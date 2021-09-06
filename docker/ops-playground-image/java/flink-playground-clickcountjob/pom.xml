@@ -22,7 +22,7 @@ under the License.
 
 	<groupId>org.apache.flink</groupId>
 	<artifactId>flink-playground-clickcountjob</artifactId>
-	<version>1-FLINK-1.12_2.11</version>
+	<version>1-FLINK-1.13_2.12</version>
 
 	<name>flink-playground-clickcountjob</name>
 	<packaging>jar</packaging>
@@ -44,9 +44,9 @@ under the License.
 
     <properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<flink.version>1.12.1</flink.version>
+		<flink.version>1.13.2</flink.version>
 		<java.version>1.8</java.version>
-		<scala.binary.version>2.11</scala.binary.version>
+		<scala.binary.version>2.12</scala.binary.version>
 		<maven.compiler.source>${java.version}</maven.compiler.source>
 		<maven.compiler.target>${java.version}</maven.compiler.target>
 	</properties>
@@ -54,18 +54,24 @@ under the License.
 	<dependencies>
 		<!-- Apache Flink dependencies -->
 		<!-- These dependencies are provided, because they should not be packaged into the JAR file. -->
-		<dependency>
-			<groupId>org.apache.flink</groupId>
-			<artifactId>flink-java</artifactId>
-			<version>${flink.version}</version>
-			<scope>provided</scope>
-		</dependency>
+<!--		<dependency>-->
+<!--			<groupId>org.apache.flink</groupId>-->
+<!--			<artifactId>flink-java</artifactId>-->
+<!--			<version>${flink.version}</version>-->
+<!--			<scope>provided</scope>-->
+<!--		</dependency>-->
+
+<!--		<dependency>-->
+<!--			<groupId>org.apache.flink</groupId>-->
+<!--			<artifactId>flink-streaming-java_${scala.binary.version}</artifactId>-->
+<!--			<version>${flink.version}</version>-->
+<!--			<scope>provided</scope>-->
+<!--		</dependency>-->
 
 		<dependency>
 			<groupId>org.apache.flink</groupId>
-			<artifactId>flink-streaming-java_${scala.binary.version}</artifactId>
+			<artifactId>flink-clients_${scala.binary.version}</artifactId>
 			<version>${flink.version}</version>
-			<scope>provided</scope>
 		</dependency>
 
 		<!-- Connector dependencies -->
@@ -88,6 +94,16 @@ under the License.
 			<artifactId>log4j</artifactId>
 			<version>1.2.17</version>
 			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.flink</groupId>
+			<artifactId>flink-metrics-graphite</artifactId>
+			<version>${flink.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.flink</groupId>
+			<artifactId>flink-metrics-prometheus_2.12</artifactId>
+			<version>${flink.version}</version>
 		</dependency>
 	</dependencies>
 

@@ -18,9 +18,8 @@
 package org.apache.flink.playgrounds.ops.clickcount;
 
 import org.apache.flink.api.java.utils.ParameterTool;
-import org.apache.flink.playgrounds.ops.clickcount.functions.BackpressureMap;
-import org.apache.flink.playgrounds.ops.clickcount.functions.ClickEventStatisticsCollector;
-import org.apache.flink.playgrounds.ops.clickcount.functions.CountingAggregator;
+import org.apache.flink.connector.kafka.source.KafkaSourceBuilder;
+import org.apache.flink.playgrounds.ops.clickcount.functions.*;
 import org.apache.flink.playgrounds.ops.clickcount.records.ClickEvent;
 import org.apache.flink.playgrounds.ops.clickcount.records.ClickEventDeserializationSchema;
 import org.apache.flink.playgrounds.ops.clickcount.records.ClickEventStatistics;
@@ -29,6 +28,7 @@ import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor;
+import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer;
@@ -81,14 +81,11 @@ public class ClickEventCount {
 		kafkaProps.setProperty(ConsumerConfig.GROUP_ID_CONFIG, "click-event-count");
 
 		DataStream<ClickEvent> clicks =
-				env.addSource(new FlinkKafkaConsumer<>(inputTopic, new ClickEventDeserializationSchema(), kafkaProps))
+				env.addSource(new CustomFlinkKafkaConsumer<>(inputTopic, new ClickEventDeserializationSchema(), kafkaProps))
 			.name("ClickEvent Source")
-			.assignTimestampsAndWatermarks(new BoundedOutOfOrdernessTimestampExtractor<ClickEvent>(Time.of(200, TimeUnit.MILLISECONDS)) {
-				@Override
-				public long extractTimestamp(final ClickEvent element) {
-					return element.getTimestamp().getTime();
-				}
-			});
+			.assignTimestampsAndWatermarks(new ClickEventWatermarkStrategy());
+
+//		new KafkaSourceBuilder<ClickEvent>.setTopics(inputTopic)
 
 		if (inflictBackpressure) {
 			// Force a network shuffle so that the backpressure will affect the buffer pools
@@ -99,14 +96,14 @@ public class ClickEventCount {
 		}
 
 		DataStream<ClickEventStatistics> statistics = clicks
+//			.map(new MetricMapper())
 			.keyBy(ClickEvent::getPage)
-			.timeWindow(WINDOW_SIZE)
-			.aggregate(new CountingAggregator(),
-				new ClickEventStatisticsCollector())
+			.window(TumblingEventTimeWindows.of(WINDOW_SIZE))
+			.aggregate(new CountingAggregator(), new ClickEventStatisticsCollector())
 			.name("ClickEvent Counter");
 
 		statistics
-			.addSink(new FlinkKafkaProducer<>(
+			.addSink(new CustomFlinkKafkaProducer<>(
 				outputTopic,
 				new ClickEventStatisticsSerializationSchema(outputTopic),
 				kafkaProps,

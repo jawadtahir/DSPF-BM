@@ -4,26 +4,9 @@
 **/*.iml
 .DS_Store
 
-docker/data-generator/.classpath
+**/.settings
 
-docker/data-generator/.project
+**/.classpath
 
-docker/data-generator/.settings/org.eclipse.core.resources.prefs
+**/.project
 
-docker/data-generator/.settings/org.eclipse.jdt.apt.core.prefs
-
-docker/data-generator/.settings/org.eclipse.jdt.core.prefs
-
-docker/data-generator/.settings/org.eclipse.m2e.core.prefs
-
-docker/ops-playground-image/java/flink-playground-clickcountjob/.project
-
-docker/ops-playground-image/java/flink-playground-clickcountjob/.settings/org.eclipse.core.resources.prefs
-
-docker/ops-playground-image/java/flink-playground-clickcountjob/.settings/org.eclipse.m2e.core.prefs
-
-table-walkthrough/.project
-
-table-walkthrough/.settings/org.eclipse.core.resources.prefs
-
-table-walkthrough/.settings/org.eclipse.m2e.core.prefs

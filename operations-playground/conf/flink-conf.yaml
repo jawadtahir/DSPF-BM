@@ -33,10 +33,10 @@ state.backend: jobmanager
 state.checkpoints.dir: file:///tmp/flink-checkpoints-directory
 # state.savepoints.dir: file:///tmp/flink-savepoints-directory
 
-metrics.reporter.grph.factory.class: org.apache.flink.metrics.graphite.GraphiteReporterFactory
-metrics.reporter.grph.host: graphite
-metrics.reporter.grph.port: 2003
-metrics.reporter.grph.interval: 1 SECOND
+# metrics.reporter.grph.factory.class: org.apache.flink.metrics.graphite.GraphiteReporterFactory
+# metrics.reporter.grph.host: graphite
+# metrics.reporter.grph.port: 2003
+# metrics.reporter.grph.interval: 1 SECOND
 
 metrics.reporter.prom.class: org.apache.flink.metrics.prometheus.PrometheusReporter
 

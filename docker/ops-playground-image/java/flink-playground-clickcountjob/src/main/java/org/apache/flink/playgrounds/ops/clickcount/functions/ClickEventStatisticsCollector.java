@@ -17,6 +17,9 @@
 
 package org.apache.flink.playgrounds.ops.clickcount.functions;
 
+import org.apache.flink.configuration.Configuration;
+import org.apache.flink.metrics.Meter;
+import org.apache.flink.metrics.MeterView;
 import org.apache.flink.playgrounds.ops.clickcount.records.ClickEvent;
 import org.apache.flink.playgrounds.ops.clickcount.records.ClickEventStatistics;
 import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction;
