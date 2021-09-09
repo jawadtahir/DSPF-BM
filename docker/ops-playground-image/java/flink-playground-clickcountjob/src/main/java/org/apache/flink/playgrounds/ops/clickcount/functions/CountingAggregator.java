@@ -18,30 +18,36 @@
 package org.apache.flink.playgrounds.ops.clickcount.functions;
 
 import org.apache.flink.api.common.functions.AggregateFunction;
+import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.playgrounds.ops.clickcount.records.ClickEvent;
+
+import java.time.Instant;
+import java.util.Date;
 
 /**
  * An {@link AggregateFunction} which simply counts {@link ClickEvent}s.
  *
  */
-public class CountingAggregator implements AggregateFunction<ClickEvent, Long, Long> {
+public class CountingAggregator implements AggregateFunction<ClickEvent, Tuple2<Long, Date>, Tuple2<Long, Date>> {
 	@Override
-	public Long createAccumulator() {
-		return 0L;
+	public Tuple2<Long, Date> createAccumulator() {
+		return new Tuple2<>(0L, new Date(Long.MAX_VALUE)) ;
 	}
 
 	@Override
-	public Long add(final ClickEvent value, final Long accumulator) {
-		return accumulator + 1;
-	}
-
-	@Override
-	public Long getResult(final Long accumulator) {
+	public Tuple2<Long, Date> add(final ClickEvent value, final Tuple2<Long, Date> accumulator) {
+		accumulator.f0 = accumulator.f0 + 1L;
+		accumulator.f1 = (value.getCreationTimestamp().before(accumulator.f1) )? value.getCreationTimestamp() : accumulator.f1;
 		return accumulator;
 	}
 
 	@Override
-	public Long merge(final Long a, final Long b) {
-		return a + b;
+	public Tuple2<Long, Date> getResult(final Tuple2<Long, Date> accumulator) {
+		return accumulator;
+	}
+
+	@Override
+	public Tuple2<Long, Date> merge(final Tuple2<Long, Date> a, final Tuple2<Long, Date> b) {
+		return new Tuple2<Long, Date>(a.f0+b.f0,  a.f1.before(b.f1)?a.f1:b.f1);
 	}
 }

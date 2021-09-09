@@ -17,6 +17,7 @@
 
 package org.apache.flink.playgrounds.ops.clickcount.functions;
 
+import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.metrics.Meter;
 import org.apache.flink.metrics.MeterView;
@@ -26,6 +27,7 @@ import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.util.Collector;
 
+
 import java.util.Date;
 
 /**
@@ -34,17 +36,19 @@ import java.util.Date;
  *
  **/
 public class ClickEventStatisticsCollector
-		extends ProcessWindowFunction<Long, ClickEventStatistics, String, TimeWindow> {
+		extends ProcessWindowFunction<Tuple2<Long, Date>, ClickEventStatistics, String, TimeWindow> {
 
 	@Override
 	public void process(
 			final String page,
 			final Context context,
-			final Iterable<Long> elements,
+			final Iterable<Tuple2<Long, Date>> elements,
 			final Collector<ClickEventStatistics> out) throws Exception {
 
-		Long count = elements.iterator().next();
+		Tuple2<Long, Date> tuple = elements.iterator().next();
+		Long count = tuple.f0;
+		Date earliestDate = tuple.f1;
 
-		out.collect(new ClickEventStatistics(new Date(context.window().getStart()), new Date(context.window().getEnd()), page, count));
+		out.collect(new ClickEventStatistics(new Date(context.window().getStart()), new Date(context.window().getEnd()), earliestDate, page, count));
 	}
 }

@@ -22,6 +22,7 @@ services:
 
   zookeeper:
     image: wurstmeister/zookeeper:3.4.6
+
   kafka:
     image: wurstmeister/kafka:2.12-2.2.1
     environment:
@@ -33,14 +34,8 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
     ports:
       - "9094:9094"
-
-#  graphite:
-#    image: graphiteapp/graphite-statsd
-#    ports:
-#      - "58080:80"
-#      - "58126:8126"
-#    volumes:
-#      - /home/foobar/PhD/Data/faults/graphite1:/opt/graphite/storage
+    volumes:
+      - /home/foobar/PhD/Data/faults/kafka-logs:/tmp/kafka-logs
 
 
   prometheus:
@@ -48,8 +43,18 @@ services:
     ports:
       - "59090:9090"
     volumes:
-      - /home/foobar/PhD/Repos/flink-playgrounds/operations-playground/conf/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./conf/prometheus.yml:/etc/prometheus/prometheus.yml
       - /home/foobar/PhD/Data/faults/prometheus:/prometheus
+
+
+  grafana:
+    image: grafana/grafana
+    depends_on:
+      - prometheus
+    ports:
+      - "53000:3000"
+    volumes:
+      - /home/foobar/PhD/Data/faults/grafana:/var/lib/grafana
 
   jobmanager:
     image: apache/flink:1.13.2-scala_2.12-java8
@@ -67,12 +72,6 @@ services:
       - JOB_MANAGER_RPC_ADDRESS=jobmanager
     hostname: jobmanager
 
-  grafana:
-    image: grafana/grafana
-    depends_on:
-      - prometheus
-    ports:
-      - "53000:3000"
 
   taskmanager:
     image: apache/flink:1.13.2-scala_2.12-java8
@@ -118,6 +117,7 @@ services:
 
   client:
     build: ../docker/ops-playground-image
+#    image: jawadtahir/flink-ops-playground
     image: flink-ops-playground
     command: "flink run -d /opt/ClickCountJob.jar --bootstrap.servers kafka:9092 --checkpointing --event-time"
     depends_on:
@@ -129,6 +129,7 @@ services:
       - JOB_MANAGER_RPC_ADDRESS=jobmanager
   
   clickevent-generator:
+#    image: jawadtahir/flink-ops-playground
     image: flink-ops-playground
     command: "java -classpath /opt/ClickCountJob.jar:/opt/flink/lib/* org.apache.flink.playgrounds.ops.clickcount.ClickEventGenerator --bootstrap.servers kafka:9092 --topic input"
     depends_on:

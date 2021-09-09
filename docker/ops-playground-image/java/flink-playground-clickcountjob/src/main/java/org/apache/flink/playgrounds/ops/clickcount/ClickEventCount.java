@@ -62,7 +62,7 @@ public class ClickEventCount {
 	public static final String BACKPRESSURE_OPTION = "backpressure";
 	public static final String OPERATOR_CHAINING_OPTION = "chaining";
 
-	public static final Time WINDOW_SIZE = Time.of(15, TimeUnit.SECONDS);
+	public static final Time WINDOW_SIZE = Time.of(60, TimeUnit.SECONDS);
 
 	public static void main(String[] args) throws Exception {
 		final ParameterTool params = ParameterTool.fromArgs(args);
@@ -99,7 +99,8 @@ public class ClickEventCount {
 //			.map(new MetricMapper())
 			.keyBy(ClickEvent::getPage)
 			.window(TumblingEventTimeWindows.of(WINDOW_SIZE))
-			.aggregate(new CountingAggregator(), new ClickEventStatisticsCollector())
+			.process(new CountProcessWindowFunction())
+//			.aggregate(new CountingAggregator(), new ClickEventStatisticsCollector())
 			.name("ClickEvent Counter");
 
 		statistics

@@ -29,11 +29,14 @@ import java.util.Objects;
 public class ClickEventStatistics {
 
 	//using java.util.Date for better readability
-	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy hh:mm:ss:SSS")
+	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy HH:mm:ss:SSS")
 	private Date windowStart;
 	//using java.util.Date for better readability
-	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy hh:mm:ss:SSS")
+	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy HH:mm:ss:SSS")
 	private Date windowEnd;
+	//using java.util.Date for better readability
+	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy HH:mm:ss:SSS")
+	private Date firstMsgTS;
 	private String page;
 	private long count;
 
@@ -43,10 +46,12 @@ public class ClickEventStatistics {
 	public ClickEventStatistics(
 			final Date windowStart,
 			final Date windowEnd,
+			final Date firstMsgTS,
 			final String page,
 			final long count) {
 		this.windowStart = windowStart;
 		this.windowEnd = windowEnd;
+		this.firstMsgTS = firstMsgTS;
 		this.page = page;
 		this.count = count;
 	}
@@ -65,6 +70,14 @@ public class ClickEventStatistics {
 
 	public void setWindowEnd(final Date windowEnd) {
 		this.windowEnd = windowEnd;
+	}
+
+	public Date getFirstMsgTS() {
+		return firstMsgTS;
+	}
+
+	public void setFirstMsgTS(Date firstMsgTS) {
+		this.firstMsgTS = firstMsgTS;
 	}
 
 	public String getPage() {
@@ -95,12 +108,13 @@ public class ClickEventStatistics {
 		return count == that.count &&
 				Objects.equals(windowStart, that.windowStart) &&
 				Objects.equals(windowEnd, that.windowEnd) &&
+				Objects.equals(this.firstMsgTS, that.firstMsgTS) &&
 				Objects.equals(page, that.page);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(windowStart, windowEnd, page, count);
+		return Objects.hash(windowStart, windowEnd, firstMsgTS, page, count);
 	}
 
 	@Override
@@ -108,6 +122,7 @@ public class ClickEventStatistics {
 		final StringBuilder sb = new StringBuilder("ClickEventStatistics{");
 		sb.append("windowStart=").append(windowStart);
 		sb.append(", windowEnd=").append(windowEnd);
+		sb.append(", firstMsgTS=").append(firstMsgTS);
 		sb.append(", page='").append(page).append('\'');
 		sb.append(", count=").append(count);
 		sb.append('}');

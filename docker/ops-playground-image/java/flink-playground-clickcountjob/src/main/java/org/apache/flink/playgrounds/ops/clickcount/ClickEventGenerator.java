@@ -47,7 +47,7 @@ import static org.apache.flink.playgrounds.ops.clickcount.ClickEventCount.WINDOW
  */
 public class ClickEventGenerator {
 
-	public static final int EVENTS_PER_WINDOW = 1000;
+	public static final int EVENTS_PER_WINDOW = 5000;
 
 	private static final List<String> pages = Arrays.asList("/help", "/index", "/shop", "/jobs", "/about", "/news");
 
@@ -67,6 +67,8 @@ public class ClickEventGenerator {
 
 		ClickIterator clickIterator = new ClickIterator();
 
+		Long counter = 0L;
+
 		while (true) {
 
 			ProducerRecord<byte[], byte[]> record = new ClickEventSerializationSchema(topic).serialize(
@@ -75,7 +77,13 @@ public class ClickEventGenerator {
 
 			producer.send(record);
 
-			Thread.sleep(DELAY);
+//			Thread.sleep(DELAY);
+
+			counter++;
+			if (counter == 119) {
+				Thread.sleep(1);
+				counter = 0L;
+			}
 		}
 	}
 
@@ -105,7 +113,8 @@ public class ClickEventGenerator {
 
 		private Date nextTimestamp(String page) {
 			long nextTimestamp = nextTimestampPerKey.getOrDefault(page, 0L);
-			nextTimestampPerKey.put(page, nextTimestamp + WINDOW_SIZE.toMilliseconds() / EVENTS_PER_WINDOW);
+//			nextTimestampPerKey.put(page, nextTimestamp + WINDOW_SIZE.toMilliseconds() / EVENTS_PER_WINDOW);
+			nextTimestampPerKey.put(page, nextTimestamp + (WINDOW_SIZE.toMilliseconds()  / EVENTS_PER_WINDOW ) );
 			return new Date(nextTimestamp);
 		}
 
