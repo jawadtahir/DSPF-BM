@@ -35,7 +35,7 @@ services:
     ports:
       - "9094:9094"
     volumes:
-      - /home/foobar/PhD/Data/faults/kafka-logs:/tmp/kafka-logs
+      - /home/foobar/PhD/Data/faults/kafka-logs:/kafka
 
 
   prometheus:
