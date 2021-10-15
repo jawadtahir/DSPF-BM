@@ -48,8 +48,8 @@ services:
           - "node.labels.vmtype==man"
 
   clickevent-generator:
-    #    image: jawadtahir/flink-ops-playground
-    image: flink-ops-playground
+    image: jawadtahir/flink-ops-playground
+    #image: flink-ops-playground
     command: "java -classpath /opt/ClickCountJob.jar:/opt/flink/lib/* org.apache.flink.playgrounds.ops.clickcount.ClickEventGenerator --bootstrap.servers kafka:9092 --topic input"
     depends_on:
       - kafka
