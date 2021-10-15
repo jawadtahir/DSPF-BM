@@ -98,7 +98,6 @@ services:
     depends_on:
       - prometheus
     ports:
-      - "58081:8081"
       - target: 8081
         published: 48081
         mode: host
@@ -192,6 +191,8 @@ services:
       - JOB_MANAGER_RPC_ADDRESS=jobmanager
     deploy:
       replicas: 1
+      restart_policy:
+        condition: on-failure
       placement:
         constraints:
           - "node.labels.vmtype==man"
