@@ -22,6 +22,11 @@ services:
 
   zookeeper:
     image: wurstmeister/zookeeper:3.4.6
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - "node.labels.vmtype==man"
 
   kafka:
     image: wurstmeister/kafka:2.12-2.2.1
@@ -40,7 +45,7 @@ services:
       replicas: 1
       placement:
         constraints:
-          - "node.label.vmtype==man"
+          - "node.labels.vmtype==man"
 
   clickevent-generator:
     #    image: jawadtahir/flink-ops-playground
@@ -52,7 +57,7 @@ services:
       replicas: 1
       placement:
         constraints:
-          - "node.label.vmtype==man"
+          - "node.labels.vmtype==man"
 
 
 
@@ -67,7 +72,7 @@ services:
       replicas: 1
       placement:
         constraints:
-          - "node.label.vmtype==man"
+          - "node.labels.vmtype==man"
 
   grafana:
     image: grafana/grafana
@@ -83,7 +88,7 @@ services:
       replicas: 1
       placement:
         constraints:
-          - "node.label.vmtype==man"
+          - "node.labels.vmtype==man"
 
 
 
@@ -110,7 +115,7 @@ services:
       replicas: 1
       placement:
         constraints:
-          - "node.label.vmtype==jm"
+          - "node.labels.vmtype==jm"
 
 
   taskmanager:
@@ -130,7 +135,7 @@ services:
       replicas: 1
       placement:
         constraints:
-          - "node.label.vmname==tm1"
+          - "node.labels.vmname==tm1"
 
   taskmanager1:
     image: apache/flink:1.13.2-scala_2.12-java8
@@ -149,7 +154,7 @@ services:
       replicas: 1
       placement:
         constraints:
-          - "node.label.vmname==tm2"
+          - "node.labels.vmname==tm2"
 
   taskmanager2:
     image: apache/flink:1.13.2-scala_2.12-java8
@@ -168,7 +173,7 @@ services:
       replicas: 1
       placement:
         constraints:
-          - "node.label.vmname==tm3"
+          - "node.labels.vmname==tm3"
 
 
 
@@ -189,7 +194,7 @@ services:
       replicas: 1
       placement:
         constraints:
-          - "node.label.vmtype==man"
+          - "node.labels.vmtype==man"
 
   
 
