@@ -1,0 +1,9 @@
+---
+servers:
+- address: "localhost:52923"
+  containers:
+  - "some-nginx"
+operation: "kill"
+operationOptns: []
+suboperation: ""
+suboperationOptns: []
