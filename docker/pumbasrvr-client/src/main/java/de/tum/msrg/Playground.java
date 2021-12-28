@@ -32,7 +32,7 @@ public class Playground {
 //        suboperationoptns.add(suboperationoptn);
 
 
-        Chaos chaos = new Chaos(servers, operation, operationOptns, suboperation, suboperationoptns);
+        Chaos chaos = new Chaos(servers, operation, operationOptns, suboperation, suboperationoptns, 10);
 
         ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
 

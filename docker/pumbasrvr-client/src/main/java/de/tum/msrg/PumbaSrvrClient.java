@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public class PumbaSrvrClient {
 
@@ -26,6 +27,7 @@ public class PumbaSrvrClient {
     private String subCommand;
     private Map<String, String> subCmdOptions;
     private List<String> containers;
+    private Integer startDelay;
 
 
     public PumbaSrvrClient(Map<String, Integer> servers){
@@ -36,11 +38,16 @@ public class PumbaSrvrClient {
         for (Map.Entry<String, Integer> server: this.servers.entrySet()){
             try (Socket serverSocket = new Socket()) {
 
+                //start delay
+                TimeUnit.SECONDS.sleep(startDelay);
+
                 serverSocket.connect(new InetSocketAddress(server.getKey(), server.getValue()));
                 serverSocket.getOutputStream().write(String.format("%s\n", command).getBytes(StandardCharsets.UTF_8));
                 serverSocket.getOutputStream().flush();
 
-            } catch (IOException e) {
+
+
+            } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
             }
         }
@@ -155,6 +162,14 @@ public class PumbaSrvrClient {
         this.containers = containers;
     }
 
+    public Integer getStartDelay() {
+        return startDelay;
+    }
+
+    public void setStartDelay(Integer startDelay) {
+        this.startDelay = startDelay;
+    }
+
     public static void main (String[] args)  {
 
 
@@ -189,6 +204,9 @@ public class PumbaSrvrClient {
                     suboperationOptns.put(optn.getOption(), optn.getValue());
                 }
 
+                Integer startDelay = chaos.getStartDelay();
+
+
                 PumbaSrvrClient client = new PumbaSrvrClient(serverMap);
 
                 switch (operation.toLowerCase()){
@@ -207,6 +225,7 @@ public class PumbaSrvrClient {
                 client.setSubCommand(suboperation);
                 client.setSubCmdOptions(suboperationOptns);
                 client.setContainers(containers);
+                client.setStartDelay(startDelay);
 
                 client.sendCommand(client.buildCommand());
 

@@ -10,17 +10,19 @@ public class Chaos {
     private List<OperationOptn> operationOptns;
     private String suboperation;
     private List<OperationOptn> suboperationOptns;
+    private Integer startDelay;
 
     public Chaos(){
-        this(new ArrayList<>(), "", new ArrayList<>(), "", new ArrayList<>());
+        this(new ArrayList<>(), "", new ArrayList<>(), "", new ArrayList<>(), 0);
     }
 
-    public Chaos(List<Server> servers, String operation, List<OperationOptn> operationOptns, String suboperation, List<OperationOptn> suboperationOptns) {
+    public Chaos(List<Server> servers, String operation, List<OperationOptn> operationOptns, String suboperation, List<OperationOptn> suboperationOptns, Integer startDelay) {
         this.servers = servers;
         this.operation = operation;
         this.operationOptns = operationOptns;
         this.suboperation = suboperation;
         this.suboperationOptns = suboperationOptns;
+        this.startDelay = startDelay;
     }
 
     public List<Server> getServers() {
@@ -63,6 +65,14 @@ public class Chaos {
         this.suboperationOptns = suboperationOptns;
     }
 
+    public Integer getStartDelay() {
+        return startDelay;
+    }
+
+    public void setStartDelay(Integer startDelay) {
+        this.startDelay = startDelay;
+    }
+
     @Override
     public String toString() {
         return "Chaos{" +
@@ -71,6 +81,7 @@ public class Chaos {
                 ", operationOptns=" + operationOptns +
                 ", suboperation='" + suboperation + '\'' +
                 ", suboperationOptns=" + suboperationOptns +
+                ", startDelay=" + startDelay +
                 '}';
     }
 }
