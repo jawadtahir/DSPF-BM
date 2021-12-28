@@ -1,14 +1,14 @@
 ---
 servers:
-  - address: "localhost:52923"
+  - address: "taskmanager:52923"
     containers:
-      - "some-nginx"
+      - "DSPF-BM_taskmanager"
 operation: "kill"
 operationOptns: []
 suboperation: ""
 suboperationOptns: []
 # in seconds
-startDelay: 5
+startDelay: 30
 
 
 #---

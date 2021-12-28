@@ -24,7 +24,7 @@ query.server.port: 6125
 taskmanager.memory.process.size: 1728Mb
 taskmanager.numberOfTaskSlots: 1
 
-parallelism.default: 2
+parallelism.default: 3
 
 execution.checkpointing.interval: 5 s
 

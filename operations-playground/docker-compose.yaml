@@ -20,6 +20,21 @@ version: "3.9"
 
 services:
 
+  pumbasrvr:
+    image: jawadtahir/pumbasrvr
+    deploy:
+      mode: global
+
+  pumbasrvrclient:
+    image: jawadtahir/pumbasrvrclient
+    environment:
+      PUMBA_SRVR_CLIENT_RESOURCE_DIR: "/home/ubuntu/DSPF-BM/docker/pumbasrvr-client/src/main/resources/"
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - "node.labels.vmtype==man"
+
   zookeeper:
     image: wurstmeister/zookeeper:3.4.6
     deploy:
@@ -136,6 +151,7 @@ services:
         constraints:
           - "node.labels.vmname==tm1"
 
+
   taskmanager1:
     image: apache/flink:1.13.2-scala_2.12-java8
     depends_on:
@@ -197,6 +213,6 @@ services:
         constraints:
           - "node.labels.vmtype==man"
 
-  
+#
 
 
