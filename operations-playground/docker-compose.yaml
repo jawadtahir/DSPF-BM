@@ -58,4 +58,4 @@ services:
 networks:
   default:
     external: true
-    name: DSPF-BM_default
+    name: infra_default
