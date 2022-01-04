@@ -124,22 +124,13 @@ public class PumbaSrvrClient {
 
             String resourceDir = System.getenv().getOrDefault("PUMBA_SRVR_CLIENT_RESOURCE_DIR", "");
             String yamlFileName = "experiment.yaml";
-
-
             String fileToRead = Paths.get(resourceDir, yamlFileName).toString();
-
             File yamlFile = new File(fileToRead);
-
             ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
             mapper.findAndRegisterModules();
             Chaos chaos = mapper.readValue(yamlFile, Chaos.class);
-            Server server = chaos.getServer();
 
-
-            List<String> containers = chaos.getContainers();
-            String adrs = server.getAddress();
-
-
+            LOGGER.info(chaos.toString());
 
             PumbaSrvrClient client = new PumbaSrvrClient(chaos);
 
