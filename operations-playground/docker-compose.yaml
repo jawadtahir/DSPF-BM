@@ -21,6 +21,8 @@ version: "3.9"
 services:
 
   pumbasrvrclient:
+    networks:
+      - infra_default
     image: jawadtahir/pumbasrvrclient
     deploy:
       replicas: 1
@@ -41,6 +43,9 @@ services:
 #          - "node.labels.vmtype==man"
 
   client:
+
+    networks:
+      - infra_default
     #build: ../docker/ops-playground-image
     image: jawadtahir/flink-ops-playground
     #    image: flink-ops-playground
@@ -58,6 +63,6 @@ services:
           - "node.labels.vmtype==man"
 
 networks:
-  default:
+  infra_default:
     external: true
     name: infra_default
