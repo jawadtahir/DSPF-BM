@@ -1,21 +1,23 @@
 ---
-servers:
-  - address: "taskmanager:52923"
-    containers:
-      - "DSPF-BM_taskmanager"
+server:
+  address: "taskmanager"
+  port: 52923
+containers:
+    - "infra_taskmanager"
 operation: "kill"
 operationOptns: []
 suboperation: ""
 suboperationOptns: []
 # in seconds
-startDelay: 30
+startDelay: 10
 
-
+#
 #---
-#servers:
-#  - address: "localhost:52923"
-#    containers:
-#      - "some-nginx"
+#server:
+#  address: "taskmanager"
+#  port: 52923
+#containers:
+#  - "infra_taskmanager"
 #operation: "netem"
 #operationOptns:
 #  - option: "-d"
@@ -26,3 +28,5 @@ startDelay: 30
 #suboperationOptns:
 #  - option: "-t"
 #    value: "1000"
+## in seconds
+#startDelay: 10
