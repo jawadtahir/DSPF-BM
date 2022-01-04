@@ -5,19 +5,21 @@ import java.util.List;
 import java.util.Map;
 
 public class Chaos {
-    private List<Server> servers;
+    private Server server;
+    private List<String> containers;
     private String operation;
     private List<OperationOptn> operationOptns;
     private String suboperation;
     private List<OperationOptn> suboperationOptns;
     private Integer startDelay;
 
-    public Chaos(){
-        this(new ArrayList<>(), "", new ArrayList<>(), "", new ArrayList<>(), 0);
+    public Chaos() {
+        this(new Server(), new ArrayList<>(), "", new ArrayList<>(), "", new ArrayList<>(), 10);
     }
 
-    public Chaos(List<Server> servers, String operation, List<OperationOptn> operationOptns, String suboperation, List<OperationOptn> suboperationOptns, Integer startDelay) {
-        this.servers = servers;
+    public Chaos(Server server, List<String> containers, String operation, List<OperationOptn> operationOptns, String suboperation, List<OperationOptn> suboperationOptns, Integer startDelay) {
+        this.server = server;
+        this.containers = containers;
         this.operation = operation;
         this.operationOptns = operationOptns;
         this.suboperation = suboperation;
@@ -25,12 +27,20 @@ public class Chaos {
         this.startDelay = startDelay;
     }
 
-    public List<Server> getServers() {
-        return servers;
+    public Server getServer() {
+        return server;
     }
 
-    public void setServers(List<Server> servers) {
-        this.servers = servers;
+    public void setServer(Server server) {
+        this.server = server;
+    }
+
+    public List<String> getContainers() {
+        return containers;
+    }
+
+    public void setContainers(List<String> containers) {
+        this.containers = containers;
     }
 
     public String getOperation() {
@@ -76,7 +86,8 @@ public class Chaos {
     @Override
     public String toString() {
         return "Chaos{" +
-                "servers=" + servers +
+                "server=" + server +
+                ", containers=" + containers +
                 ", operation='" + operation + '\'' +
                 ", operationOptns=" + operationOptns +
                 ", suboperation='" + suboperation + '\'' +
@@ -85,43 +96,17 @@ public class Chaos {
                 '}';
     }
 }
-class ServerElements {
-    public ServerElements() {
-        this(new Server());
-    }
 
-    public ServerElements(Server server) {
-        this.server = server;
-    }
-
-    private Server server;
-
-    public Server getServer() {
-        return server;
-    }
-
-    public void setServer(Server server) {
-        this.server = server;
-    }
-
-    @Override
-    public String toString() {
-        return "ServerElements{" +
-                "server=" + server +
-                '}';
-    }
-}
 class Server {
     private String address;
-    private List<String> containers;
+    private Integer port;
 
-    public Server(){
-        this("localhost:52923", new ArrayList<>());
+    public Server() {
     }
 
-    public Server(String address, List<String> containers) {
+    public Server(String address, Integer port) {
         this.address = address;
-        this.containers = containers;
+        this.port = port;
     }
 
     public String getAddress() {
@@ -132,19 +117,19 @@ class Server {
         this.address = address;
     }
 
-    public List<String> getContainers() {
-        return containers;
+    public Integer getPort() {
+        return port;
     }
 
-    public void setContainers(List<String> containers) {
-        this.containers = containers;
+    public void setPort(Integer port) {
+        this.port = port;
     }
 
     @Override
     public String toString() {
         return "Server{" +
                 "address='" + address + '\'' +
-                ", containers=" + containers +
+                ", port=" + port +
                 '}';
     }
 }

@@ -6,6 +6,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class Playground {
@@ -13,7 +14,7 @@ public class Playground {
     public static void main(String[] args) throws IOException {
         List<String> containers = new ArrayList<>();
         containers.add("some-nginx");
-        Server server = new Server("localhost:52923", containers);
+        Server server = new Server("localhost", 52923);
 
         List<Server> servers = new ArrayList<>();
         servers.add(server);
@@ -32,7 +33,7 @@ public class Playground {
 //        suboperationoptns.add(suboperationoptn);
 
 
-        Chaos chaos = new Chaos(servers, operation, operationOptns, suboperation, suboperationoptns, 10);
+        Chaos chaos = new Chaos(server, Collections.singletonList("some"), "kill", operationOptns, "", suboperationoptns, 10);
 
         ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
 

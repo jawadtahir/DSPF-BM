@@ -15,3 +15,6 @@
 
 operations-playground/.env
 operations-playground/.envrc
+operations-playground/lib/flink-dist_2.11-1.13.0.jar
+
+operations-playground/lib/frauddetection-0.1.jar

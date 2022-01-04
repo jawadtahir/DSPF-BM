@@ -12,6 +12,8 @@ import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -21,44 +23,38 @@ import java.util.concurrent.TimeUnit;
 public class PumbaSrvrClient {
 
     private static final Logger LOGGER= LogManager.getLogger(PumbaSrvrClient.class);
-    private Map<String, Integer> servers;
-    private Operation operation;
-    private Map<String, String> options;
-    private String subCommand;
-    private Map<String, String> subCmdOptions;
-    private List<String> containers;
-    private Integer startDelay;
 
+    private Chaos chaos;
 
-    public PumbaSrvrClient(Map<String, Integer> servers){
-        this.servers = servers;
+    public PumbaSrvrClient(Chaos chaos){
+        this.chaos = chaos;
     }
 
     public void sendCommand(String command){
-        for (Map.Entry<String, Integer> server: this.servers.entrySet()){
-            try (Socket serverSocket = new Socket()) {
 
-                //start delay
-                TimeUnit.SECONDS.sleep(startDelay);
+        try (Socket serverSocket = new Socket()) {
 
-                serverSocket.connect(new InetSocketAddress(server.getKey(), server.getValue()));
-                serverSocket.getOutputStream().write(String.format("%s\n", command).getBytes(StandardCharsets.UTF_8));
-                serverSocket.getOutputStream().flush();
+            //start delay
+            TimeUnit.SECONDS.sleep(chaos.getStartDelay());
+
+            serverSocket.connect(new InetSocketAddress(chaos.getServer().getAddress(), chaos.getServer().getPort()));
+            serverSocket.getOutputStream().write(String.format("%s\n", command).getBytes(StandardCharsets.UTF_8));
+            serverSocket.getOutputStream().flush();
 
 
 
-            } catch (IOException | InterruptedException e) {
-                e.printStackTrace();
-            }
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
         }
+
     }
 
     public String buildCommand(){
         String retVal = "";
 
-        if (this.operation == Operation.KILL){
+        if (chaos.getOperation().toString().equals("kill")){
             retVal = buildKillCommand();
-        }else if (this.operation == Operation.NETEM){
+        }else if (chaos.getOperation().equals("netem")){
             retVal = buildNetemCommand();
         }
 
@@ -85,7 +81,7 @@ public class PumbaSrvrClient {
 
         configureCommandOptions(sb);
 
-        sb.append(this.subCommand).append(" ");
+        sb.append(chaos.getSuboperation()).append(" ");
 
         configureSubCmdOptions(sb);
         configureContainers(sb);
@@ -96,79 +92,30 @@ public class PumbaSrvrClient {
     }
 
     protected void configureCommandOptions(StringBuilder sb){
-        if (this.options != null && !this.options.isEmpty()){
-            for (Map.Entry<String, String> option:this.options.entrySet()){
-                sb.append(option.getKey()).append("=").append(option.getValue()).append(" ");
+        if (chaos.getOperation() != null && !chaos.getOperationOptns().isEmpty()){
+            for (OperationOptn option : chaos.getOperationOptns()){
+                sb.append(String.format("%s=%s ", option.getOption(), option.getValue()));
             }
         }
     }
 
     protected void configureContainers(StringBuilder sb){
-        if (this.containers != null && !this.containers.isEmpty()){
-            for (String container: this.containers){
-                sb.append(container).append(" ");
+        if (chaos.getContainers() != null && !chaos.getContainers().isEmpty()){
+            for (String container: chaos.getContainers()){
+                sb.append(String.format("'re2:%s*' ", container));
             }
         }
     }
 
 
     protected void configureSubCmdOptions(StringBuilder sb){
-        if (this.subCmdOptions != null && !this.subCmdOptions.isEmpty()){
-            for (Map.Entry<String, String> option:this.subCmdOptions.entrySet()){
-                sb.append(option.getKey()).append("=").append(option.getValue()).append(" ");
+        if (chaos.getSuboperation() != null && !chaos.getSuboperationOptns().isEmpty()){
+            for (OperationOptn option : chaos.getSuboperationOptns()){
+                sb.append(String.format("%s=%s ", option.getOption(), option.getValue()));
             }
         }
     }
 
-
-
-    public Operation getOperation() {
-        return operation;
-    }
-
-    public void setOperation(Operation operation) {
-        this.operation = operation;
-    }
-
-    public Map<String, String> getOptions() {
-        return options;
-    }
-
-    public void setOptions(Map<String, String> options) {
-        this.options = options;
-    }
-
-    public String getSubCommand() {
-        return subCommand;
-    }
-
-    public void setSubCommand(String subCommand) {
-        this.subCommand = subCommand;
-    }
-
-    public Map<String, String> getSubCmdOptions() {
-        return subCmdOptions;
-    }
-
-    public void setSubCmdOptions(Map<String, String> subCmdOptions) {
-        this.subCmdOptions = subCmdOptions;
-    }
-
-    public List<String> getContainers() {
-        return containers;
-    }
-
-    public void setContainers(List<String> containers) {
-        this.containers = containers;
-    }
-
-    public Integer getStartDelay() {
-        return startDelay;
-    }
-
-    public void setStartDelay(Integer startDelay) {
-        this.startDelay = startDelay;
-    }
 
     public static void main (String[] args)  {
 
@@ -177,59 +124,27 @@ public class PumbaSrvrClient {
 
             String resourceDir = System.getenv().getOrDefault("PUMBA_SRVR_CLIENT_RESOURCE_DIR", "");
             String yamlFileName = "experiment.yaml";
-            String fileToRead = String.format("%s%s", resourceDir, yamlFileName);
+
+
+            String fileToRead = Paths.get(resourceDir, yamlFileName).toString();
 
             File yamlFile = new File(fileToRead);
 
             ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
             mapper.findAndRegisterModules();
             Chaos chaos = mapper.readValue(yamlFile, Chaos.class);
-            List<Server> servers = chaos.getServers();
-            Map<String, Integer> serverMap = new HashMap<>();
-            for (Server server: servers){
-                List<String> containers = server.getContainers();
-                String adrs = server.getAddress();
-                serverMap.put(adrs.split(":")[0], Integer.parseInt(adrs.split(":")[1]));
+            Server server = chaos.getServer();
 
 
-                String operation = chaos.getOperation();
-                Map<String, String> operationOptns = new HashMap<>();
-                for (OperationOptn optn: chaos.getOperationOptns()){
-                    operationOptns.put(optn.getOption(), optn.getValue());
-                }
-
-                String suboperation = chaos.getSuboperation();
-                Map<String, String> suboperationOptns = new HashMap<>();
-                for (OperationOptn optn: chaos.getSuboperationOptns()){
-                    suboperationOptns.put(optn.getOption(), optn.getValue());
-                }
-
-                Integer startDelay = chaos.getStartDelay();
+            List<String> containers = chaos.getContainers();
+            String adrs = server.getAddress();
 
 
-                PumbaSrvrClient client = new PumbaSrvrClient(serverMap);
 
-                switch (operation.toLowerCase()){
-                    case "kill":
-                        client.setOperation(Operation.KILL);
-                        break;
-                    case "netem":
-                        client.setOperation(Operation.NETEM);
-                        break;
-                    default:
-                        LOGGER.error("Unknown operation");
-                        break;
-                }
+            PumbaSrvrClient client = new PumbaSrvrClient(chaos);
 
-                client.setOptions(operationOptns);
-                client.setSubCommand(suboperation);
-                client.setSubCmdOptions(suboperationOptns);
-                client.setContainers(containers);
-                client.setStartDelay(startDelay);
+            client.sendCommand(client.buildCommand());
 
-                client.sendCommand(client.buildCommand());
-
-            }
         } catch (IOException e) {
             e.printStackTrace();
         }
