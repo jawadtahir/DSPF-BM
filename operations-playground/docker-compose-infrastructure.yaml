@@ -22,6 +22,8 @@ services:
 
   pumbasrvr:
     image: jawadtahir/pumbasrvr
+    networks:
+      - infra
     deploy:
       mode: global
 
@@ -35,6 +37,8 @@ services:
 
   kafka:
     image: wurstmeister/kafka:2.12-2.2.1
+    networks:
+      - infra
     environment:
       KAFKA_ADVERTISED_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
       KAFKA_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
@@ -56,8 +60,8 @@ services:
 
   prometheus:
     image: prom/prometheus
-    #    ports:
-    #      - "59090:9090"
+    networks:
+      - infra
     volumes:
       - ./conf/prometheus.yml:/etc/prometheus/prometheus.yml
       - $DATA_DIR/prometheus:/prometheus
@@ -69,6 +73,8 @@ services:
 
   grafana:
     image: grafana/grafana
+    networks:
+      - infra
     depends_on:
       - prometheus
     ports:
@@ -87,6 +93,8 @@ services:
 
   jobmanager:
     image: apache/flink:1.13.2-scala_2.12-java8
+    networks:
+      - infra
     command: "jobmanager.sh start-foreground"
     depends_on:
       - prometheus
@@ -112,6 +120,8 @@ services:
 
   taskmanager:
     image: apache/flink:1.13.2-scala_2.12-java8
+    networks:
+      - infra
     depends_on:
       - jobmanager
     command: "taskmanager.sh start-foreground"
@@ -132,6 +142,8 @@ services:
 
   taskmanager1:
     image: apache/flink:1.13.2-scala_2.12-java8
+    networks:
+      - infra
     depends_on:
       - jobmanager
     command: "taskmanager.sh start-foreground"
@@ -151,6 +163,8 @@ services:
 
   taskmanager2:
     image: apache/flink:1.13.2-scala_2.12-java8
+    networks:
+      - infra
     depends_on:
       - jobmanager
     command: "taskmanager.sh start-foreground"
@@ -167,3 +181,7 @@ services:
       placement:
         constraints:
           - "node.labels.vmname==tm3"
+
+networks:
+  infra:
+    attachable: true
