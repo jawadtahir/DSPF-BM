@@ -19,11 +19,24 @@
 version: "3.9"
 
 services:
+  pumbasrvr:
+    image: jawadtahir/pumbasrvr
+    networks:
+      - infra
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - "node.labels.vmname==tm3"
 
   pumbasrvrclient:
     networks:
-      - infra_infra
+      - infra
     image: jawadtahir/pumbasrvrclient
+    volumes:
+      - $PUMBA_SRVR_CLIENT_RESOURCE_DIR/experiment.yaml:/PumbaSrvrClient/experiment.yaml
     deploy:
       replicas: 1
       restart_policy:
@@ -47,7 +60,7 @@ services:
   client:
 
     networks:
-      - infra_infra
+      - infra
     #build: ../docker/ops-playground-image
     image: jawadtahir/flink-ops-playground
     #    image: flink-ops-playground
@@ -65,6 +78,6 @@ services:
           - "node.labels.vmtype==man"
 
 networks:
-  infra_infra:
+  infra:
     external: true
     name: infra_infra

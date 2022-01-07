@@ -1,6 +1,6 @@
 ---
 server:
-  address: "taskmanager"
+  address: "pumbasrvr"
   port: 52923
 containers:
     - "infra_taskmanager"
@@ -9,7 +9,7 @@ operationOptns: []
 suboperation: ""
 suboperationOptns: []
 # in seconds
-startDelay: 10
+startDelay: 30
 
 #
 #---
