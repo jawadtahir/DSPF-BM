@@ -49,7 +49,7 @@ services:
     image: jawadtahir/flink-ops-playground
     #image: flink-ops-playground
     networks:
-      - infra_infra
+      - infra
     command: "java -classpath /opt/ClickCountJob.jar:/opt/flink/lib/* org.apache.flink.playgrounds.ops.clickcount.ClickEventGenerator --bootstrap.servers kafka:9092 --topic input"
     deploy:
       replicas: 1
