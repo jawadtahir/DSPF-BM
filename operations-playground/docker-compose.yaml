@@ -77,6 +77,20 @@ services:
         constraints:
           - "node.labels.vmtype==man"
 
+
+  benchmarker:
+    networks:
+      - infra
+    depends_on:
+      - client
+    image: jawadtahir/flink-ops-playground
+    command: "java -classpath /opt/ClickCountJob.jar:/opt/flink/lib/* org.apache.flink.playgrounds.ops.clickcount.E2EMetrics --bootstrap.servers kafka:9092 --topic output"
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - "node.label.vmtype==man"
+
 networks:
   infra:
     external: true
