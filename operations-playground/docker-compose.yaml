@@ -89,7 +89,7 @@ services:
       replicas: 1
       placement:
         constraints:
-          - "node.label.vmtype==man"
+          - "node.labels.vmtype==man"
 
 networks:
   infra:
