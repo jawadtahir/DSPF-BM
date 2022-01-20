@@ -116,6 +116,18 @@ services:
         constraints:
           - "node.labels.vmtype==jm"
 
+  pumbasrvr_jm:
+    image: jawadtahir/pumbasrvr
+    networks:
+      - infra
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - "node.labels.vmtype==jm"
+
 
   taskmanager:
     image: apache/flink:1.13.2-scala_2.12-java8
@@ -132,6 +144,18 @@ services:
     environment:
       - JOB_MANAGER_RPC_ADDRESS=jobmanager
     hostname: taskmanager
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - "node.labels.vmname==tm1"
+
+  pumbasrvr_tm1:
+    image: jawadtahir/pumbasrvr
+    networks:
+      - infra
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
     deploy:
       replicas: 1
       placement:
@@ -160,6 +184,18 @@ services:
         constraints:
           - "node.labels.vmname==tm2"
 
+  pumbasrvr_tm2:
+    image: jawadtahir/pumbasrvr
+    networks:
+      - infra
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - "node.labels.vmname==tm2"
+
   taskmanager2:
     image: apache/flink:1.13.2-scala_2.12-java8
     networks:
@@ -175,6 +211,18 @@ services:
     environment:
       - JOB_MANAGER_RPC_ADDRESS=jobmanager
     hostname: taskmanager2
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - "node.labels.vmname==tm3"
+
+  pumbasrvr_tm3:
+    image: jawadtahir/pumbasrvr
+    networks:
+      - infra
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
     deploy:
       replicas: 1
       placement:

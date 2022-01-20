@@ -52,9 +52,13 @@ public class E2EMetrics {
                 for (ConsumerRecord<byte[], byte[]> record: flinkOutputs){
                     ObjectMapper object = new ObjectMapper();
                     ClickEventStatistics stats = object.readValue(record.value(), ClickEventStatistics.class);
+                    LOGGER.error(stats);
                     throughput += stats.getCount();
+                    LOGGER.error(throughput);
 
-                    E2EMetrics.latency.set(calculateLatency(stats));
+                    double latency = calculateLatency(stats);
+                    LOGGER.error(latency);
+                    E2EMetrics.latency.set(latency);
 
                 }
 

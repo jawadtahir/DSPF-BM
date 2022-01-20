@@ -19,17 +19,6 @@
 version: "3.9"
 
 services:
-  pumbasrvr:
-    image: jawadtahir/pumbasrvr
-    networks:
-      - infra
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    deploy:
-      replicas: 1
-      placement:
-        constraints:
-          - "node.labels.vmname==tm3"
 
   pumbasrvrclient:
     networks:
