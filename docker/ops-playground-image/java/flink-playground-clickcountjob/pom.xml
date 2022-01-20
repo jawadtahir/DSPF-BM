@@ -44,8 +44,9 @@ under the License.
 
     <properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<kafka.version>3.0.0</kafka.version>
+		<kafka.version>2.4.1</kafka.version>
 		<flink.version>1.13.2</flink.version>
+		<prometheus.version>0.8.1</prometheus.version>
 		<java.version>1.8</java.version>
 		<scala.binary.version>2.12</scala.binary.version>
 		<maven.compiler.source>${java.version}</maven.compiler.source>
@@ -114,12 +115,12 @@ under the License.
 		<dependency>
 			<groupId>io.prometheus</groupId>
 			<artifactId>simpleclient</artifactId>
-			<version>0.14.1</version>
+			<version>${prometheus.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>io.prometheus</groupId>
 			<artifactId>simpleclient_httpserver</artifactId>
-			<version>0.14.1</version>
+			<version>${prometheus.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
