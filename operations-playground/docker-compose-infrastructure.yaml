@@ -104,6 +104,9 @@ services:
     volumes:
       - ./lib:/opt/flink/usrlib
       - ./conf:/opt/flink/conf
+      - ./lib/oshi-core-4.4.2.jar:/opt/flink/lib/oshi-core-4.4.2.jar
+      - ./lib/jna-5.8.0.jar:/opt/flink/lib/jna-5.8.0.jar
+      - ./lib/jna-platform-5.8.0.jar:/opt/flink/lib/jna-platform-5.8.0.jar
       - $CHECKPOINT_DIR:/tmp/flink-checkpoints-directory
       - $SAVEPOINT_DIR:/tmp/flink-savepoints-directory
     environment:
@@ -139,6 +142,9 @@ services:
     volumes:
       - ./lib:/opt/flink/usrlib
       - ./conf:/opt/flink/conf
+      - ./lib/oshi-core-4.4.2.jar:/opt/flink/lib/oshi-core-4.4.2.jar
+      - ./lib/jna-5.8.0.jar:/opt/flink/lib/jna-5.8.0.jar
+      - ./lib/jna-platform-5.8.0.jar:/opt/flink/lib/jna-platform-5.8.0.jar
       - $CHECKPOINT_DIR:/tmp/flink-checkpoints-directory
       - $SAVEPOINT_DIR:/tmp/flink-savepoints-directory
     environment:
@@ -173,6 +179,9 @@ services:
     volumes:
       - ./lib:/opt/flink/usrlib
       - ./conf:/opt/flink/conf
+      - ./lib/oshi-core-4.4.2.jar:/opt/flink/lib/oshi-core-4.4.2.jar
+      - ./lib/jna-5.8.0.jar:/opt/flink/lib/jna-5.8.0.jar
+      - ./lib/jna-platform-5.8.0.jar:/opt/flink/lib/jna-platform-5.8.0.jar
       - $CHECKPOINT_DIR:/tmp/flink-checkpoints-directory
       - $SAVEPOINT_DIR:/tmp/flink-savepoints-directory
     environment:
@@ -206,6 +215,9 @@ services:
     volumes:
       - ./lib:/opt/flink/usrlib
       - ./conf:/opt/flink/conf
+      - ./lib/oshi-core-4.4.2.jar:/opt/flink/lib/oshi-core-4.4.2.jar
+      - ./lib/jna-5.8.0.jar:/opt/flink/lib/jna-5.8.0.jar
+      - ./lib/jna-platform-5.8.0.jar:/opt/flink/lib/jna-platform-5.8.0.jar
       - $CHECKPOINT_DIR:/tmp/flink-checkpoints-directory
       - $SAVEPOINT_DIR:/tmp/flink-savepoints-directory
     environment:
