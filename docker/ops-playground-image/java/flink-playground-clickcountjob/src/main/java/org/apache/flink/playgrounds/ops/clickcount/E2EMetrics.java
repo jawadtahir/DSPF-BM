@@ -24,7 +24,7 @@ import java.util.Properties;
 public class E2EMetrics {
 
     private static HTTPServer promServer;
-    protected static final Gauge throughput = Gauge.build("e2eThroughput", "End-to-End throughput").register();
+
     protected static final Gauge latency = Gauge.build("e2eLatency", "End-to-End latency").register();
 
     private static final Logger LOGGER = LogManager.getLogger();
@@ -52,17 +52,13 @@ public class E2EMetrics {
                 for (ConsumerRecord<byte[], byte[]> record: flinkOutputs){
                     ObjectMapper object = new ObjectMapper();
                     ClickEventStatistics stats = object.readValue(record.value(), ClickEventStatistics.class);
-                    LOGGER.error(stats);
-                    throughput += stats.getCount();
-                    LOGGER.error(throughput);
+                    
 
                     double latency = calculateLatency(stats);
-                    LOGGER.error(latency);
                     E2EMetrics.latency.set(latency);
 
                 }
 
-                E2EMetrics.throughput.set((double) throughput);
             }
 
     }

@@ -23,8 +23,6 @@ import java.util.Properties;
 public class CustomFlinkKafkaProducer<IN>  extends FlinkKafkaProducer<IN> {
 
     private transient Meter throughputMeter;
-    private transient Date windowDate;
-    private transient Date arrivalTime;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CustomFlinkKafkaProducer.class);
 
@@ -75,22 +73,13 @@ public class CustomFlinkKafkaProducer<IN>  extends FlinkKafkaProducer<IN> {
     @Override
     public void open(Configuration configuration) throws Exception {
         super.open(configuration);
-        this.throughputMeter = getRuntimeContext().getMetricGroup().meter("customNumRecordsIn", new MeterView(1));
-        this.arrivalTime = Date.from(Instant.now());
-        getRuntimeContext().getMetricGroup().gauge("endToEndLatency", new Gauge<Long>() {
-            @Override
-            public Long getValue() {
-                Long latency = arrivalTime.getTime() - windowDate.getTime();
-                return latency;
-            }
-        });
+        this.throughputMeter = getRuntimeContext().getMetricGroup().meter("flinkRecordsProduced", new MeterView(1));
+
     }
 
     @Override
     public void invoke(KafkaTransactionState transaction, IN next, Context context) throws FlinkKafkaException {
         super.invoke(transaction, next, context);
-        this.arrivalTime = Date.from(Instant.now());
         this.throughputMeter.markEvent();
-        this.windowDate = ((ClickEventStatistics) next).getFirstMsgTS();
     }
 }

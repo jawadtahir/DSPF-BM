@@ -51,7 +51,7 @@ public class CustomFlinkKafkaConsumer<T> extends FlinkKafkaConsumer<T>
     @Override
     public void open(Configuration configuration) throws Exception {
         super.open(configuration);
-        this.throughputMeter = this.getRuntimeContext().getMetricGroup().meter("customNumRecordsIn", new MeterView(1));
+        this.throughputMeter = this.getRuntimeContext().getMetricGroup().meter("flinkRecordsConsumed", new MeterView(1));
     }
 
     @Override

@@ -43,7 +43,7 @@ metrics.reporter.prom.class: org.apache.flink.metrics.prometheus.PrometheusRepor
 metrics.latency.granularity: subtask
 metrics.latency.interval: 1
 restart-strategy.fixed-delay.attempts: 2147483646
-#metrics.system-resource: true
+metrics.system-resource: true
 state.backend.latency-track.keyed-state-enabled: true
 
 

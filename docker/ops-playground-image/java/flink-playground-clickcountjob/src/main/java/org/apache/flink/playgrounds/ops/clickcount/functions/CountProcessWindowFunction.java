@@ -17,6 +17,9 @@ public class CountProcessWindowFunction extends ProcessWindowFunction<ClickEvent
         Long windowCounter = 0L;
         for (ClickEvent event : elements){
             windowCounter = windowCounter + 1;
+            if (event.getCreationTimestamp().before(firstMsgTS)){
+                firstMsgTS = event.getCreationTimestamp();
+            }
         }
 
         ClickEventStatistics stats = new ClickEventStatistics(new Date(context.window().getStart()), new Date(context.window().getEnd()), firstMsgTS, s, windowCounter);

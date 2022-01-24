@@ -45,9 +45,9 @@ public class CustomKafkaFetcher<T> extends KafkaFetcher<T> {
 
     @Override
     protected void partitionConsumerRecordsHandler(List<ConsumerRecord<byte[], byte[]>> partitionRecords, KafkaTopicPartitionState<T, TopicPartition> partition) throws Exception {
-        this.customMeter.markEvent(partitionRecords.size());
 //        recordCounter.set(partitionRecords.size());
         super.partitionConsumerRecordsHandler(partitionRecords, partition);
+        this.customMeter.markEvent(partitionRecords.size());
     }
 
 //    public AtomicLong getRecordCounter() {

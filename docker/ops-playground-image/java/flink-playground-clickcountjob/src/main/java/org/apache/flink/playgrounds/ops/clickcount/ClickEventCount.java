@@ -108,7 +108,7 @@ public class ClickEventCount {
 				outputTopic,
 				new ClickEventStatisticsSerializationSchema(outputTopic),
 				kafkaProps,
-				FlinkKafkaProducer.Semantic.AT_LEAST_ONCE))
+				FlinkKafkaProducer.Semantic.EXACTLY_ONCE))
 			.name("ClickEventStatistics Sink");
 
 		env.execute("Click Event Count");
