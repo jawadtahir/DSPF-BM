@@ -102,7 +102,7 @@ services:
         published: 48081
         mode: host
     volumes:
-      - ./lib:/opt/flink/lib
+      - ./lib:/opt/flink/usrlib
       - ./conf:/opt/flink/conf
       - $CHECKPOINT_DIR:/tmp/flink-checkpoints-directory
       - $SAVEPOINT_DIR:/tmp/flink-savepoints-directory
@@ -137,7 +137,7 @@ services:
       - jobmanager
     command: "taskmanager.sh start-foreground"
     volumes:
-      - ./lib:/opt/flink/lib
+      - ./lib:/opt/flink/usrlib
       - ./conf:/opt/flink/conf
       - $CHECKPOINT_DIR:/tmp/flink-checkpoints-directory
       - $SAVEPOINT_DIR:/tmp/flink-savepoints-directory
@@ -171,7 +171,7 @@ services:
       - jobmanager
     command: "taskmanager.sh start-foreground"
     volumes:
-      - ./lib:/opt/flink/lib
+      - ./lib:/opt/flink/usrlib
       - ./conf:/opt/flink/conf
       - $CHECKPOINT_DIR:/tmp/flink-checkpoints-directory
       - $SAVEPOINT_DIR:/tmp/flink-savepoints-directory
@@ -204,7 +204,7 @@ services:
       - jobmanager
     command: "taskmanager.sh start-foreground"
     volumes:
-      - ./lib:/opt/flink/lib
+      - ./lib:/opt/flink/usrlib
       - ./conf:/opt/flink/conf
       - $CHECKPOINT_DIR:/tmp/flink-checkpoints-directory
       - $SAVEPOINT_DIR:/tmp/flink-savepoints-directory
