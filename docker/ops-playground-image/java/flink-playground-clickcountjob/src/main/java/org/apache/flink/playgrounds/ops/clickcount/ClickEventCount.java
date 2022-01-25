@@ -79,6 +79,7 @@ public class ClickEventCount {
 		Properties kafkaProps = new Properties();
 		kafkaProps.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, brokers);
 		kafkaProps.setProperty(ConsumerConfig.GROUP_ID_CONFIG, "click-event-count");
+		kafkaProps.setProperty(ProducerConfig.TRANSACTION_TIMEOUT_CONFIG, "60000");
 
 		DataStream<ClickEvent> clicks =
 				env.addSource(new CustomFlinkKafkaConsumer<>(inputTopic, new ClickEventDeserializationSchema(), kafkaProps))

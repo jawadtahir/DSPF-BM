@@ -80,7 +80,7 @@ public class ClickEventGenerator {
 //			Thread.sleep(DELAY);
 
 			counter++;
-			if (counter == 119) {
+			if (counter == 1000) {
 				Thread.sleep(1);
 				counter = 0L;
 			}
