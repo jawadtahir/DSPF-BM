@@ -27,6 +27,6 @@ operationOptns:
 suboperation: "delay"
 suboperationOptns:
   - option: "-t"
-    value: "8000"
+    value: "2000"
 # in seconds
 startDelay: 90
