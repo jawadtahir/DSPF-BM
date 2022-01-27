@@ -1,6 +1,7 @@
 package org.apache.flink.playgrounds.ops.clickcount;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
 import io.prometheus.client.exporter.HTTPServer;
 import org.apache.flink.api.java.utils.ParameterTool;
@@ -25,12 +26,19 @@ public class E2EMetrics {
 
     private static HTTPServer promServer;
 
-    protected static final Gauge latency = Gauge.build("e2eLatency", "End-to-End latency").register();
+    protected static final Gauge latency = Gauge.
+            build("e2eLatency", "End-to-End latency").
+            register();
+
+    protected static final Counter falseResults = Counter.
+            build("falseResults", "The number of windows with wrong results").
+            register();
 
     private static final Logger LOGGER = LogManager.getLogger();
 
     public static void main (String[] args) throws IOException {
         ParameterTool parameterTool = ParameterTool.fromArgs(args);
+        long recordsPerWindow = parameterTool.getInt("recordsPerWindow", 5000);
         Properties kafkaProps =  createKafkaProperties(parameterTool);
 
         KafkaConsumer<byte[], byte[]> consumer = new KafkaConsumer<byte[], byte[]>(kafkaProps);
@@ -52,10 +60,14 @@ public class E2EMetrics {
                 for (ConsumerRecord<byte[], byte[]> record: flinkOutputs){
                     ObjectMapper object = new ObjectMapper();
                     ClickEventStatistics stats = object.readValue(record.value(), ClickEventStatistics.class);
-                    
+
 
                     double latency = calculateLatency(stats);
                     E2EMetrics.latency.set(latency);
+
+                    if (stats.getCount() != recordsPerWindow){
+                        E2EMetrics.falseResults.inc();
+                    }
 
                 }
 
