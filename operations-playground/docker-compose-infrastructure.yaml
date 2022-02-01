@@ -53,7 +53,7 @@ services:
       replicas: 1
       placement:
         constraints:
-          - "node.labels.vmtype==man"
+          - "node.labels.vmtype==jm"
 
 
 
