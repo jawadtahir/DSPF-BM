@@ -20,19 +20,19 @@ version: "3.9"
 
 services:
 
-  pumbasrvrclient:
-    networks:
-      - infra
-    image: jawadtahir/pumbasrvrclient
-    volumes:
-      - $PUMBA_SRVR_CLIENT_RESOURCE_DIR/experiment.yaml:/PumbaSrvrClient/experiment.yaml
-    deploy:
-      replicas: 1
-      restart_policy:
-        condition: none
-      placement:
-        constraints:
-          - "node.labels.vmtype==man"
+#  pumbasrvrclient:
+#    networks:
+#      - infra
+#    image: jawadtahir/pumbasrvrclient
+#    volumes:
+#      - $PUMBA_SRVR_CLIENT_RESOURCE_DIR/experiment.yaml:/PumbaSrvrClient/experiment.yaml
+#    deploy:
+#      replicas: 1
+#      restart_policy:
+#        condition: none
+#      placement:
+#        constraints:
+#          - "node.labels.vmtype==man"
 
   clickevent-generator:
     image: jawadtahir/flink-ops-playground
