@@ -45,6 +45,7 @@ services:
       KAFKA_CREATE_TOPICS: "input:2:1, output:2:1"
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_LOG_RETENTION_BYTES: 16106127360 #15 GB
+      KAFKA_LOG_RETENTION_MINUTES: 15
 #    ports:
 #      - "9092:9092"
     volumes:
