@@ -26,10 +26,11 @@ taskmanager.numberOfTaskSlots: 1
 
 parallelism.default: 3
 
-execution.checkpointing.interval: 5 s
+execution.checkpointing.interval: 5s
+execution.checkpointing.mode: EXACTLY_ONCE
 
-state.backend: jobmanager
-#state.checkpoint-storage: jobmanager
+state.backend: hashmap
+state.checkpoint-storage: filesystem
 state.checkpoints.dir: file:///tmp/flink-checkpoints-directory
 # state.savepoints.dir: file:///tmp/flink-savepoints-directory
 
