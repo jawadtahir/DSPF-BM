@@ -26,9 +26,9 @@ operationOptns:
 #    value: "infra_infra"
   - option: "--tc-image"
     value: "gaiadocker/iproute2"
-suboperation: "delay"
+suboperation: "loss"
 suboperationOptns:
-  - option: "-t"
-    value: "8000"
+  - option: "-p"
+    value: "50"
 # in seconds
 startDelay: 90
