@@ -24,7 +24,7 @@ query.server.port: 6125
 taskmanager.memory.process.size: 15Gb
 taskmanager.numberOfTaskSlots: 1
 
-parallelism.default: 3
+parallelism.default: 2
 
 execution.checkpointing.interval: 60s
 execution.checkpointing.mode: EXACTLY_ONCE
