@@ -42,9 +42,9 @@ services:
       KAFKA_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
-      KAFKA_CREATE_TOPICS: "input:2:1, output:2:1"
+      KAFKA_CREATE_TOPICS: "input:3:1, output:3:1"
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_LOG_RETENTION_BYTES: 5368709120 #5 GB
+      KAFKA_LOG_RETENTION_BYTES: 3758096384 #3.5 GB
       KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS: 60000 # 1 minutes
 
 #      KAFKA_LOG_RETENTION_MINUTES: 15
@@ -95,7 +95,7 @@ services:
 
 
   jobmanager:
-    image: apache/flink:1.13.2-scala_2.12-java8
+    image: apache/flink:1.14.4-scala_2.12-java8
     networks:
       - infra
     command: "jobmanager.sh start-foreground"
@@ -140,7 +140,7 @@ services:
 
 
   taskmanager:
-    image: apache/flink:1.13.2-scala_2.12-java8
+    image: apache/flink:1.14.4-scala_2.12-java8
     networks:
       - infra
     depends_on:
@@ -180,7 +180,7 @@ services:
 
 
   taskmanager1:
-    image: apache/flink:1.13.2-scala_2.12-java8
+    image: apache/flink:1.14.4-scala_2.12-java8
     networks:
       - infra
     depends_on:
@@ -219,7 +219,7 @@ services:
           - "node.labels.vmname==tm2"
 
   taskmanager2:
-    image: apache/flink:1.13.2-scala_2.12-java8
+    image: apache/flink:1.14.4-scala_2.12-java8
     networks:
       - infra
     depends_on:

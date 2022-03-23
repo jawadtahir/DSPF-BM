@@ -120,7 +120,7 @@ public class ClickEventCount {
 			.name("ClickEvent Counter");
 
 		statistics.sinkTo(kafkaSink).name("ClickEventStatistics Sink");
-		
+
 
 		env.execute("Click Event Count");
 	}
