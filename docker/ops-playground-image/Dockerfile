@@ -32,8 +32,8 @@ RUN mvn clean install
 # Build Operations Playground Image
 ###############################################################################
 
-FROM apache/flink:1.13.2-scala_2.12-java8
-
+#FROM apache/flink:1.13.2-scala_2.12-java8
+FROM apache/flink:1.14.4-scala_2.12-java8
 WORKDIR /opt/flink/bin
 
 # Copy Click Count Job

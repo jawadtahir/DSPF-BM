@@ -17,9 +17,15 @@
 
 package org.apache.flink.playgrounds.ops.clickcount;
 
+import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.java.utils.ParameterTool;
-import org.apache.flink.connector.kafka.source.KafkaSourceBuilder;
-import org.apache.flink.playgrounds.ops.clickcount.functions.*;
+import org.apache.flink.connector.base.DeliveryGuarantee;
+import org.apache.flink.playgrounds.ops.clickcount.connector.CustomKafkaSink;
+import org.apache.flink.playgrounds.ops.clickcount.connector.CustomKafkaSource;
+import org.apache.flink.playgrounds.ops.clickcount.functions.BackpressureMap;
+import org.apache.flink.playgrounds.ops.clickcount.functions.ClickEventWatermarkStrategy;
+import org.apache.flink.playgrounds.ops.clickcount.functions.CountProcessWindowFunction;
+import org.apache.flink.playgrounds.ops.clickcount.functions.CountingAggregator;
 import org.apache.flink.playgrounds.ops.clickcount.records.ClickEvent;
 import org.apache.flink.playgrounds.ops.clickcount.records.ClickEventDeserializationSchema;
 import org.apache.flink.playgrounds.ops.clickcount.records.ClickEventStatistics;
@@ -27,11 +33,10 @@ import org.apache.flink.playgrounds.ops.clickcount.records.ClickEventStatisticsS
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor;
+import org.apache.flink.streaming.api.functions.AssignerWithPeriodicWatermarks;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
+import org.apache.flink.streaming.api.windowing.assigners.TumblingProcessingTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
-import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
-import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -81,12 +86,22 @@ public class ClickEventCount {
 		kafkaProps.setProperty(ConsumerConfig.GROUP_ID_CONFIG, "click-event-count");
 		kafkaProps.setProperty(ProducerConfig.TRANSACTION_TIMEOUT_CONFIG, "60000");
 
-		DataStream<ClickEvent> clicks =
-				env.addSource(new CustomFlinkKafkaConsumer<>(inputTopic, new ClickEventDeserializationSchema(), kafkaProps))
-			.name("ClickEvent Source")
-			.assignTimestampsAndWatermarks(new ClickEventWatermarkStrategy());
+		CustomKafkaSource<ClickEvent> kafkaSource = CustomKafkaSource.<ClickEvent>builder()
+				.setTopics(inputTopic)
+				.setValueOnlyDeserializer(new ClickEventDeserializationSchema())
+				.setProperties(kafkaProps)
+				.build();
 
-//		new KafkaSourceBuilder<ClickEvent>.setTopics(inputTopic)
+		WatermarkStrategy<ClickEvent> wmStrategy = new ClickEventWatermarkStrategy();
+
+		CustomKafkaSink<ClickEventStatistics> kafkaSink = CustomKafkaSink.<ClickEventStatistics>builder()
+				.setBootstrapServers(brokers)
+				.setRecordSerializer(new ClickEventStatisticsSerializationSchema(outputTopic))
+				.setDeliverGuarantee(DeliveryGuarantee.AT_LEAST_ONCE)
+				.build();
+
+		DataStream<ClickEvent> clicks = env.fromSource(kafkaSource, wmStrategy, "ClickEvent Source" );
+
 
 		if (inflictBackpressure) {
 			// Force a network shuffle so that the backpressure will affect the buffer pools
@@ -101,16 +116,11 @@ public class ClickEventCount {
 			.keyBy(ClickEvent::getPage)
 			.window(TumblingEventTimeWindows.of(WINDOW_SIZE))
 			.process(new CountProcessWindowFunction())
-//			.aggregate(new CountingAggregator(), new ClickEventStatisticsCollector())
+//			.aggregate(new CountingAggregator())
 			.name("ClickEvent Counter");
 
-		statistics
-			.addSink(new CustomFlinkKafkaProducer<>(
-				outputTopic,
-				new ClickEventStatisticsSerializationSchema(outputTopic),
-				kafkaProps,
-				FlinkKafkaProducer.Semantic.EXACTLY_ONCE))
-			.name("ClickEventStatistics Sink");
+		statistics.sinkTo(kafkaSink).name("ClickEventStatistics Sink");
+		
 
 		env.execute("Click Event Count");
 	}
@@ -122,6 +132,7 @@ public class ClickEventCount {
 		boolean checkpointingEnabled = params.has(CHECKPOINTING_OPTION);
 		boolean eventTimeSemantics = params.has(EVENT_TIME_OPTION);
 		boolean enableChaining = params.has(OPERATOR_CHAINING_OPTION);
+
 
 		if (checkpointingEnabled) {
 			env.enableCheckpointing(1000);

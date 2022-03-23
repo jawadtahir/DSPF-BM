@@ -45,7 +45,7 @@ under the License.
     <properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<kafka.version>2.4.1</kafka.version>
-		<flink.version>1.13.2</flink.version>
+		<flink.version>1.14.4</flink.version>
 		<prometheus.version>0.8.1</prometheus.version>
 		<java.version>1.8</java.version>
 		<scala.binary.version>2.12</scala.binary.version>
@@ -104,7 +104,7 @@ under the License.
 		</dependency>
 		<dependency>
 			<groupId>org.apache.flink</groupId>
-			<artifactId>flink-metrics-prometheus_2.12</artifactId>
+			<artifactId>flink-metrics-prometheus</artifactId>
 			<version>${flink.version}</version>
 		</dependency>
 		<dependency>
