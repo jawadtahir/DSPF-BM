@@ -151,9 +151,9 @@ public class CustomKafkaSource<OUT>
                 () -> new CustomKafkaPartitionSplitReader(props, readerContext, throughputMeter, kafkaSourceReaderMetrics);
         KafkaRecordEmitter<OUT> recordEmitter = new KafkaRecordEmitter<>(deserializationSchema);
 
-        return new KafkaSourceReader<>(
+        return new CustomKafkaSourceReader<>(
                 elementsQueue,
-                new KafkaSourceFetcherManager(
+                new CustomKafkaSourceFetcherManager(
                         elementsQueue, splitReaderSupplier::get, splitFinishedHook),
                 recordEmitter,
                 toConfiguration(props),
