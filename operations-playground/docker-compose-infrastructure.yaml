@@ -117,7 +117,7 @@ services:
       - /home/ubuntu/hadoop-3.3.2:/hadoop
     environment:
       - JOB_MANAGER_RPC_ADDRESS=jobmanager
-      - HADOOP_CLASSPATH=\'/home/ubuntu/hadoop-3.3.2/bin/hadoop classpath\'
+      - HADOOP_CLASSPATH=/hadoop/bin/hadoop classpath
     hostname: jobmanager
     deploy:
 
@@ -160,7 +160,7 @@ services:
       - /home/ubuntu/hadoop-3.3.2:/hadoop
     environment:
       - JOB_MANAGER_RPC_ADDRESS=jobmanager
-      - HADOOP_CLASSPATH=\'/home/ubuntu/hadoop-3.3.2/bin/hadoop classpath\'
+      - HADOOP_CLASSPATH=/hadoop/bin/hadoop classpath
     hostname: taskmanager
     deploy:
       replicas: 1
@@ -202,7 +202,7 @@ services:
       - /home/ubuntu/hadoop-3.3.2:/hadoop
     environment:
       - JOB_MANAGER_RPC_ADDRESS=jobmanager
-      - HADOOP_CLASSPATH=\'/home/ubuntu/hadoop-3.3.2/bin/hadoop classpath\'
+      - HADOOP_CLASSPATH='/hadoop/bin/hadoop classpath'
     hostname: taskmanager1
     deploy:
       replicas: 1
@@ -243,7 +243,7 @@ services:
       - /home/ubuntu/hadoop-3.3.2:/hadoop
     environment:
       - JOB_MANAGER_RPC_ADDRESS=jobmanager
-      - HADOOP_CLASSPATH=\'/hadoop/bin/hadoop classpath\'
+      - HADOOP_CLASSPATH="/hadoop/bin/hadoop classpath"
     hostname: taskmanager2
     deploy:
       replicas: 1
