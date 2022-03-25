@@ -114,6 +114,7 @@ services:
       - ./lib/flink-shaded-hadoop-2-uber-2.8.3-9.0.jar:/opt/flink/lib/flink-shaded-hadoop-2-uber-2.8.3-9.0.jar
       - $CHECKPOINT_DIR:/tmp/flink-checkpoints-directory
       - $SAVEPOINT_DIR:/tmp/flink-savepoints-directory
+      - /home/ubuntu/hadoop-3.3.2:/hadoop
     environment:
       - JOB_MANAGER_RPC_ADDRESS=jobmanager
       - HADOOP_CLASSPATH=\'/home/ubuntu/hadoop-3.3.2/bin/hadoop classpath\'
@@ -156,6 +157,7 @@ services:
       - ./lib/jna-platform-4.2.2.jar:/opt/flink/lib/jna-platform-4.2.2.jar
       - $CHECKPOINT_DIR:/tmp/flink-checkpoints-directory
       - $SAVEPOINT_DIR:/tmp/flink-savepoints-directory
+      - /home/ubuntu/hadoop-3.3.2:/hadoop
     environment:
       - JOB_MANAGER_RPC_ADDRESS=jobmanager
       - HADOOP_CLASSPATH=\'/home/ubuntu/hadoop-3.3.2/bin/hadoop classpath\'
@@ -197,6 +199,7 @@ services:
       - ./lib/jna-platform-4.2.2.jar:/opt/flink/lib/jna-platform-4.2.2.jar
       - $CHECKPOINT_DIR:/tmp/flink-checkpoints-directory
       - $SAVEPOINT_DIR:/tmp/flink-savepoints-directory
+      - /home/ubuntu/hadoop-3.3.2:/hadoop
     environment:
       - JOB_MANAGER_RPC_ADDRESS=jobmanager
       - HADOOP_CLASSPATH=\'/home/ubuntu/hadoop-3.3.2/bin/hadoop classpath\'
@@ -237,9 +240,10 @@ services:
       - ./lib/jna-platform-4.2.2.jar:/opt/flink/lib/jna-platform-4.2.2.jar
       - $CHECKPOINT_DIR:/tmp/flink-checkpoints-directory
       - $SAVEPOINT_DIR:/tmp/flink-savepoints-directory
+      - /home/ubuntu/hadoop-3.3.2:/hadoop
     environment:
       - JOB_MANAGER_RPC_ADDRESS=jobmanager
-      - HADOOP_CLASSPATH=\'/home/ubuntu/hadoop-3.3.2/bin/hadoop classpath\'
+      - HADOOP_CLASSPATH=\'/hadoop/bin/hadoop classpath\'
     hostname: taskmanager2
     deploy:
       replicas: 1
