@@ -160,7 +160,7 @@ services:
       - /home/ubuntu/hadoop-3.3.2:/hadoop
     environment:
       - JOB_MANAGER_RPC_ADDRESS=jobmanager
-      - HADOOP_CLASSPATH=/hadoop/bin/hadoop classpath
+      - HADOOP_CLASSPATH=/hadoop/etc/hadoop:/hadoop/share/hadoop/common/lib/*:/hadoop/share/hadoop/common/*:/hadoop/share/hadoop/hdfs:/hadoop/share/hadoop/hdfs/lib/*:/hadoop/share/hadoop/hdfs/*:/hadoop/share/hadoop/mapreduce/*:/hadoop/share/hadoop/yarn:/hadoop/share/hadoop/yarn/lib/*:/hadoop/share/hadoop/yarn/*:/hadoop/bin/hadoop
     hostname: taskmanager
     deploy:
       replicas: 1
@@ -202,7 +202,7 @@ services:
       - /home/ubuntu/hadoop-3.3.2:/hadoop
     environment:
       - JOB_MANAGER_RPC_ADDRESS=jobmanager
-      - HADOOP_CLASSPATH='/hadoop/bin/hadoop classpath'
+      - HADOOP_CLASSPATH=/hadoop/etc/hadoop:/hadoop/share/hadoop/common/lib/*:/hadoop/share/hadoop/common/*:/hadoop/share/hadoop/hdfs:/hadoop/share/hadoop/hdfs/lib/*:/hadoop/share/hadoop/hdfs/*:/hadoop/share/hadoop/mapreduce/*:/hadoop/share/hadoop/yarn:/hadoop/share/hadoop/yarn/lib/*:/hadoop/share/hadoop/yarn/*:/hadoop/bin/hadoop
     hostname: taskmanager1
     deploy:
       replicas: 1
@@ -243,7 +243,7 @@ services:
       - /home/ubuntu/hadoop-3.3.2:/hadoop
     environment:
       - JOB_MANAGER_RPC_ADDRESS=jobmanager
-      - HADOOP_CLASSPATH="/hadoop/bin/hadoop classpath"
+      - HADOOP_CLASSPATH=/hadoop/etc/hadoop:/hadoop/share/hadoop/common/lib/*:/hadoop/share/hadoop/common/*:/hadoop/share/hadoop/hdfs:/hadoop/share/hadoop/hdfs/lib/*:/hadoop/share/hadoop/hdfs/*:/hadoop/share/hadoop/mapreduce/*:/hadoop/share/hadoop/yarn:/hadoop/share/hadoop/yarn/lib/*:/hadoop/share/hadoop/yarn/*:/hadoop/bin/hadoop
     hostname: taskmanager2
     deploy:
       replicas: 1
