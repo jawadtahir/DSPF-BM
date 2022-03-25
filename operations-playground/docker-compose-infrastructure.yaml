@@ -116,6 +116,7 @@ services:
       - $SAVEPOINT_DIR:/tmp/flink-savepoints-directory
     environment:
       - JOB_MANAGER_RPC_ADDRESS=jobmanager
+      - HADOOP_CLASSPATH=\'/home/ubuntu/hadoop-3.3.2/bin/hadoop classpath\'
     hostname: jobmanager
     deploy:
 
