@@ -1,0 +1,24 @@
+<configuration>
+    <property>
+        <name>dfs.replication</name>
+        <value>1</value>
+    </property>
+
+    <property>
+        <name>dfs.datanode.address</name>
+        <value>node1:9866</value>
+    </property>
+    <property>
+        <name>dfs.datanode.ipc.address</name>
+        <value>node1:9867</value>
+    </property>
+    <property>
+        <name>dfs.datanode.https.address</name>
+        <value>node1:9865</value>
+    </property>
+    <property>
+        <name>dfs.datanode.http.address</name>
+        <value>node1:9864</value>
+    </property>
+
+</configuration>
