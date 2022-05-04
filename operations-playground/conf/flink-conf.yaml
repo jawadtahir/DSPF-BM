@@ -26,7 +26,7 @@ taskmanager.numberOfTaskSlots: 1
 
 parallelism.default: 2
 
-execution.checkpointing.interval: 60s
+execution.checkpointing.interval: 10s
 execution.checkpointing.mode: EXACTLY_ONCE
 
 state.backend: hashmap

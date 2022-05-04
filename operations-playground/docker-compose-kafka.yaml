@@ -1,0 +1,122 @@
+version: '3.9'
+
+services:
+  zookeeper1:
+    image: zookeeper:3.8.0
+    restart: always
+    hostname: zookeeper1
+    environment:
+      ZOO_MY_ID: 1
+      ZOO_SERVERS: server.1=zookeeper1:2888:3888;2181 server.2=zookeeper2:2888:3888;2181 server.3=zookeeper3:2888:3888;2181
+
+
+  zookeeper2:
+    image: zookeeper:3.8.0
+    depends_on:
+      - zookeeper1
+    restart: always
+    hostname: zookeeper2
+    environment:
+      ZOO_MY_ID: 2
+      ZOO_SERVERS: server.1=zookeeper1:2888:3888;2181 server.2=zookeeper2:2888:3888;2181 server.3=zookeeper3:2888:3888;2181
+
+
+  zookeeper3:
+    image: zookeeper:3.8.0
+    depends_on:
+      - zookeeper2
+    restart: always
+    hostname: zookeeper3
+    environment:
+      ZOO_MY_ID: 3
+      ZOO_SERVERS: server.1=zookeeper1:2888:3888;2181 server.2=zookeeper2:2888:3888;2181 server.3=zookeeper3:2888:3888;2181
+
+  kafka1:
+    image: wurstmeister/kafka:2.13-2.8.1
+    depends_on:
+      - zookeeper3
+    hostname: kafka1
+    environment:
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181,zookeeper2:2181,zookeeper3:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
+      KAFKA_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
+      KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka1:9092,OUTSIDE://localhost:59094
+      KAFKA_METRICS_SAMPLE_WINDOW_MS: 1000
+      KAFKA_CREATE_TOPICS: "input:3:2, output:3:2"
+    ports:
+      - mode: host
+        published: 59094
+        target: 9094
+
+
+  kafka2:
+    image: wurstmeister/kafka:2.13-2.8.1
+    depends_on:
+      - zookeeper3
+    hostname: kafka2
+    environment:
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181,zookeeper2:2181,zookeeper3:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
+      KAFKA_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
+      KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka2:9092,OUTSIDE://localhost:59095
+      KAFKA_METRICS_SAMPLE_WINDOW_MS: 1000
+    ports:
+      - mode: host
+        published: 59095
+        target: 9094
+
+
+  kafka3:
+    image: wurstmeister/kafka:2.13-2.8.1
+    depends_on:
+      - zookeeper3
+    hostname: kafka3
+    environment:
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181,zookeeper2:2181,zookeeper3:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
+      KAFKA_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
+      KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka3:9092,OUTSIDE://localhost:59096
+      KAFKA_METRICS_SAMPLE_WINDOW_MS: 1000
+    ports:
+      - mode: host
+        published: 59096
+        target: 9094
+
+
+  kafka4:
+    image: wurstmeister/kafka:2.13-2.8.1
+    depends_on:
+      - zookeeper3
+    hostname: kafka4
+    environment:
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181,zookeeper2:2181,zookeeper3:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
+      KAFKA_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
+      KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka4:9092,OUTSIDE://localhost:59097
+      KAFKA_METRICS_SAMPLE_WINDOW_MS: 1000
+    ports:
+      - mode: host
+        published: 59097
+        target: 9094
+
+  kafka5:
+    image: wurstmeister/kafka:2.13-2.8.1
+    depends_on:
+      - zookeeper3
+    hostname: kafka5
+    environment:
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181,zookeeper2:2181,zookeeper3:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
+      KAFKA_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
+      KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka5:9092,OUTSIDE://localhost:59098
+      KAFKA_METRICS_SAMPLE_WINDOW_MS: 1000
+    ports:
+      - mode: host
+        published: 59098
+        target: 9094
+

@@ -17,9 +17,10 @@
 
 package org.apache.flink.playgrounds.ops.clickcount.records;
 
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.annotation.JsonFormat;
 
-import java.time.Clock;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import java.time.Instant;
 import java.util.Date;
 import java.util.Objects;
@@ -28,13 +29,13 @@ import java.util.Objects;
  * A simple event recording a click on a {@link ClickEvent#page} at time {@link ClickEvent#timestamp}.
  *
  */
-public class ClickEvent {
+public class ClickEvent{
 
 	//using java.util.Date for better readability
-	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy HH:mm:ss:SSS")
+	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS")
 	private Date timestamp;
 	private String page;
-	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy HH:mm:ss:SSS")
+	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS")
 	private Date creationTimestamp;
 
 	public ClickEvent() {

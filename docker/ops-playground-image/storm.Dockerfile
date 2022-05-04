@@ -29,12 +29,10 @@ RUN mvn clean install
 
 
 ###############################################################################
-# Build Operations Playground Image
+# Storm image
 ###############################################################################
 
-FROM apache/flink:1.14.4-scala_2.12-java11
-WORKDIR /opt/flink/bin
+FROM storm:2.2.0 AS storm
+COPY --from=builder /opt/flink-playground-clickcountjob/target/flink-playground-clickcountjob-*.jar /apache-storm-2.4.0/bin/ClickCountJob.jar
 
-# Copy Click Count Job for flink
-COPY --from=builder /opt/flink-playground-clickcountjob/target/flink-playground-clickcountjob-*.jar /opt/ClickCountJob.jar
 

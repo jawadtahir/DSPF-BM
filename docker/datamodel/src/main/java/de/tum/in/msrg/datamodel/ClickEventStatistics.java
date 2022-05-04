@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.playgrounds.ops.clickcount.records;
+package de.tum.in.msrg.datamodel;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
@@ -26,7 +26,7 @@ import java.util.Objects;
  * A small wrapper class for windowed page counts.
  *
  */
-public class ClickEventStatistics{
+public class ClickEventStatistics {
 
 	//using java.util.Date for better readability
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS")

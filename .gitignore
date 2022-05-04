@@ -20,3 +20,5 @@ operations-playground/lib/flink-dist_2.11-1.13.0.jar
 operations-playground/lib/frauddetection-0.1.jar
 
 *.log
+/docker/kafka-data-gen/settings.xml
+/docker/storm-topology/settings.xml

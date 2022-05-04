@@ -1,0 +1,159 @@
+version: '3.9'
+
+
+services:
+  redis:
+    image: redis
+    hostname: redis
+    networks:
+      storm:
+
+  zookeeper:
+    image: zookeeper:3.5.9
+    hostname: zookeeper
+    depends_on:
+      - redis
+    networks:
+      storm:
+
+
+  kafka:
+    image: wurstmeister/kafka:2.12-2.2.1
+    networks:
+      - storm
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
+      KAFKA_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
+      KAFKA_CREATE_TOPICS: "input:3:1, output:3:1"
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LOG_RETENTION_BYTES: 3758096384 #3.5 GB
+      KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS: 60000 # 1 minutes
+
+    #      KAFKA_LOG_RETENTION_MINUTES: 15
+    #    ports:
+    #      - "9092:9092"
+    volumes:
+      - kafka-logs:/kafka
+
+
+  nimbus:
+    image: storm:2.2.0
+    hostname: nimbus
+    depends_on:
+      - kafka
+    volumes:
+      - ./storm-conf/storm.yaml:/conf/storm.yaml
+      - /home/foobar/Downloads/apache-storm-2.4.0/log:/logs
+      - ./storm-conf/worker.xml:/apache-storm-2.4.0/log4j2/worker.xml
+      - tempData:/data
+    command: storm nimbus
+
+    networks:
+      storm:
+#    ports:
+#      - target: 6627
+#        published: 56627
+#        mode: host
+#      - target: 8000
+#        published: 58000
+#        mode: host
+
+
+  supervisor:
+    image: storm:2.2.0
+    hostname: supervisor
+    depends_on:
+      - kafka
+      - nimbus
+    volumes:
+      - ./storm-conf/storm.yaml:/conf/storm.yaml
+      - /home/foobar/Downloads/apache-storm-2.4.0/log:/logs
+      - ./storm-conf/worker.xml:/apache-storm-2.4.0/log4j2/worker.xml
+      - tempDataS:/data
+    command: storm supervisor
+    networks:
+      storm:
+
+
+#  supervisor1:
+#    image: storm
+#    hostname: supervisor1
+#    depends_on:
+#      - kafka
+#      - nimbus
+#    volumes:
+#      - ./storm-conf/storm.yaml:/conf/storm.yaml
+#      - logsS1:/logs
+#      - tempDataS1:/data
+#    command: storm supervisor
+#    networks:
+#      storm:
+#
+#  supervisor2:
+#    image: storm
+#    hostname: supervisor2
+#    depends_on:
+#      - kafka
+#      - nimbus
+#    volumes:
+#      - ./storm-conf/storm.yaml:/conf/storm.yaml
+#      - logsS2:/logs
+#      - tempDataS2:/data
+#    command: storm supervisor
+#    networks:
+#      storm:
+
+
+
+  stormUI:
+    image: storm:2.2.0
+#    hostname: stormUI
+    depends_on:
+      - supervisor
+    command: storm ui
+    volumes:
+      - ./storm-conf/storm.yaml:/conf/storm.yaml
+    networks:
+      storm:
+    ports:
+      - target: 8080
+        published: 58080
+        mode: host
+
+
+  stormTop:
+    image: jawadtahir/storm-topology
+    depends_on:
+      - stormUI
+    command: "storm jar /apache-storm-2.4.0/bin/ClickCountJob.jar de.tum.in.msrg.storm.StormTopology kafka:9092 nimbus"
+    restart: on-failure
+    networks:
+      storm:
+
+  clickevent-generator:
+    image: jawadtahir/flink-ops-playground
+    #image: flink-ops-playground
+    depends_on:
+      - stormTop
+    networks:
+      - storm
+    command: "java -classpath /opt/ClickCountJob.jar:/opt/flink/lib/* org.apache.flink.playgrounds.ops.clickcount.ClickEventGenerator --bootstrap.servers kafka:9092 --topic input"
+
+
+networks:
+  storm:
+
+volumes:
+  logs:
+  logsS:
+  logsS1:
+  logsS2:
+  tempData:
+  tempDataS:
+  tempDataS1:
+  tempDataS2:
+  kafka-logs:
