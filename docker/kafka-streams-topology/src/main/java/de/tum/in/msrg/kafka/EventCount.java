@@ -16,12 +16,18 @@
  */
 package de.tum.in.msrg.kafka;
 
+import de.tum.in.msrg.datamodel.ClickEventStatistics;
 import de.tum.in.msrg.kafka.processor.ClickEventMapper;
+import de.tum.in.msrg.kafka.processor.ClickEventStatsAggregator;
+import de.tum.in.msrg.kafka.processor.ClickEventStatsInitializer;
 import de.tum.in.msrg.kafka.processor.ClickEventTimeExtractor;
 import de.tum.in.msrg.kafka.serdes.ClickEventSerde;
+import de.tum.in.msrg.kafka.serdes.ClickEventStatsSerde;
 import org.apache.commons.cli.*;
+import org.apache.kafka.common.metrics.*;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.utils.Bytes;
+import org.apache.kafka.common.utils.Time;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
@@ -31,10 +37,9 @@ import org.apache.kafka.streams.state.KeyValueStore;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
-import java.util.Locale;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * In this example, we implement a simple WordCount program using the high-level Streams DSL
@@ -47,6 +52,7 @@ public class EventCount {
     private static String KAFKA_BOOTSTRAP;
     private static String INPUT_TOPIC;
     private static String OUTPUT_TOPIC;
+    private static String PROCESSING_GUARANTEE;
 
     public static void main(String[] args) throws Exception {
 
@@ -57,31 +63,22 @@ public class EventCount {
         KAFKA_BOOTSTRAP = cmd.getOptionValue("kafka", "kafka:9092");
         INPUT_TOPIC = cmd.getOptionValue("input", "input");
         OUTPUT_TOPIC = cmd.getOptionValue("output", "output");
+        PROCESSING_GUARANTEE = cmd.getOptionValue("guarantee", "exactly_once_beta");
 
 
-        Properties props = new Properties();
-        props.put(StreamsConfig.APPLICATION_ID_CONFIG, "streams-eventcount");
+        Properties props = getProperties();
         props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKA_BOOTSTRAP);
-        props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
-        props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass());
-        props.put(StreamsConfig.DEFAULT_TIMESTAMP_EXTRACTOR_CLASS_CONFIG, ClickEventTimeExtractor.class.getCanonicalName());
+        props.put(StreamsConfig.PROCESSING_GUARANTEE_CONFIG, PROCESSING_GUARANTEE);
+        props.put(StreamsConfig.REPLICATION_FACTOR_CONFIG, "3");
 
-        final StreamsBuilder builder = new StreamsBuilder();
+        Metrics customMetrics = getMetrics();
 
 
-        builder.<String, String>stream(INPUT_TOPIC, Consumed.with(new ClickEventTimeExtractor()))
-               .flatMapValues(new ClickEventMapper())
-                .groupBy((key, value) -> value.getPage(), Grouped.with(Serdes.String(), new ClickEventSerde()))
-                .windowedBy(TimeWindows.of(Duration.of(60, ChronoUnit.SECONDS))).count().toStream();
-//                .aggregate()
-//               .groupBy((key, value) -> value)
-//               .count(Materialized.<String, Long, KeyValueStore<Bytes, byte[]>>as("counts-store"))
-//               .toStream()
-//               .to(OUTPUT_TOPIC,  Produced.with(Serdes.String(), Serdes.Long()));
-
-        final Topology topology = builder.build();
+        final Topology topology = getTopology(INPUT_TOPIC, OUTPUT_TOPIC, customMetrics);
         final KafkaStreams streams = new KafkaStreams(topology, props);
         final CountDownLatch latch = new CountDownLatch(1);
+
+
 
         // attach shutdown handler to catch control-c
         Runtime.getRuntime().addShutdownHook(new Thread("streams-shutdown-hook") {
@@ -99,6 +96,53 @@ public class EventCount {
             System.exit(1);
         }
         System.exit(0);
+    }
+
+    public static Topology getTopology(String input, String output, Metrics metrics) {
+        StreamsBuilder builder = new StreamsBuilder();
+
+
+        builder.<String, String>stream(input, Consumed.with(new ClickEventTimeExtractor()))
+               .flatMapValues(new ClickEventMapper(metrics))
+                .groupBy((key, value) -> value.getPage(), Grouped.with(Serdes.String(), new ClickEventSerde()))
+                .windowedBy(TimeWindows.of(Duration.of(60, ChronoUnit.SECONDS)).grace(Duration.ofMillis(0)))
+                .aggregate(new ClickEventStatsInitializer(), new ClickEventStatsAggregator(),
+                        Materialized.with(new Serdes.StringSerde(), new ClickEventStatsSerde()))
+                .suppress(Suppressed.untilWindowCloses(Suppressed.BufferConfig.unbounded()))
+                .toStream().selectKey((key, value) -> {
+                    value.setWindowStart(new Date(key.window().start()));
+                    value.setWindowEnd(new Date(key.window().end()));
+                    return value.getPage();
+                })
+                .to(output, Produced.with(new Serdes.StringSerde(), new ClickEventStatsSerde()));
+
+        Topology topology = builder.build();
+        return topology;
+    }
+
+    public static Properties getProperties() {
+        Properties props = new Properties();
+
+        props.put(StreamsConfig.APPLICATION_ID_CONFIG, "streams-eventcount");
+
+        props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
+        props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass());
+        props.put(StreamsConfig.DEFAULT_TIMESTAMP_EXTRACTOR_CLASS_CONFIG, ClickEventTimeExtractor.class.getCanonicalName());
+        props.put(StreamsConfig.METRICS_SAMPLE_WINDOW_MS_CONFIG, "1000");
+
+        return props;
+    }
+
+    public static Metrics getMetrics(){
+        Metrics metrics = null;
+        MetricConfig metricConfig = new MetricConfig();
+        metricConfig.timeWindow(1, TimeUnit.SECONDS);
+        KafkaMetricsContext metricsContext = new KafkaMetricsContext("de.tum.in.msrg.kafka");
+        List<MetricsReporter> reporters = Arrays.asList(new JmxReporter());
+
+
+        metrics = new Metrics(metricConfig, reporters, Time.SYSTEM, metricsContext);
+        return metrics;
     }
 
     private static Options createCLI(){
@@ -122,10 +166,17 @@ public class EventCount {
                 .desc("Output topic for the stream")
                 .build();
 
+        Option pgOptn = Option.builder("guarantee")
+                .argName("guarantee")
+                .hasArg()
+                .desc("Processing guarantee")
+                .build();
+
         opts
                 .addOption(serverOptn)
                 .addOption(inTopicOptn)
-                .addOption(outTopicOptn);
+                .addOption(outTopicOptn)
+                .addOption(pgOptn);
 
         return opts;
 

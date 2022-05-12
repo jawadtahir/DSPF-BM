@@ -22,3 +22,4 @@ operations-playground/lib/frauddetection-0.1.jar
 *.log
 /docker/kafka-data-gen/settings.xml
 /docker/storm-topology/settings.xml
+/docker/kafka-streams-topology/settings.xml

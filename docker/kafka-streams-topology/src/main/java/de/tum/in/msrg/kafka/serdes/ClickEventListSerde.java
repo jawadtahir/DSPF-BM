@@ -1,6 +1,7 @@
 package de.tum.in.msrg.kafka.serdes;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.tum.in.msrg.datamodel.ClickEvent;
 import org.apache.kafka.common.serialization.Deserializer;
@@ -8,6 +9,7 @@ import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serializer;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
 
@@ -18,7 +20,7 @@ public class ClickEventListSerde implements Serde<List<ClickEvent>>, Serializer<
     @Override
     public List<ClickEvent> deserialize(String topic, byte[] data) {
         try {
-            return mapper.readValue(data, Class.);
+            return mapper.readValue(data, new TypeReference<List<ClickEvent>>() {});
         } catch (IOException e) {
             e.printStackTrace();
             return null;

@@ -8,6 +8,8 @@ import org.apache.kafka.streams.processor.api.ProcessorContext;
 import org.apache.kafka.streams.processor.api.ProcessorSupplier;
 import org.apache.kafka.streams.processor.api.Record;
 
+import java.util.Date;
+
 public class ClickEventProcessorSupplier implements ProcessorSupplier<String, String, String, ClickEvent> {
     @Override
     public Processor<String, String, String, ClickEvent> get() {
@@ -29,6 +31,7 @@ public class ClickEventProcessorSupplier implements ProcessorSupplier<String, St
         public void process(Record<String, String> record) {
             try {
                 ClickEvent event = mapper.readValue(record.value(), ClickEvent.class);
+                event.setCreationTimestamp(new Date(record.timestamp()));
                 this.context.forward(record.withValue(event));
             } catch (JsonProcessingException e) {
                 e.printStackTrace();

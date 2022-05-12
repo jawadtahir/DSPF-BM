@@ -69,13 +69,14 @@ public class KafkaDataGen
         while (true){
             ClickEvent clickEvent = clickIterator.next();
             try {
-                ProducerRecord<String, String> record = new ProducerRecord<>(dataGen.topic, dataGen.objectMapper.writeValueAsString(clickEvent));
+                ProducerRecord<String, String> record = new ProducerRecord<>(dataGen.topic, clickEvent.getPage(), dataGen.objectMapper.writeValueAsString(clickEvent));
                 kafkaProducer.send(record);
                 counter++;
 
                 if (counter == dataGen.delay){
                     Thread.sleep(1);
                     counter = 0;
+                    kafkaProducer.flush();
                 }
             } catch (JsonProcessingException | InterruptedException | KafkaException e) {
                 e.printStackTrace();

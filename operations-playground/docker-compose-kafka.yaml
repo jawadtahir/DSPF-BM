@@ -43,7 +43,11 @@ services:
       KAFKA_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
       KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka1:9092,OUTSIDE://localhost:59094
       KAFKA_METRICS_SAMPLE_WINDOW_MS: 1000
-      KAFKA_CREATE_TOPICS: "input:3:2, output:3:2"
+      KAFKA_LOG_MESSAGE_TIMESTAMP_TYPE: LogAppendTime
+      KAFKA_MIN_INSYNC_REPLICAS: 2
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
     ports:
       - mode: host
         published: 59094
@@ -53,7 +57,7 @@ services:
   kafka2:
     image: wurstmeister/kafka:2.13-2.8.1
     depends_on:
-      - zookeeper3
+      - kafka1
     hostname: kafka2
     environment:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181,zookeeper2:2181,zookeeper3:2181
@@ -62,6 +66,11 @@ services:
       KAFKA_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
       KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka2:9092,OUTSIDE://localhost:59095
       KAFKA_METRICS_SAMPLE_WINDOW_MS: 1000
+      KAFKA_LOG_MESSAGE_TIMESTAMP_TYPE: LogAppendTime
+      KAFKA_MIN_INSYNC_REPLICAS: 2
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
     ports:
       - mode: host
         published: 59095
@@ -71,7 +80,7 @@ services:
   kafka3:
     image: wurstmeister/kafka:2.13-2.8.1
     depends_on:
-      - zookeeper3
+      - kafka2
     hostname: kafka3
     environment:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181,zookeeper2:2181,zookeeper3:2181
@@ -80,6 +89,11 @@ services:
       KAFKA_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
       KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka3:9092,OUTSIDE://localhost:59096
       KAFKA_METRICS_SAMPLE_WINDOW_MS: 1000
+      KAFKA_LOG_MESSAGE_TIMESTAMP_TYPE: LogAppendTime
+      KAFKA_MIN_INSYNC_REPLICAS: 2
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
     ports:
       - mode: host
         published: 59096
@@ -89,7 +103,7 @@ services:
   kafka4:
     image: wurstmeister/kafka:2.13-2.8.1
     depends_on:
-      - zookeeper3
+      - kafka3
     hostname: kafka4
     environment:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181,zookeeper2:2181,zookeeper3:2181
@@ -98,6 +112,11 @@ services:
       KAFKA_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
       KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka4:9092,OUTSIDE://localhost:59097
       KAFKA_METRICS_SAMPLE_WINDOW_MS: 1000
+      KAFKA_LOG_MESSAGE_TIMESTAMP_TYPE: LogAppendTime
+      KAFKA_MIN_INSYNC_REPLICAS: 2
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
     ports:
       - mode: host
         published: 59097
@@ -106,7 +125,7 @@ services:
   kafka5:
     image: wurstmeister/kafka:2.13-2.8.1
     depends_on:
-      - zookeeper3
+      - kafka4
     hostname: kafka5
     environment:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181,zookeeper2:2181,zookeeper3:2181
@@ -115,8 +134,37 @@ services:
       KAFKA_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
       KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka5:9092,OUTSIDE://localhost:59098
       KAFKA_METRICS_SAMPLE_WINDOW_MS: 1000
+      KAFKA_LOG_MESSAGE_TIMESTAMP_TYPE: LogAppendTime
+      KAFKA_MIN_INSYNC_REPLICAS: 2
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
     ports:
       - mode: host
         published: 59098
+        target: 9094
+
+
+  kafka6:
+    image: wurstmeister/kafka:2.13-2.8.1
+    depends_on:
+      - kafka5
+    hostname: kafka6
+    environment:
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181,zookeeper2:2181,zookeeper3:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
+      KAFKA_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
+      KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka6:9092,OUTSIDE://localhost:59099
+      KAFKA_METRICS_SAMPLE_WINDOW_MS: 1000
+      KAFKA_LOG_MESSAGE_TIMESTAMP_TYPE: LogAppendTime
+      KAFKA_MIN_INSYNC_REPLICAS: 2
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_CREATE_TOPICS: "input:6:3, output:6:3"
+    ports:
+      - mode: host
+        published: 59099
         target: 9094
 
