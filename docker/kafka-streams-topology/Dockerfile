@@ -5,19 +5,25 @@ COPY settings.xml $MAVEN_CONFIG/settings.xml
 
 WORKDIR /kafka-topology
 
-RUN mvn package
+RUN mvn clean package
 
-FROM openjdk:11-jdk-slim
+FROM openjdk:11-jdk
 
 COPY --from=maven /kafka-topology/target/kafka-streams-topology*.jar /kafka-topology/kafka-streams-topology.jar
-WORKDIR /kafka-topology
+COPY --from=maven /kafka-topology/jmx_prometheus_httpserver*.jar /jmx-exporter/jmx_prometheus_httpserver.jar
+COPY --from=maven /kafka-topology/config.yaml /jmx-exporter/config.yaml
+COPY --from=maven /kafka-topology/entrypoint.sh /entrypoint.sh
+RUN ["chmod", "+x", "./entrypoint.sh"]
 
-ENV KAFKA_BOOTSTRAP="kafka1:9092"
-ENV INPUT_TOPIC="input"
-ENV OUTPUT_TOPIC="output"
-ENV PROCESSING_GUARANTEE="exactly_once_beta"
-ENV JMX_PORT=52923
+#WORKDIR /jmx-exporter
 
-ENTRYPOINT java -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.port=$JMX_PORT  -jar kafka-streams-topology.jar -kafka $KAFKA_BOOTSTRAP -input $INPUT_TOPIC -output $OUTPUT_TOPIC -guarantee $PROCESSING_GUARANTEE
+#RUN nohup java -jar jmx_prometheus_httpserver.jar 12345 config.yaml &
+EXPOSE 12345 12346
+
+VOLUME /kafka-topology /tmp/kafka-streams
+WORKDIR /
+ENV APPID=kstreams-eventcount KAFKA_BOOTSTRAP=kafka:9092 INPUT_TOPIC=input OUTPUT_TOPIC=output PROCESSING_GUARANTEE=exactly_once_beta STANDBY=0
+
+ENTRYPOINT ["./entrypoint.sh"]
 
 #-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.port=52923

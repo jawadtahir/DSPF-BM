@@ -20,12 +20,20 @@ rule_files:
 # Here it's Prometheus itself.
 scrape_configs:
   # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
-  - job_name: "flink"
-#  - job_name: "metrics"
+#  - job_name: "flink"
+##  - job_name: "metrics"
+#
+#    # metrics_path defaults to '/metrics'
+#    # scheme defaults to 'http'.
+#
+#    static_configs:
+#      - targets: ["taskmanager:9249", "taskmanager1:9249", "taskmanager2:9249", "jobmanager:9249", "benchmarker:9249"]
+#      - targets: ["prompgw:9091"]
+  - job_name: "kstreams"
+    #  - job_name: "metrics"
 
     # metrics_path defaults to '/metrics'
     # scheme defaults to 'http'.
 
     static_configs:
-      - targets: ["taskmanager:9249", "taskmanager1:9249", "taskmanager2:9249", "jobmanager:9249", "benchmarker:9249"]
-#      - targets: ["prompgw:9091"]
+      - targets: ["kstreams1:12345", "kstreams2:12345", "kstreams3:12345"]

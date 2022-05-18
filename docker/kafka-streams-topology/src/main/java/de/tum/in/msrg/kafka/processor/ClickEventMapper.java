@@ -9,6 +9,8 @@ import org.apache.kafka.common.metrics.Metrics;
 import org.apache.kafka.common.metrics.stats.WindowedCount;
 import org.apache.kafka.common.utils.Time;
 import org.apache.kafka.streams.kstream.ValueMapper;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -22,6 +24,8 @@ public class ClickEventMapper implements ValueMapper<String, Iterable<ClickEvent
     private static final ObjectMapper mapper = new ObjectMapper();
     private WindowedCount throughput;
     private MetricConfig config = new MetricConfig();
+
+    private static final Logger LOGGER = LogManager.getLogger(ClickEventMapper.class);
 
     public ClickEventMapper() {
         super();
@@ -47,7 +51,10 @@ public class ClickEventMapper implements ValueMapper<String, Iterable<ClickEvent
         } catch (UnknownHostException e) {
             uid = Thread.currentThread().getName();
             e.printStackTrace();
+            LOGGER.warn(e.getMessage());
         }
+
+        LOGGER.info(String.format("UID: %s", uid));
 
         return uid;
     }
@@ -58,7 +65,10 @@ public class ClickEventMapper implements ValueMapper<String, Iterable<ClickEvent
     public Iterable<ClickEvent> apply(String value) {
         try {
             this.throughput.record(this.config, 1.0, Time.SYSTEM.milliseconds());
-            return Arrays.asList( mapper.readValue(value, ClickEvent.class));
+            ClickEvent event = mapper.readValue(value, ClickEvent.class);
+            LOGGER.debug(event.toString());
+
+            return Arrays.asList(event);
 
         } catch (JsonProcessingException e) {
            e.printStackTrace();

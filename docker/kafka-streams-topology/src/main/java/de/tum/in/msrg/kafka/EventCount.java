@@ -34,6 +34,8 @@ import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.Topology;
 import org.apache.kafka.streams.kstream.*;
 import org.apache.kafka.streams.state.KeyValueStore;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
@@ -41,39 +43,57 @@ import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-/**
- * In this example, we implement a simple WordCount program using the high-level Streams DSL
- * that reads from a source topic "streams-plaintext-input", where the values of messages represent lines of text,
- * split each text line into words and then compute the word occurence histogram, write the continuous updated histogram
- * into a topic "streams-wordcount-output" where each record is an updated count of a single word.
- */
+
 public class EventCount {
 
     private static String KAFKA_BOOTSTRAP;
     private static String INPUT_TOPIC;
     private static String OUTPUT_TOPIC;
     private static String PROCESSING_GUARANTEE;
+    private static String APP_ID;
+    private static String NUM_STANDBY;
+
+    private static final Logger LOGGER = LogManager.getLogger(EventCount.class);
 
     public static void main(String[] args) throws Exception {
+        LOGGER.info(Arrays.asList(args));
+
+        LOGGER.info("Getting program arguments");
 
         Options cliOpts = createCLI();
         DefaultParser parser = new DefaultParser();
         CommandLine cmd = parser.parse(cliOpts, args);
 
         KAFKA_BOOTSTRAP = cmd.getOptionValue("kafka", "kafka:9092");
+        LOGGER.info(String.format("Kafka bootstrap server: %s", KAFKA_BOOTSTRAP));
+
         INPUT_TOPIC = cmd.getOptionValue("input", "input");
+        LOGGER.info(String.format("Input topic: %s", INPUT_TOPIC));
+
         OUTPUT_TOPIC = cmd.getOptionValue("output", "output");
+        LOGGER.info(String.format("Output topic: %s", OUTPUT_TOPIC));
+
         PROCESSING_GUARANTEE = cmd.getOptionValue("guarantee", "exactly_once_beta");
+        LOGGER.info(String.format("Configured processing guarantee: %s", PROCESSING_GUARANTEE));
+
+        APP_ID = cmd.getOptionValue("appid", "streams-eventcount");
+        LOGGER.info(String.format("Application ID: %s", APP_ID));
+
+        NUM_STANDBY = cmd.getOptionValue("standby", "0");
+        LOGGER.info(String.format("NUmber of standby replicas: %s", NUM_STANDBY));
+
 
 
         Properties props = getProperties();
         props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKA_BOOTSTRAP);
         props.put(StreamsConfig.PROCESSING_GUARANTEE_CONFIG, PROCESSING_GUARANTEE);
         props.put(StreamsConfig.REPLICATION_FACTOR_CONFIG, "3");
+        props.put(StreamsConfig.APPLICATION_ID_CONFIG, APP_ID);
 
+        LOGGER.info("Creating custom metrics...");
         Metrics customMetrics = getMetrics();
 
-
+        LOGGER.info("Creating topology...");
         final Topology topology = getTopology(INPUT_TOPIC, OUTPUT_TOPIC, customMetrics);
         final KafkaStreams streams = new KafkaStreams(topology, props);
         final CountDownLatch latch = new CountDownLatch(1);
@@ -89,12 +109,14 @@ public class EventCount {
             }
         });
 
+        LOGGER.info("Starting stream");
         try {
             streams.start();
             latch.await();
         } catch (Throwable e) {
             System.exit(1);
         }
+        LOGGER.info("Kafka Streams shutting down gracefully");
         System.exit(0);
     }
 
@@ -109,9 +131,12 @@ public class EventCount {
                 .aggregate(new ClickEventStatsInitializer(), new ClickEventStatsAggregator(),
                         Materialized.with(new Serdes.StringSerde(), new ClickEventStatsSerde()))
                 .suppress(Suppressed.untilWindowCloses(Suppressed.BufferConfig.unbounded()))
-                .toStream().selectKey((key, value) -> {
+                .toStream()
+                .selectKey((key, value) -> {
                     value.setWindowStart(new Date(key.window().start()));
                     value.setWindowEnd(new Date(key.window().end()));
+
+                    LOGGER.debug(value.toString());
                     return value.getPage();
                 })
                 .to(output, Produced.with(new Serdes.StringSerde(), new ClickEventStatsSerde()));
@@ -123,12 +148,15 @@ public class EventCount {
     public static Properties getProperties() {
         Properties props = new Properties();
 
-        props.put(StreamsConfig.APPLICATION_ID_CONFIG, "streams-eventcount");
+//        props.put(StreamsConfig.APPLICATION_ID_CONFIG, "streams-eventcount");
 
         props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
         props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass());
         props.put(StreamsConfig.DEFAULT_TIMESTAMP_EXTRACTOR_CLASS_CONFIG, ClickEventTimeExtractor.class.getCanonicalName());
         props.put(StreamsConfig.METRICS_SAMPLE_WINDOW_MS_CONFIG, "1000");
+        props.put(StreamsConfig.NUM_STREAM_THREADS_CONFIG, "2");
+        props.put(StreamsConfig.NUM_STANDBY_REPLICAS_CONFIG, NUM_STANDBY);
+        props.put(StreamsConfig.APPLICATION_SERVER_CONFIG, "0.0.0.0:12346");
 
         return props;
     }
@@ -172,11 +200,25 @@ public class EventCount {
                 .desc("Processing guarantee")
                 .build();
 
+        Option idOptn = Option.builder("appid")
+                .argName("id")
+                .hasArg()
+                .desc("Application ID")
+                .build();
+
+        Option standbyOptn = Option.builder("standby")
+                .argName("num")
+                .hasArg()
+                .desc("Number of standby replicas")
+                .build();
+
         opts
                 .addOption(serverOptn)
                 .addOption(inTopicOptn)
                 .addOption(outTopicOptn)
-                .addOption(pgOptn);
+                .addOption(pgOptn)
+                .addOption(idOptn)
+                .addOption(standbyOptn);
 
         return opts;
 

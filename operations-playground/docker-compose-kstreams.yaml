@@ -1,0 +1,71 @@
+version: '3.9'
+
+services:
+  kstreams1:
+    image: jawadtahir/kafka-streams-topology
+    hostname: kstreams1
+    environment:
+      KAFKA_BOOTSTRAP: "kafka1:9092"
+      INPUT_TOPIC: "input"
+      OUTPUT_TOPIC: "output"
+      PROCESSING_GUARANTEE: "exactly_once_beta"
+    volumes:
+      - ./conf/log4j2-kstreams.xml:/kafka-topology/log4j2.xml
+      - kstreams1State:/tmp/kafka-streams
+    networks:
+      infra:
+
+
+  kstreams2:
+    image: jawadtahir/kafka-streams-topology
+    hostname: kstreams2
+    environment:
+      KAFKA_BOOTSTRAP: "kafka1:9092"
+      INPUT_TOPIC: "input"
+      OUTPUT_TOPIC: "output"
+      PROCESSING_GUARANTEE: "exactly_once_beta"
+    volumes:
+      - ./conf/log4j2-kstreams.xml:/kafka-topology/log4j2.xml
+      - kstreams2State:/tmp/kafka-streams
+    networks:
+      infra:
+
+  kstreams3:
+    image: jawadtahir/kafka-streams-topology
+    hostname: kstreams3
+    environment:
+      KAFKA_BOOTSTRAP: "kafka1:9092"
+      INPUT_TOPIC: "input"
+      OUTPUT_TOPIC: "output"
+      PROCESSING_GUARANTEE: "exactly_once_beta"
+    volumes:
+      - ./conf/log4j2-kstreams.xml:/kafka-topology/log4j2.xml
+      - kstreams3State:/tmp/kafka-streams
+    networks:
+      infra:
+
+  kstreams4:
+    image: jawadtahir/kafka-streams-topology
+    hostname: kstreams4
+    environment:
+      KAFKA_BOOTSTRAP: "kafka1:9092"
+      INPUT_TOPIC: "input"
+      OUTPUT_TOPIC: "output"
+      PROCESSING_GUARANTEE: "exactly_once_beta"
+    volumes:
+      - ./conf/log4j2-kstreams.xml:/kafka-topology/log4j2.xml
+      - kstreams4State:/tmp/kafka-streams
+    networks:
+      infra:
+
+volumes:
+  kstreams1State:
+  kstreams2State:
+  kstreams3State:
+  kstreams4State:
+
+
+networks:
+  infra:
+    name: infra
+    external: true

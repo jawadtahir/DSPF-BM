@@ -1,6 +1,33 @@
 version: '3.9'
 
 services:
+  prometheus:
+    image: prom/prometheus
+    restart: always
+    hostname: prometheus
+    entrypoint: /bin/prometheus --config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/prometheus --storage.tsdb.retention.size=10GB --web.console.libraries=/usr/share/prometheus/console_libraries --web.console.templates=/usr/share/prometheus/consoles
+    volumes:
+      - ./conf/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus:/prometheus
+    networks:
+      infra:
+    ports:
+      - mode: host
+        target: 9090
+        published: 49090
+
+  grafana:
+    image: grafana/grafana
+    volumes:
+      - grafana:/var/lib/grafana
+    networks:
+      infra:
+    ports:
+      - mode: host
+        target: 3000
+        published: 43000
+
+
   zookeeper1:
     image: zookeeper:3.8.0
     restart: always
@@ -8,6 +35,12 @@ services:
     environment:
       ZOO_MY_ID: 1
       ZOO_SERVERS: server.1=zookeeper1:2888:3888;2181 server.2=zookeeper2:2888:3888;2181 server.3=zookeeper3:2888:3888;2181
+    volumes:
+      - zk1data:/data
+      - zk1datalog:/datalog
+      - zk1log:/logs
+    networks:
+      infra:
 
 
   zookeeper2:
@@ -19,6 +52,12 @@ services:
     environment:
       ZOO_MY_ID: 2
       ZOO_SERVERS: server.1=zookeeper1:2888:3888;2181 server.2=zookeeper2:2888:3888;2181 server.3=zookeeper3:2888:3888;2181
+    volumes:
+      - zk2data:/data
+      - zk2datalog:/datalog
+      - zk2log:/logs
+    networks:
+      infra:
 
 
   zookeeper3:
@@ -30,6 +69,12 @@ services:
     environment:
       ZOO_MY_ID: 3
       ZOO_SERVERS: server.1=zookeeper1:2888:3888;2181 server.2=zookeeper2:2888:3888;2181 server.3=zookeeper3:2888:3888;2181
+    volumes:
+      - zk3data:/data
+      - zk3datalog:/datalog
+      - zk3log:/logs
+    networks:
+      infra:
 
   kafka1:
     image: wurstmeister/kafka:2.13-2.8.1
@@ -44,10 +89,17 @@ services:
       KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka1:9092,OUTSIDE://localhost:59094
       KAFKA_METRICS_SAMPLE_WINDOW_MS: 1000
       KAFKA_LOG_MESSAGE_TIMESTAMP_TYPE: LogAppendTime
+      KAFKA_LOG_RETENTION_BYTES: 2684354560 #2.5 GB
+      KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS: 60000 # 1 minutes
       KAFKA_MIN_INSYNC_REPLICAS: 2
       KAFKA_DEFAULT_REPLICATION_FACTOR: 3
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_CREATE_TOPICS: "input:3:3, output:3:3"
+    volumes:
+      - kafka1:/kafka
+    networks:
+      infra:
     ports:
       - mode: host
         published: 59094
@@ -67,10 +119,16 @@ services:
       KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka2:9092,OUTSIDE://localhost:59095
       KAFKA_METRICS_SAMPLE_WINDOW_MS: 1000
       KAFKA_LOG_MESSAGE_TIMESTAMP_TYPE: LogAppendTime
+      KAFKA_LOG_RETENTION_BYTES: 2684354560 #2.5 GB
+      KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS: 60000 # 1 minutes
       KAFKA_MIN_INSYNC_REPLICAS: 2
       KAFKA_DEFAULT_REPLICATION_FACTOR: 3
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+    volumes:
+      - kafka2:/kafka
+    networks:
+      infra:
     ports:
       - mode: host
         published: 59095
@@ -90,81 +148,129 @@ services:
       KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka3:9092,OUTSIDE://localhost:59096
       KAFKA_METRICS_SAMPLE_WINDOW_MS: 1000
       KAFKA_LOG_MESSAGE_TIMESTAMP_TYPE: LogAppendTime
+      KAFKA_LOG_RETENTION_BYTES: 2684354560 #2.5 GB
+      KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS: 60000 # 1 minutes
       KAFKA_MIN_INSYNC_REPLICAS: 2
       KAFKA_DEFAULT_REPLICATION_FACTOR: 3
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+    volumes:
+      - kafka3:/kafka
+    networks:
+      infra:
     ports:
       - mode: host
         published: 59096
         target: 9094
 
 
+#  kafka4:
+#    image: wurstmeister/kafka:2.13-2.8.1
+#    depends_on:
+#      - kafka3
+#    hostname: kafka4
+#    environment:
+#      KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181,zookeeper2:2181,zookeeper3:2181
+#      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+#      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
+#      KAFKA_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
+#      KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka4:9092,OUTSIDE://localhost:59097
+#      KAFKA_METRICS_SAMPLE_WINDOW_MS: 1000
+#      KAFKA_LOG_MESSAGE_TIMESTAMP_TYPE: LogAppendTime
+#      KAFKA_LOG_RETENTION_BYTES: 2684354560 #2.5 GB
+#      KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS: 60000 # 1 minutes
+#      KAFKA_MIN_INSYNC_REPLICAS: 2
+#      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+#      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+#      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+#    volumes:
+#      - kafka4:/kafka
+#    networks:
+#      infra:
+#    ports:
+#      - mode: host
+#        published: 59097
+#        target: 9094
+#
+#  kafka5:
+#    image: wurstmeister/kafka:2.13-2.8.1
+#    depends_on:
+#      - kafka4
+#    hostname: kafka5
+#    environment:
+#      KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181,zookeeper2:2181,zookeeper3:2181
+#      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+#      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
+#      KAFKA_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
+#      KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka5:9092,OUTSIDE://localhost:59098
+#      KAFKA_METRICS_SAMPLE_WINDOW_MS: 1000
+#      KAFKA_LOG_MESSAGE_TIMESTAMP_TYPE: LogAppendTime
+#      KAFKA_LOG_RETENTION_BYTES: 2684354560 #2.5 GB
+#      KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS: 60000 # 1 minutes
+#      KAFKA_MIN_INSYNC_REPLICAS: 2
+#      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+#      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+#      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+#    volumes:
+#      - kafka5:/kafka
+#    networks:
+#      infra:
+#    ports:
+#      - mode: host
+#        published: 59098
+#        target: 9094
+#
+#
+#  kafka6:
+#    image: wurstmeister/kafka:2.13-2.8.1
+#    depends_on:
+#      - kafka5
+#    hostname: kafka6
+#    environment:
+#      KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181,zookeeper2:2181,zookeeper3:2181
+#      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+#      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
+#      KAFKA_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
+#      KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka6:9092,OUTSIDE://localhost:59099
+#      KAFKA_METRICS_SAMPLE_WINDOW_MS: 1000
+#      KAFKA_LOG_MESSAGE_TIMESTAMP_TYPE: LogAppendTime
+#      KAFKA_LOG_RETENTION_BYTES: 2684354560 #2.5 GB
+#      KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS: 60000 # 1 minutes
+#      KAFKA_MIN_INSYNC_REPLICAS: 2
+#      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+#      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+#      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+#    volumes:
+#      - kafka6:/kafka
+#    networks:
+#      infra:
+#    ports:
+#      - mode: host
+#        published: 59099
+#        target: 9094
+
+
+
+volumes:
+  kafka1:
+  kafka2:
+  kafka3:
   kafka4:
-    image: wurstmeister/kafka:2.13-2.8.1
-    depends_on:
-      - kafka3
-    hostname: kafka4
-    environment:
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181,zookeeper2:2181,zookeeper3:2181
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
-      KAFKA_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
-      KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka4:9092,OUTSIDE://localhost:59097
-      KAFKA_METRICS_SAMPLE_WINDOW_MS: 1000
-      KAFKA_LOG_MESSAGE_TIMESTAMP_TYPE: LogAppendTime
-      KAFKA_MIN_INSYNC_REPLICAS: 2
-      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
-    ports:
-      - mode: host
-        published: 59097
-        target: 9094
-
   kafka5:
-    image: wurstmeister/kafka:2.13-2.8.1
-    depends_on:
-      - kafka4
-    hostname: kafka5
-    environment:
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181,zookeeper2:2181,zookeeper3:2181
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
-      KAFKA_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
-      KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka5:9092,OUTSIDE://localhost:59098
-      KAFKA_METRICS_SAMPLE_WINDOW_MS: 1000
-      KAFKA_LOG_MESSAGE_TIMESTAMP_TYPE: LogAppendTime
-      KAFKA_MIN_INSYNC_REPLICAS: 2
-      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
-    ports:
-      - mode: host
-        published: 59098
-        target: 9094
-
-
   kafka6:
-    image: wurstmeister/kafka:2.13-2.8.1
-    depends_on:
-      - kafka5
-    hostname: kafka6
-    environment:
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181,zookeeper2:2181,zookeeper3:2181
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
-      KAFKA_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
-      KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka6:9092,OUTSIDE://localhost:59099
-      KAFKA_METRICS_SAMPLE_WINDOW_MS: 1000
-      KAFKA_LOG_MESSAGE_TIMESTAMP_TYPE: LogAppendTime
-      KAFKA_MIN_INSYNC_REPLICAS: 2
-      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
-      KAFKA_CREATE_TOPICS: "input:6:3, output:6:3"
-    ports:
-      - mode: host
-        published: 59099
-        target: 9094
+  zk1data:
+  zk1datalog:
+  zk1log:
+  zk2data:
+  zk2datalog:
+  zk2log:
+  zk3data:
+  zk3datalog:
+  zk3log:
+  prometheus:
+  grafana:
 
+networks:
+  infra:
+    attachable: true
+    name: infra
