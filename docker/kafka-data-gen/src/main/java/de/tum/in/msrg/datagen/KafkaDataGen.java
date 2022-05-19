@@ -132,6 +132,7 @@ public class KafkaDataGen
 
         private Map<String, Long> nextTimestampPerKey;
         private int nextPageIndex;
+        private long id = Long.MIN_VALUE;
 
         ClickIterator() {
             nextTimestampPerKey = new HashMap<>();
@@ -140,7 +141,8 @@ public class KafkaDataGen
 
         ClickEvent next() {
             String page = nextPage();
-            return new ClickEvent(nextTimestamp(page), page);
+            id++;
+            return new ClickEvent(id, nextTimestamp(page), page);
         }
 
         private Date nextTimestamp(String page) {

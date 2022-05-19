@@ -19,8 +19,7 @@ package de.tum.in.msrg.datamodel;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
-import java.util.Date;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * A small wrapper class for windowed page counts.
@@ -37,22 +36,21 @@ public class ClickEventStatistics {
 	//using java.util.Date for better readability
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS")
 	private Date firstMsgTS;
-	private String page;
+	private Set<String> pages;
+	private List<Long> ids;
 	private long count;
 
 	public ClickEventStatistics() {
+		this.pages = new HashSet<>();
+		this.ids = new ArrayList<>();
 	}
 
-	public ClickEventStatistics(
-			final Date windowStart,
-			final Date windowEnd,
-			final Date firstMsgTS,
-			final String page,
-			final long count) {
+	public ClickEventStatistics(Date windowStart, Date windowEnd, Date firstMsgTS, Set<String> pages, List<Long> ids, long count) {
 		this.windowStart = windowStart;
 		this.windowEnd = windowEnd;
 		this.firstMsgTS = firstMsgTS;
-		this.page = page;
+		this.pages = pages;
+		this.ids = ids;
 		this.count = count;
 	}
 
@@ -80,12 +78,20 @@ public class ClickEventStatistics {
 		this.firstMsgTS = firstMsgTS;
 	}
 
-	public String getPage() {
-		return page;
+	public Set<String> getPages() {
+		return pages;
 	}
 
-	public void setPage(final String page) {
-		this.page = page;
+	public void setPages(Set<String> pages) {
+		this.pages = Collections.synchronizedSet(pages) ;
+	}
+
+	public List<Long> getIds() {
+		return ids;
+	}
+
+	public void setIds(List<Long> ids) {
+		this.ids = ids;
 	}
 
 	public long getCount() {
@@ -97,35 +103,27 @@ public class ClickEventStatistics {
 	}
 
 	@Override
-	public boolean equals(final Object o) {
-		if (this == o) {
-			return true;
-		}
-		if (o == null || getClass() != o.getClass()) {
-			return false;
-		}
-		final ClickEventStatistics that = (ClickEventStatistics) o;
-		return count == that.count &&
-				Objects.equals(windowStart, that.windowStart) &&
-				Objects.equals(windowEnd, that.windowEnd) &&
-				Objects.equals(this.firstMsgTS, that.firstMsgTS) &&
-				Objects.equals(page, that.page);
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		ClickEventStatistics that = (ClickEventStatistics) o;
+		return count == that.count && windowStart.equals(that.windowStart) && windowEnd.equals(that.windowEnd) && Objects.equals(firstMsgTS, that.firstMsgTS) && Objects.equals(pages, that.pages) && Objects.equals(ids, that.ids);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(windowStart, windowEnd, firstMsgTS, page, count);
+		return Objects.hash(windowStart, windowEnd, firstMsgTS, pages, ids, count);
 	}
 
 	@Override
 	public String toString() {
-		final StringBuilder sb = new StringBuilder("ClickEventStatistics{");
-		sb.append("windowStart=").append(windowStart);
-		sb.append(", windowEnd=").append(windowEnd);
-		sb.append(", firstMsgTS=").append(firstMsgTS);
-		sb.append(", page='").append(page).append('\'');
-		sb.append(", count=").append(count);
-		sb.append('}');
-		return sb.toString();
+		return "ClickEventStatistics{" +
+				"windowStart=" + windowStart +
+				", windowEnd=" + windowEnd +
+				", firstMsgTS=" + firstMsgTS +
+				", pages=" + Arrays.deepToString(pages.toArray()) +
+				", ids=" + Arrays.deepToString(ids.toArray()) +
+				", count=" + count +
+				'}';
 	}
 }

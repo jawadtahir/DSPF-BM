@@ -13,6 +13,7 @@ import java.util.Objects;
  */
 public class ClickEvent{
 
+    private long id;
     //using java.util.Date for better readability
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS")
     private Date timestamp;
@@ -23,16 +24,26 @@ public class ClickEvent{
     public ClickEvent() {
     }
 
-    public ClickEvent(final Date timestamp, final String page) {
+    public ClickEvent(long id, Date timestamp, String page) {
         this.timestamp = timestamp;
         this.page = page;
         this.creationTimestamp = Date.from(Instant.now());
     }
 
-    public ClickEvent(final Date timestamp, final String page, final Date creationTimestamp) {
+
+    public ClickEvent(long id, Date timestamp, String page, Date creationTimestamp) {
+        this.id = id;
         this.timestamp = timestamp;
         this.page = page;
         this.creationTimestamp = creationTimestamp;
+    }
+
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
     }
 
     public Date getTimestamp() {
@@ -60,30 +71,26 @@ public class ClickEvent{
     }
 
     @Override
-    public boolean equals(final Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        final ClickEvent that = (ClickEvent) o;
-        return Objects.equals(timestamp, that.timestamp) && Objects.equals(page, that.page) && Objects.equals(creationTimestamp, that.creationTimestamp);
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ClickEvent that = (ClickEvent) o;
+        return id == that.id && timestamp.equals(that.timestamp) && page.equals(that.page) && creationTimestamp.equals(that.creationTimestamp);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(timestamp, page, creationTimestamp);
+        return Objects.hash(id, timestamp, page, creationTimestamp);
     }
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("ClickEvent{");
-        sb.append("timestamp=").append(timestamp);
-        sb.append(", page='").append(page).append('\'');
-        sb.append(", creationTime=").append(creationTimestamp);
-        sb.append('}');
-        return sb.toString();
+        return "ClickEvent{" +
+                "id=" + id +
+                ", timestamp=" + timestamp +
+                ", page='" + page + '\'' +
+                ", creationTimestamp=" + creationTimestamp +
+                '}';
     }
 }
 
