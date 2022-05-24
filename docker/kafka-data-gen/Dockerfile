@@ -12,8 +12,8 @@ FROM openjdk:11-jre-slim
 COPY --from=maven /kafka-data-gen/target/kafka-data-gen*.jar /jar/datagen.jar
 WORKDIR /jar
 
-ENV KAFKA_BOOTSTRAP="kafka:9092" KAFKA_TOPIC="input" DELAY_COUNT=1000
+ENV KAFKA_BOOTSTRAP="kafka:9092" DELAY_COUNT=1000
 
 EXPOSE 52923
 
-ENTRYPOINT java -jar datagen.jar -kafka $KAFKA_BOOTSTRAP -topic $KAFKA_TOPIC -delay $DELAY_COUNT
+ENTRYPOINT java -jar datagen.jar -kafka $KAFKA_BOOTSTRAP -delay $DELAY_COUNT
