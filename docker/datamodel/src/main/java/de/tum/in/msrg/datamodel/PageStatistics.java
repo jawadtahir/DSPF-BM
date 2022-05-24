@@ -25,7 +25,7 @@ import java.util.*;
  * A small wrapper class for windowed page counts.
  *
  */
-public class ClickEventStatistics {
+public class PageStatistics {
 
 	//using java.util.Date for better readability
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS")
@@ -33,23 +33,21 @@ public class ClickEventStatistics {
 	//using java.util.Date for better readability
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS")
 	private Date windowEnd;
-	//using java.util.Date for better readability
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS")
-	private Date firstMsgTS;
-	private Set<String> pages;
+	private Date lastUpdateTS;
+	private long updateCount;
+	private String page;
 	private List<Long> ids;
 	private long count;
 
-	public ClickEventStatistics() {
-		this.pages = new HashSet<>();
-		this.ids = new ArrayList<>();
+	public PageStatistics() {
+		this.ids =  Collections.synchronizedList(new ArrayList<>());
 	}
 
-	public ClickEventStatistics(Date windowStart, Date windowEnd, Date firstMsgTS, Set<String> pages, List<Long> ids, long count) {
+	public PageStatistics(Date windowStart, Date windowEnd, String page, List<Long> ids, long count) {
 		this.windowStart = windowStart;
 		this.windowEnd = windowEnd;
-		this.firstMsgTS = firstMsgTS;
-		this.pages = Collections.synchronizedSet(pages);
+		this.page = page;
 		this.ids = ids;
 		this.count = count;
 	}
@@ -70,20 +68,28 @@ public class ClickEventStatistics {
 		this.windowEnd = windowEnd;
 	}
 
-	public Date getFirstMsgTS() {
-		return firstMsgTS;
+	public Date getLastUpdateTS() {
+		return lastUpdateTS;
 	}
 
-	public void setFirstMsgTS(Date firstMsgTS) {
-		this.firstMsgTS = firstMsgTS;
+	public void setLastUpdateTS(Date lastUpdateTS) {
+		this.lastUpdateTS = lastUpdateTS;
 	}
 
-	public Set<String> getPages() {
-		return pages;
+	public long getUpdateCount() {
+		return updateCount;
 	}
 
-	public void setPages(Set<String> pages) {
-		this.pages = Collections.synchronizedSet(pages) ;
+	public void setUpdateCount(long updateCount) {
+		this.updateCount = updateCount;
+	}
+
+	public String getPage() {
+		return page;
+	}
+
+	public void setPage(String page) {
+		this.page = page;
 	}
 
 	public List<Long> getIds() {
@@ -106,24 +112,26 @@ public class ClickEventStatistics {
 	public boolean equals(Object o) {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
-		ClickEventStatistics that = (ClickEventStatistics) o;
-		return count == that.count && windowStart.equals(that.windowStart) && windowEnd.equals(that.windowEnd) && Objects.equals(firstMsgTS, that.firstMsgTS) && Objects.equals(pages, that.pages) && Objects.equals(ids, that.ids);
+		PageStatistics that = (PageStatistics) o;
+		return updateCount == that.updateCount && count == that.count && windowStart.equals(that.windowStart) && windowEnd.equals(that.windowEnd) && lastUpdateTS.equals(that.lastUpdateTS) && Objects.equals(page, that.page) && Objects.equals(ids, that.ids);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(windowStart, windowEnd, firstMsgTS, pages, ids, count);
+		return Objects.hash(windowStart, windowEnd, lastUpdateTS, updateCount, page, ids, count);
 	}
 
 	@Override
 	public String toString() {
-		return "ClickEventStatistics{" +
-				"windowStart=" + windowStart +
-				", windowEnd=" + windowEnd +
-				", firstMsgTS=" + firstMsgTS +
-				", pages=" + Arrays.deepToString(pages.toArray()) +
-				", ids=" + Arrays.deepToString(ids.toArray()) +
-				", count=" + count +
-				'}';
+		final StringBuilder sb = new StringBuilder("PageStatistics{");
+		sb.append("windowStart=").append(windowStart);
+		sb.append(", windowEnd=").append(windowEnd);
+		sb.append(", lastUpdateTS=").append(lastUpdateTS);
+		sb.append(", updateCount=").append(updateCount);
+		sb.append(", pages=").append(page);
+		sb.append(", ids=").append(Arrays.deepToString(ids.toArray()));
+		sb.append(", count=").append(count);
+		sb.append('}');
+		return sb.toString();
 	}
 }

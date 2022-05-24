@@ -25,6 +25,7 @@ public class ClickEvent{
     }
 
     public ClickEvent(long id, Date timestamp, String page) {
+        this.id = id;
         this.timestamp = timestamp;
         this.page = page;
         this.creationTimestamp = Date.from(Instant.now());
