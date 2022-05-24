@@ -50,6 +50,18 @@
       <version>2.13.0</version>
       <scope>compile</scope>
     </dependency>
+    <!-- https://mvnrepository.com/artifact/io.prometheus/simpleclient -->
+    <dependency>
+      <groupId>io.prometheus</groupId>
+      <artifactId>simpleclient</artifactId>
+      <version>0.15.0</version>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/io.prometheus/simpleclient -->
+    <dependency>
+      <groupId>io.prometheus</groupId>
+      <artifactId>simpleclient_httpserver</artifactId>
+      <version>0.15.0</version>
+    </dependency>
   </dependencies>
 
   <build>
