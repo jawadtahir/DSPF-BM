@@ -16,30 +16,34 @@
  */
 package de.tum.in.msrg.kafka;
 
-import de.tum.in.msrg.datamodel.ClickEventStatistics;
-import de.tum.in.msrg.kafka.processor.ClickEventMapper;
-import de.tum.in.msrg.kafka.processor.ClickEventStatsAggregator;
-import de.tum.in.msrg.kafka.processor.ClickEventStatsInitializer;
-import de.tum.in.msrg.kafka.processor.ClickEventTimeExtractor;
-import de.tum.in.msrg.kafka.serdes.ClickEventSerde;
-import de.tum.in.msrg.kafka.serdes.ClickEventStatsSerde;
-import org.apache.commons.cli.*;
+import de.tum.in.msrg.datamodel.ClickEvent;
+import de.tum.in.msrg.datamodel.ClickUpdateEvent;
+import de.tum.in.msrg.datamodel.PageStatistics;
+import de.tum.in.msrg.datamodel.UpdateEvent;
+import de.tum.in.msrg.kafka.processor.*;
+import de.tum.in.msrg.kafka.serdes.*;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
 import org.apache.kafka.common.metrics.*;
 import org.apache.kafka.common.serialization.Serdes;
-import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.common.utils.Time;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.Topology;
 import org.apache.kafka.streams.kstream.*;
-import org.apache.kafka.streams.state.KeyValueStore;
+import org.apache.kafka.streams.state.TimestampedWindowStore;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -47,8 +51,6 @@ import java.util.concurrent.TimeUnit;
 public class EventCount {
 
     private static String KAFKA_BOOTSTRAP;
-    private static String INPUT_TOPIC;
-    private static String OUTPUT_TOPIC;
     private static String PROCESSING_GUARANTEE;
     private static String APP_ID;
     private static String NUM_STANDBY;
@@ -67,11 +69,6 @@ public class EventCount {
         KAFKA_BOOTSTRAP = cmd.getOptionValue("kafka", "kafka:9092");
         LOGGER.info(String.format("Kafka bootstrap server: %s", KAFKA_BOOTSTRAP));
 
-        INPUT_TOPIC = cmd.getOptionValue("input", "input");
-        LOGGER.info(String.format("Input topic: %s", INPUT_TOPIC));
-
-        OUTPUT_TOPIC = cmd.getOptionValue("output", "output");
-        LOGGER.info(String.format("Output topic: %s", OUTPUT_TOPIC));
 
         PROCESSING_GUARANTEE = cmd.getOptionValue("guarantee", "exactly_once_beta");
         LOGGER.info(String.format("Configured processing guarantee: %s", PROCESSING_GUARANTEE));
@@ -80,7 +77,7 @@ public class EventCount {
         LOGGER.info(String.format("Application ID: %s", APP_ID));
 
         NUM_STANDBY = cmd.getOptionValue("standby", "0");
-        LOGGER.info(String.format("NUmber of standby replicas: %s", NUM_STANDBY));
+        LOGGER.info(String.format("Number of standby replicas: %s", NUM_STANDBY));
 
 
 
@@ -89,12 +86,13 @@ public class EventCount {
         props.put(StreamsConfig.PROCESSING_GUARANTEE_CONFIG, PROCESSING_GUARANTEE);
         props.put(StreamsConfig.REPLICATION_FACTOR_CONFIG, "3");
         props.put(StreamsConfig.APPLICATION_ID_CONFIG, APP_ID);
+        props.put(StreamsConfig.NUM_STANDBY_REPLICAS_CONFIG, NUM_STANDBY);
 
         LOGGER.info("Creating custom metrics...");
         Metrics customMetrics = getMetrics();
 
         LOGGER.info("Creating topology...");
-        final Topology topology = getTopology(INPUT_TOPIC, OUTPUT_TOPIC, customMetrics);
+        final Topology topology = getTopology(customMetrics);
         final KafkaStreams streams = new KafkaStreams(topology, props);
         final CountDownLatch latch = new CountDownLatch(1);
 
@@ -120,26 +118,49 @@ public class EventCount {
         System.exit(0);
     }
 
-    public static Topology getTopology(String input, String output, Metrics metrics) {
+    public static Topology getTopology(Metrics metrics) {
         StreamsBuilder builder = new StreamsBuilder();
 
+        KStream<String, ClickEvent> clickStream = builder.stream("click",
+                        Consumed.<String, String>with(new ClickEventTimeExtractor())
+                                .withKeySerde(new Serdes.StringSerde())
+                                .withValueSerde(new Serdes.StringSerde()))
+                .flatMapValues(new ClickEventMapper(metrics));
 
-        builder.<String, String>stream(input, Consumed.with(new ClickEventTimeExtractor()))
-               .flatMapValues(new ClickEventMapper(metrics))
-                .groupBy((key, value) -> value.getPage(), Grouped.with(Serdes.String(), new ClickEventSerde()))
+
+        KTable<String, UpdateEvent> eventKTable = builder.table("update",
+                Consumed.<String, UpdateEvent>with(new UpdateEventTimeExtractor())
+                        .withKeySerde(new Serdes.StringSerde())
+                        .withValueSerde(new UpdateEventSerdes()),
+                Materialized.with(new Serdes.StringSerde(), new UpdateEventSerdes()));
+
+
+
+        KStream<String, ClickUpdateEvent> joinStream = clickStream.leftJoin(
+                eventKTable,
+                new ClickUpdateJoiner(),
+                Joined.<String, ClickEvent, UpdateEvent>with(
+                        new Serdes.StringSerde(),
+                        new ClickEventSerde(),
+                        new UpdateEventSerdes()));
+
+
+        joinStream
+                .groupBy((key, value) -> value.getPage(), Grouped.with(new Serdes.StringSerde(), new ClickUpdateSerdes()))
                 .windowedBy(TimeWindows.of(Duration.of(60, ChronoUnit.SECONDS)).grace(Duration.ofMillis(0)))
-                .aggregate(new ClickEventStatsInitializer(), new ClickEventStatsAggregator(),
-                        Materialized.with(new Serdes.StringSerde(), new ClickEventStatsSerde()))
+                .aggregate(
+                        new PageStatisticsInitializer(),
+                        new PageStatisticsAggregator(),
+                        Materialized.with(
+                                new Serdes.StringSerde(),
+                                new PageStatisticsSerdes()))
                 .suppress(Suppressed.untilWindowCloses(Suppressed.BufferConfig.unbounded()))
-                .toStream()
-                .selectKey((key, value) -> {
-                    value.setWindowStart(new Date(key.window().start()));
-                    value.setWindowEnd(new Date(key.window().end()));
+                .toStream((k, v) -> {
+                    v.setWindowStart(new Date(k.window().start()));
+                    v.setWindowEnd(new Date(k.window().end()));
+                    return v.getPage();
+                }).to("output", Produced.with(new Serdes.StringSerde(), new PageStatisticsSerdes()));
 
-                    LOGGER.debug(value.toString());
-                    return value.getPage();
-                })
-                .to(output, Produced.with(new Serdes.StringSerde(), new ClickEventStatsSerde()));
 
         Topology topology = builder.build();
         return topology;
@@ -155,7 +176,7 @@ public class EventCount {
         props.put(StreamsConfig.DEFAULT_TIMESTAMP_EXTRACTOR_CLASS_CONFIG, ClickEventTimeExtractor.class.getCanonicalName());
         props.put(StreamsConfig.METRICS_SAMPLE_WINDOW_MS_CONFIG, "1000");
         props.put(StreamsConfig.NUM_STREAM_THREADS_CONFIG, "2");
-        props.put(StreamsConfig.NUM_STANDBY_REPLICAS_CONFIG, NUM_STANDBY);
+
         props.put(StreamsConfig.APPLICATION_SERVER_CONFIG, "0.0.0.0:12346");
 
         return props;
@@ -182,17 +203,6 @@ public class EventCount {
                 .desc("Kafka bootstrap server")
                 .build();
 
-        Option inTopicOptn = Option.builder("input")
-                .argName("topic")
-                .hasArg()
-                .desc("Input topic for the stream")
-                .build();
-
-        Option outTopicOptn = Option.builder("output")
-                .argName("topic")
-                .hasArg()
-                .desc("Output topic for the stream")
-                .build();
 
         Option pgOptn = Option.builder("guarantee")
                 .argName("guarantee")
@@ -214,8 +224,6 @@ public class EventCount {
 
         opts
                 .addOption(serverOptn)
-                .addOption(inTopicOptn)
-                .addOption(outTopicOptn)
                 .addOption(pgOptn)
                 .addOption(idOptn)
                 .addOption(standbyOptn);

@@ -11,7 +11,7 @@
         </File>
     </Appenders>
     <Loggers>
-        <Logger name="de.tum.in.msrg.kafka" level="debug" additivity="false">
+        <Logger name="de.tum.in.msrg.kafka" level="info" additivity="false">
             <AppenderRef ref="LogToFile"/>
             <AppenderRef ref="LogToConsole"/>
         </Logger>

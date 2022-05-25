@@ -2,7 +2,7 @@ package de.tum.in.msrg.kafka.serdes;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import de.tum.in.msrg.datamodel.ClickEventStatistics;
+import de.tum.in.msrg.datamodel.PageStatistics;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serializer;
@@ -10,13 +10,13 @@ import org.apache.kafka.common.serialization.Serializer;
 import java.io.IOException;
 import java.util.Map;
 
-public class ClickEventStatsSerde implements Serde<ClickEventStatistics>, Serializer<ClickEventStatistics>, Deserializer<ClickEventStatistics> {
-    private static final ObjectMapper mapper = new ObjectMapper();
+public class PageStatisticsSerdes implements Serde<PageStatistics>, Serializer<PageStatistics>, Deserializer<PageStatistics> {
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Override
-    public ClickEventStatistics deserialize(String topic, byte[] data) {
+    public PageStatistics deserialize(String topic, byte[] data) {
         try {
-            return mapper.readValue(data, ClickEventStatistics.class);
+            return OBJECT_MAPPER.readValue(data, PageStatistics.class);
         } catch (IOException e) {
             e.printStackTrace();
             return null;
@@ -34,19 +34,19 @@ public class ClickEventStatsSerde implements Serde<ClickEventStatistics>, Serial
     }
 
     @Override
-    public Serializer<ClickEventStatistics> serializer() {
+    public Serializer<PageStatistics> serializer() {
         return this;
     }
 
     @Override
-    public Deserializer<ClickEventStatistics> deserializer() {
+    public Deserializer<PageStatistics> deserializer() {
         return this;
     }
 
     @Override
-    public byte[] serialize(String topic, ClickEventStatistics data) {
+    public byte[] serialize(String topic, PageStatistics data) {
         try {
-            return mapper.writeValueAsBytes(data);
+            return OBJECT_MAPPER.writeValueAsBytes(data);
         } catch (JsonProcessingException e) {
             e.printStackTrace();
             return null;
