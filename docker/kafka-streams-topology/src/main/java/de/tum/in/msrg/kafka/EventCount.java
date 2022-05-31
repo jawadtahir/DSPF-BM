@@ -175,6 +175,7 @@ public class EventCount {
         props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass());
         props.put(StreamsConfig.DEFAULT_TIMESTAMP_EXTRACTOR_CLASS_CONFIG, ClickEventTimeExtractor.class.getCanonicalName());
         props.put(StreamsConfig.METRICS_SAMPLE_WINDOW_MS_CONFIG, "1000");
+        props.put(StreamsConfig.METRICS_RECORDING_LEVEL_CONFIG, "DEBUG");
         props.put(StreamsConfig.NUM_STREAM_THREADS_CONFIG, "2");
 
         props.put(StreamsConfig.APPLICATION_SERVER_CONFIG, "0.0.0.0:12346");

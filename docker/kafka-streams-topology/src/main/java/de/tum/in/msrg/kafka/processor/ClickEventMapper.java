@@ -36,7 +36,7 @@ public class ClickEventMapper implements ValueMapper<String, Iterable<ClickEvent
         this.throughput = new WindowedCount();
 
         if (metrics != null){
-            MetricName throughputName = metrics.metricName("customThroughput", "stream-custom-metrics", new HashMap<>(Map.of("machine-id", getID())));
+            MetricName throughputName = metrics.metricName("customThroughput", "stream-custom-metrics", new HashMap<>(Map.of("instance", getID())));
             this.config = metrics.config();
             metrics.addMetric(throughputName, this.throughput);
         }
