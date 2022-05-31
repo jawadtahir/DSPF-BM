@@ -10,6 +10,7 @@ RUN mvn package
 FROM openjdk:11-jre-slim
 
 COPY --from=maven /latcal/target/latcal*.jar /jar/latcal.jar
+COPY --from=maven /latcal/target/classes/log4j2.xml /jar/log4j2.xml
 WORKDIR /jar
 
 ENV KAFKA_BOOTSTRAP="kafka:9092"
