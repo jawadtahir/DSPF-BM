@@ -17,7 +17,7 @@ services:
       - zk1datalog:/datalog
       - zk1log:/logs
     networks:
-      infra_2:
+      infra:
 
     deploy:
       replicas: 1
@@ -43,7 +43,7 @@ services:
       - zk2datalog:/datalog
       - zk2log:/logs
     networks:
-      infra_2:
+      infra:
 
     deploy:
       replicas: 1
@@ -69,7 +69,7 @@ services:
       - zk3datalog:/datalog
       - zk3log:/logs
     networks:
-      infra_2:
+      infra:
 
     deploy:
       replicas: 1
@@ -200,7 +200,7 @@ volumes:
   zk3log:
 
 networks:
-  infra_2:
-#    external: true
-    name: infra_2
-    attachable: true
+  infra:
+    external: true
+    name: infra
+#    attachable: true

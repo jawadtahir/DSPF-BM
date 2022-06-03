@@ -24,7 +24,7 @@ services:
       replicas: 1
       placement:
         constraints:
-          - "node.labels.vmtype==utils"
+          - "node.labels.vmname==utils"
 
   grafana:
     image: grafana/grafana
@@ -43,7 +43,7 @@ services:
       replicas: 1
       placement:
         constraints:
-          - "node.labels.vmtype==utils"
+          - "node.labels.vmname==utils"
 
 configs:
   prom_config:
