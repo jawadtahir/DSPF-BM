@@ -1,0 +1,50 @@
+version: '3.9'
+
+services:
+  datagen:
+    image: jawadtahir/kafka-data-gen
+    build:
+      context: ../docker/kafka-data-gen
+    hostname: datagen
+    networks:
+      infra:
+    volumes:
+      - ./conf/log4j2-datagen.xml:/jar/log4j2.xml
+    environment:
+      DELAY_COUNT:
+      KAFKA_BOOTSTRAP: kafka1:9092
+
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - "node.labels.vmtype==utils"
+
+
+  latcal:
+    image: jawadtahir/latcal
+    build:
+      context: ../docker/latcal
+    hostname: latcal
+    networks:
+      infra:
+    volumes:
+      - ./conf/log4j2-latcal.xml:/jar/log4j2.xml
+    environment:
+      KAFKA_BOOTSTRAP: kafka1:9092
+
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - "node.labels.vmtype==utils"
+
+
+
+
+
+
+networks:
+  infra:
+    name: infra
+    external: true

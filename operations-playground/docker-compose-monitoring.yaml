@@ -1,0 +1,75 @@
+version: '3.9'
+
+services:
+  prometheus:
+    image: prom/prometheus
+#    restart: always
+    hostname: prometheus
+    entrypoint: /bin/prometheus --config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/prometheus --storage.tsdb.retention.size=10GB --web.console.libraries=/usr/share/prometheus/console_libraries --web.console.templates=/usr/share/prometheus/consoles
+    volumes:
+#      - ./conf/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus:/prometheus
+    networks:
+      infra:
+    ports:
+      - mode: host
+        target: 9090
+        published: 49090
+
+    configs:
+      - source: prom_config
+        target: /etc/prometheus/prometheus.yml
+
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - "node.labels.vmtype==utils"
+
+  grafana:
+    image: grafana/grafana
+    depends_on:
+      - prometheus
+    volumes:
+      - grafana:/var/lib/grafana
+    networks:
+      infra:
+    ports:
+      - mode: host
+        target: 3000
+        published: 43000
+
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - "node.labels.vmtype==utils"
+
+configs:
+  prom_config:
+    file: ./conf/prometheus.yml
+
+
+#  latcal:
+#    image: jawadtahir/latcal
+#    build:
+#      context: ../docker/latcal
+#    hostname: latcal
+#    networks:
+#      infra:
+#    volumes:
+#      - conf/log4j2-latcal.xml:/jar/log4j2.xml
+#    environment:
+#      KAFKA_BOOTSTRAP: kafka1:9092
+
+
+
+
+volumes:
+  prometheus:
+  grafana:
+
+networks:
+  infra:
+    attachable: true
+    name: infra
