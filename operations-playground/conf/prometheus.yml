@@ -31,7 +31,7 @@ scrape_configs:
 #      - targets: ["prompgw:9091"]
   - job_name: "node_exporter"
     static_configs:
-      - targets: ["node2:9100", "node3:9100", "node4:9100", "node5:9100", "kafka1:9100", "kafka2:9100", "kafka3:9100", "kafka4:9100", "kafka5:9100", "kafka6:9100", "storm1:9100", "storm2:9100", "storm3:9100", "storm4:9100", "storm5:9100"]
+      - targets: ["node2:9100", "node3:9100", "node4:9100", "node5:9100", "node6:9100", "node7:9100", "node8:9100", "node9:9100", "node10:9100", "node11:9100", "node12:9100", "storm1:9100", "storm2:9100", "storm3:9100", "storm4:9100", "storm5:9100"]
 
   - job_name: "utils"
     static_configs:

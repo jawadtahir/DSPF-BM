@@ -8,17 +8,19 @@ services:
     hostname: datagen
     networks:
       infra:
-    volumes:
-      - ./conf/log4j2-datagen.xml:/jar/log4j2.xml
     environment:
       DELAY_COUNT:
       KAFKA_BOOTSTRAP: kafka1:9092
+
+    configs:
+      - source: log4j2_datagen
+        target: /jar/log4j2.xml
 
     deploy:
       replicas: 1
       placement:
         constraints:
-          - "node.labels.vmtype==utils"
+          - "node.labels.vmname==utils"
 
 
   latcal:
@@ -28,16 +30,25 @@ services:
     hostname: latcal
     networks:
       infra:
-    volumes:
-      - ./conf/log4j2-latcal.xml:/jar/log4j2.xml
     environment:
       KAFKA_BOOTSTRAP: kafka1:9092
+    configs:
+      - source: log4j2_latcal
+        target: /jar/log4j2.xml
 
     deploy:
       replicas: 1
       placement:
         constraints:
-          - "node.labels.vmtype==utils"
+          - "node.labels.vmname==utils"
+
+
+configs:
+  log4j2_latcal:
+    file: ./conf/log4j2-latcal.xml
+
+  log4j2_datagen:
+    file: ./conf/log4j2-datagen.xml
 
 
 

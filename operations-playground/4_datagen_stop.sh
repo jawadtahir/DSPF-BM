@@ -7,23 +7,25 @@ docker_swarm_volume_prune()
   ssh -o StrictHostKeyChecking=no ubuntu@$NODE_NAME docker volume prune -f
 }
 
-NODE_LIST=("node1" "node2" "node3" "node4" "node5" "kafka1" "kafka2" "kafka3" "kafka4" "kafka5" "kafka6" "storm1" "storm2" "storm3" "storm4" "storm5")
+NODE_LIST=("node1")
 
 #for i in "${NODE_LIST[@]}"; do
 #  docker_swarm_volume_prune "$i"
 #done
 
 # Remove any previous utils containers
-echo "Removing data container..."
-docker-compose -f docker-compose-utils.yaml rm -f -s -v datagen
+echo "Removing datagen container..."
+docker service rm utils_datagen
 
-echo "Sleeping for 15 seconds"
-sleep 15s
-
-# Remove any previous volumes
-echo "Removing any orphan volumes..."
-docker volume prune -f
-
+#echo "Sleeping for 10 seconds"
+#sleep 10s
+#
+## Remove any previous volumes
+#echo "Removing any orphan volumes..."
+##docker volume prune -f
+#for i in "${NODE_LIST[@]}"; do
+#  docker_swarm_volume_prune "$i"
+#done
 ## Start utils containers
 #echo "Starting utils containers..."
 #docker-compose -f docker-compose-utils.yaml up --build -d

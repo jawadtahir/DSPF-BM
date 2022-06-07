@@ -15,15 +15,15 @@ NODE_LIST=("node1")
 echo "Removing any previous monitoring containers..."
 docker stack rm monitoring
 
-echo "Sleeping for 15 seconds"
-sleep 15s
+echo "Sleeping for 10 seconds"
+sleep 10s
 
-# Remove any previous volumes
-echo "Removing any orphan volumes..."
-#docker volume prune -f
-for i in "${NODE_LIST[@]}"; do
-  docker_swarm_volume_prune "$i"
-done
+## Remove any previous volumes
+#echo "Removing any orphan volumes..."
+##docker volume prune -f
+#for i in "${NODE_LIST[@]}"; do
+#  docker_swarm_volume_prune "$i"
+#done
 
 # Start monitoring containers
 echo "Starting monitoring containers..."

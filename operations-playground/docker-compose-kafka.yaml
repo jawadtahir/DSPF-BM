@@ -6,16 +6,16 @@ services:
     image: zookeeper:3.8.0
     restart: always
     hostname: zookeeper1
-    environment:
-      ZOO_MY_ID: 1
-      ZOO_SERVERS: server.1=zookeeper1:2888:3888;2181 server.2=zookeeper2:2888:3888;2181 server.3=zookeeper3:2888:3888;2181
-#      ZOO_TICK_TIME: 20000
-      ZOO_INIT_LIMIT: 60
-      ZOO_SYNC_LIMIT: 60
-    volumes:
-      - zk1data:/data
-      - zk1datalog:/datalog
-      - zk1log:/logs
+#    environment:
+#      ZOO_MY_ID: 1
+#      ZOO_SERVERS: server.1=zookeeper1:2888:3888;2181 server.2=zookeeper2:2888:3888;2181 server.3=zookeeper3:2888:3888;2181
+##      ZOO_TICK_TIME: 20000
+#      ZOO_INIT_LIMIT: 60
+#      ZOO_SYNC_LIMIT: 60
+#    volumes:
+#      - zk1data:/data
+#      - zk1datalog:/datalog
+#      - zk1log:/logs
     networks:
       infra:
 
@@ -26,24 +26,124 @@ services:
           - "node.labels.vmname==kafka1"
 
 
-  zookeeper2:
-    image: zookeeper:3.8.0
+#  zookeeper2:
+#    image: zookeeper:3.8.0
+#    depends_on:
+#      - zookeeper1
+#    restart: always
+#    hostname: zookeeper2
+##    environment:
+##      ZOO_MY_ID: 2
+##      ZOO_SERVERS: server.1=zookeeper1:2888:3888;2181 server.2=zookeeper2:2888:3888;2181 server.3=zookeeper3:2888:3888;2181
+###      ZOO_TICK_TIME: 20000
+##      ZOO_INIT_LIMIT: 60
+##      ZOO_SYNC_LIMIT: 60
+##    volumes:
+##      - zk2data:/data
+##      - zk2datalog:/datalog
+##      - zk2log:/logs
+#    networks:
+#      infra:
+#
+#    deploy:
+#      replicas: 1
+#      placement:
+#        constraints:
+#          - "node.labels.vmname==kafka2"
+
+
+#  zookeeper3:
+#    image: zookeeper:3.8.0
+#    depends_on:
+#      - zookeeper2
+#    restart: always
+#    hostname: zookeeper3
+#    environment:
+#      ZOO_MY_ID: 3
+#      ZOO_SERVERS: server.1=zookeeper1:2888:3888;2181 server.2=zookeeper2:2888:3888;2181 server.3=zookeeper3:2888:3888;2181
+##      ZOO_TICK_TIME: 20000
+#      ZOO_INIT_LIMIT: 60
+#      ZOO_SYNC_LIMIT: 60
+##    volumes:
+##      - zk3data:/data
+##      - zk3datalog:/datalog
+##      - zk3log:/logs
+#    networks:
+#      infra:
+#
+#    deploy:
+#      replicas: 1
+#      placement:
+#        constraints:
+#          - "node.labels.vmname==kafka3"
+
+  kafka1:
+    image: wurstmeister/kafka:2.13-2.8.1
     depends_on:
       - zookeeper1
-    restart: always
-    hostname: zookeeper2
+    hostname: kafka1
     environment:
-      ZOO_MY_ID: 2
-      ZOO_SERVERS: server.1=zookeeper1:2888:3888;2181 server.2=zookeeper2:2888:3888;2181 server.3=zookeeper3:2888:3888;2181
-#      ZOO_TICK_TIME: 20000
-      ZOO_INIT_LIMIT: 60
-      ZOO_SYNC_LIMIT: 60
-    volumes:
-      - zk2data:/data
-      - zk2datalog:/datalog
-      - zk2log:/logs
+#      KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181,zookeeper2:2181,zookeeper3:2181
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
+      KAFKA_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
+      KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka1:9092,OUTSIDE://node6:9094
+      KAFKA_METRICS_SAMPLE_WINDOW_MS: 1000
+      KAFKA_LOG_MESSAGE_TIMESTAMP_TYPE: LogAppendTime
+      KAFKA_LOG_RETENTION_BYTES: 2684354560 #2.5 GB
+      KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS: 60000 # 1 minutes
+      KAFKA_MIN_INSYNC_REPLICAS: 2
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS: 3
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_CREATE_TOPICS: "click:3:3, update:3:3, output:3:3"
+#    volumes:
+#      - kafka1:/kafka
     networks:
       infra:
+    ports:
+      - mode: host
+        published: 9094
+        target: 9094
+
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - "node.labels.vmname==kafka1"
+
+
+  kafka2:
+    image: wurstmeister/kafka:2.13-2.8.1
+    depends_on:
+      - kafka1
+    hostname: kafka2
+    environment:
+#      KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181,zookeeper2:2181,zookeeper3:2181
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
+      KAFKA_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
+      KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka2:9092,OUTSIDE://node7:9094
+      KAFKA_METRICS_SAMPLE_WINDOW_MS: 1000
+      KAFKA_LOG_MESSAGE_TIMESTAMP_TYPE: LogAppendTime
+      KAFKA_LOG_RETENTION_BYTES: 2684354560 #2.5 GB
+      KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS: 60000 # 1 minutes
+      KAFKA_MIN_INSYNC_REPLICAS: 2
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS: 3
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+#    volumes:
+#      - kafka2:/kafka
+    networks:
+      infra:
+    ports:
+      - mode: host
+        published: 9094
+        target: 9094
 
     deploy:
       replicas: 1
@@ -52,24 +152,35 @@ services:
           - "node.labels.vmname==kafka2"
 
 
-  zookeeper3:
-    image: zookeeper:3.8.0
+  kafka3:
+    image: wurstmeister/kafka:2.13-2.8.1
     depends_on:
-      - zookeeper2
-    restart: always
-    hostname: zookeeper3
+      - kafka2
+    hostname: kafka3
     environment:
-      ZOO_MY_ID: 3
-      ZOO_SERVERS: server.1=zookeeper1:2888:3888;2181 server.2=zookeeper2:2888:3888;2181 server.3=zookeeper3:2888:3888;2181
-#      ZOO_TICK_TIME: 20000
-      ZOO_INIT_LIMIT: 60
-      ZOO_SYNC_LIMIT: 60
-    volumes:
-      - zk3data:/data
-      - zk3datalog:/datalog
-      - zk3log:/logs
+#      KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181,zookeeper2:2181,zookeeper3:2181
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
+      KAFKA_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
+      KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka3:9092,OUTSIDE://node8:9094
+      KAFKA_METRICS_SAMPLE_WINDOW_MS: 1000
+      KAFKA_LOG_MESSAGE_TIMESTAMP_TYPE: LogAppendTime
+      KAFKA_LOG_RETENTION_BYTES: 2684354560 #2.5 GB
+      KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS: 60000 # 1 minutes
+      KAFKA_MIN_INSYNC_REPLICAS: 2
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS: 3
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+#    volumes:
+#      - kafka3:/kafka
     networks:
       infra:
+    ports:
+      - mode: host
+        published: 9094
+        target: 9094
 
     deploy:
       replicas: 1
@@ -77,127 +188,6 @@ services:
         constraints:
           - "node.labels.vmname==kafka3"
 
-#  kafka1:
-#    image: wurstmeister/kafka:2.13-2.8.1
-#    depends_on:
-#      - zookeeper3
-#    hostname: kafka1
-#    environment:
-#      KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181,zookeeper2:2181,zookeeper3:2181
-#      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
-#      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
-#      KAFKA_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
-#      KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka1:9092,OUTSIDE://kafka1:9094
-#      KAFKA_METRICS_SAMPLE_WINDOW_MS: 1000
-#      KAFKA_LOG_MESSAGE_TIMESTAMP_TYPE: LogAppendTime
-#      KAFKA_LOG_RETENTION_BYTES: 2684354560 #2.5 GB
-#      KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS: 60000 # 1 minutes
-#      KAFKA_MIN_INSYNC_REPLICAS: 2
-#      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
-#      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
-#      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
-#      KAFKA_CREATE_TOPICS: "click:3:3, update:3:3, output:3:3"
-#    volumes:
-#      - kafka1:/kafka
-#    networks:
-#      infra:
-#    ports:
-#      - mode: host
-#        published: 9094
-#        target: 9094
-#
-#    deploy:
-#      replicas: 1
-#      placement:
-#        constraints:
-#          - "node.labels.vmname==tm1"
-#
-#
-#  kafka2:
-#    image: wurstmeister/kafka:2.13-2.8.1
-#    depends_on:
-#      - kafka1
-#    hostname: kafka2
-#    environment:
-#      KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181,zookeeper2:2181,zookeeper3:2181
-#      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
-#      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
-#      KAFKA_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
-#      KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka2:9092,OUTSIDE://kafka2:9094
-#      KAFKA_METRICS_SAMPLE_WINDOW_MS: 1000
-#      KAFKA_LOG_MESSAGE_TIMESTAMP_TYPE: LogAppendTime
-#      KAFKA_LOG_RETENTION_BYTES: 2684354560 #2.5 GB
-#      KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS: 60000 # 1 minutes
-#      KAFKA_MIN_INSYNC_REPLICAS: 2
-#      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
-#      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
-#      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
-#    volumes:
-#      - kafka2:/kafka
-#    networks:
-#      infra:
-#    ports:
-#      - mode: host
-#        published: 9094
-#        target: 9094
-#
-#    deploy:
-#      replicas: 1
-#      placement:
-#        constraints:
-#          - "node.labels.vmname==tm2"
-#
-#
-#  kafka3:
-#    image: wurstmeister/kafka:2.13-2.8.1
-#    depends_on:
-#      - kafka2
-#    hostname: kafka3
-#    environment:
-#      KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181,zookeeper2:2181,zookeeper3:2181
-#      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
-#      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
-#      KAFKA_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
-#      KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka3:9092,OUTSIDE://kafka3:9094
-#      KAFKA_METRICS_SAMPLE_WINDOW_MS: 1000
-#      KAFKA_LOG_MESSAGE_TIMESTAMP_TYPE: LogAppendTime
-#      KAFKA_LOG_RETENTION_BYTES: 2684354560 #2.5 GB
-#      KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS: 60000 # 1 minutes
-#      KAFKA_MIN_INSYNC_REPLICAS: 2
-#      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
-#      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
-#      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
-#    volumes:
-#      - kafka3:/kafka
-#    networks:
-#      infra:
-#    ports:
-#      - mode: host
-#        published: 9094
-#        target: 9094
-#
-#    deploy:
-#      replicas: 1
-#      placement:
-#        constraints:
-#          - "node.labels.vmname==tm3"
-
-
-
-
-volumes:
-  kafka1:
-  kafka2:
-  kafka3:
-  zk1data:
-  zk1datalog:
-  zk1log:
-  zk2data:
-  zk2datalog:
-  zk2log:
-  zk3data:
-  zk3datalog:
-  zk3log:
 
 networks:
   infra:

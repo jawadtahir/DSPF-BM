@@ -11,9 +11,6 @@ services:
       KAFKA_BOOTSTRAP: "kafka1:9092"
       PROCESSING_GUARANTEE: "exactly_once_beta"
       STANDBY: 0
-    volumes:
-#      - ./conf/log4j2-kstreams.xml:/kafka-topology/log4j2.xml
-      - kstreams1State:/tmp/kafka-streams
     configs:
       - source: kstreams_log_config
         target: /kafka-topology/log4j2.xml
@@ -37,9 +34,7 @@ services:
       KAFKA_BOOTSTRAP: "kafka1:9092"
       PROCESSING_GUARANTEE: "exactly_once_beta"
       STANDBY: 0
-    volumes:
-#      - ./conf/log4j2-kstreams.xml:/kafka-topology/log4j2.xml
-      - kstreams2State:/tmp/kafka-streams
+
 
     configs:
       - source: kstreams_log_config
@@ -63,9 +58,7 @@ services:
       KAFKA_BOOTSTRAP: "kafka1:9092"
       PROCESSING_GUARANTEE: "exactly_once_beta"
       STANDBY: 0
-    volumes:
-#      - ./conf/log4j2-kstreams.xml:/kafka-topology/log4j2.xml
-      - kstreams3State:/tmp/kafka-streams
+
 
     configs:
       - source: kstreams_log_config
@@ -90,9 +83,7 @@ services:
       KAFKA_BOOTSTRAP: "kafka1:9092"
       PROCESSING_GUARANTEE: "exactly_once_beta"
       STANDBY: 0
-    volumes:
-#      - ./conf/log4j2-kstreams.xml:/kafka-topology/log4j2.xml
-      - kstreams4State:/tmp/kafka-streams
+
 
     configs:
       - source: kstreams_log_config
@@ -110,13 +101,6 @@ services:
 configs:
   kstreams_log_config:
     file: ./conf/log4j2-kstreams.xml
-
-
-volumes:
-  kstreams1State:
-  kstreams2State:
-  kstreams3State:
-  kstreams4State:
 
 
 networks:
