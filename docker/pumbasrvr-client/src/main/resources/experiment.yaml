@@ -1,34 +1,33 @@
 ---
-#server:
-#  address: "pumbasrvr_tm1"
-#  port: 52923
-#containers:
-#    - "infra_taskmanager"
-#operation: "kill"
-#operationOptns: []
-#suboperation: ""
-#suboperationOptns: []
-## in seconds
-#startDelay: 90
 
-#
-#---
-server:
-  address: "pumbasrvr_tm1"
-  port: 52923
-containers:
-  - "infra_taskmanager"
-operation: "netem"
-operationOptns:
-  - option: "-d"
-    value: "90s"
-#  - option: "-i"
-#    value: "infra_infra"
-  - option: "--tc-image"
-    value: "gaiadocker/iproute2"
-suboperation: "loss"
-suboperationOptns:
-  - option: "-p"
-    value: "50"
-# in seconds
-startDelay: 90
+tasks:
+  - server:
+      address: "127.0.0.1"
+      port: 52923
+    containers:
+      - "kstreams_kstreams"
+    operation: "netem"
+    operationOptns:
+      - option: "--interface"
+        value: "docker_gwbridge"
+      - option: "--duration"
+        value: "10s"
+      - option: "--tc-image"
+        value: "gaiadocker/iproute2"
+
+    suboperation: "delay"
+    suboperationOptns:
+      - option: "--time"
+        value: "100"
+    startDelay: 10
+
+  - server:
+      address: "127.0.0.1"
+      port: 52923
+    containers:
+      - "utils_datagen"
+    operation: "kill"
+    operationOptns: []
+    suboperation: ""
+    suboperationOptns: []
+    startDelay: 120

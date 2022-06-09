@@ -24,3 +24,5 @@ operations-playground/lib/frauddetection-0.1.jar
 /docker/storm-topology/settings.xml
 /docker/kafka-streams-topology/settings.xml
 /docker/latcal/settings.xml
+
+*.envrc

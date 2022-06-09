@@ -14,8 +14,12 @@ NODE_LIST=("node1")
 #done
 
 # Remove any previous utils containers
-echo "Removing datagen container..."
-docker service rm utils_datagen
+#echo "Removing datagen container..."
+#docker service rm utils_datagen
+
+docker stack rm kafka
+docker stack rm kstreams
+docker stack rm utils
 
 #echo "Sleeping for 10 seconds"
 #sleep 10s

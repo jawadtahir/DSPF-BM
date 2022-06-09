@@ -24,6 +24,20 @@ services:
           - "node.labels.vmname==kstreams1"
 
 
+  pumba_ks1:
+    image: jawadtahir/pumbasrvr
+    hostname: pumba_ks1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      infra:
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - "node.labels.vmname==kstreams1"
+
+
   kstreams2:
     image: jawadtahir/kafka-streams-topology
     build:
@@ -42,6 +56,19 @@ services:
     networks:
       infra:
 
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - "node.labels.vmname==kstreams2"
+
+  pumba_ks2:
+    image: jawadtahir/pumbasrvr
+    hostname: pumba_ks2
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      infra:
     deploy:
       replicas: 1
       placement:
@@ -73,30 +100,54 @@ services:
         constraints:
           - "node.labels.vmname==kstreams3"
 
-  kstreams4:
-    image: jawadtahir/kafka-streams-topology
-    build:
-      context: ../docker/kafka-streams-topology
-    hostname: kstreams4
-    environment:
-      APPID: kafka-streams-count
-      KAFKA_BOOTSTRAP: "kafka1:9092"
-      PROCESSING_GUARANTEE: "exactly_once_beta"
-      STANDBY: 0
-
-
-    configs:
-      - source: kstreams_log_config
-        target: /kafka-topology/log4j2.xml
-
+  pumba_ks3:
+    image: jawadtahir/pumbasrvr
+    hostname: pumba_ks3
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
     networks:
       infra:
-
     deploy:
       replicas: 1
       placement:
         constraints:
-          - "node.labels.vmname==kstreams4"
+          - "node.labels.vmname==kstreams3"
+
+#  kstreams4:
+#    image: jawadtahir/kafka-streams-topology
+#    build:
+#      context: ../docker/kafka-streams-topology
+#    hostname: kstreams4
+#    environment:
+#      APPID: kafka-streams-count
+#      KAFKA_BOOTSTRAP: "kafka1:9092"
+#      PROCESSING_GUARANTEE: "exactly_once_beta"
+#      STANDBY: 0
+#
+#
+#    configs:
+#      - source: kstreams_log_config
+#        target: /kafka-topology/log4j2.xml
+#
+#    networks:
+#      infra:
+#
+#    deploy:
+#      replicas: 1
+#      placement:
+#        constraints:
+#          - "node.labels.vmname==kstreams4"
+#
+#  pumba_ks4:
+#    image: jawadtahir/pumbasrvr
+#    hostname: pumba_ks4
+#    networks:
+#      infra:
+#    deploy:
+#      replicas: 1
+#      placement:
+#        constraints:
+#          - "node.labels.vmname==kstreams4"
 
 configs:
   kstreams_log_config:

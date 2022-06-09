@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class Chaos {
+public class Task {
     private Server server;
     private List<String> containers;
     private String operation;
@@ -13,11 +13,11 @@ public class Chaos {
     private List<OperationOptn> suboperationOptns;
     private Integer startDelay;
 
-    public Chaos() {
+    public Task() {
         this(new Server(), new ArrayList<>(), "", new ArrayList<>(), "", new ArrayList<>(), 10);
     }
 
-    public Chaos(Server server, List<String> containers, String operation, List<OperationOptn> operationOptns, String suboperation, List<OperationOptn> suboperationOptns, Integer startDelay) {
+    public Task(Server server, List<String> containers, String operation, List<OperationOptn> operationOptns, String suboperation, List<OperationOptn> suboperationOptns, Integer startDelay) {
         this.server = server;
         this.containers = containers;
         this.operation = operation;
@@ -85,7 +85,7 @@ public class Chaos {
 
     @Override
     public String toString() {
-        return "Chaos{" +
+        return "Task{" +
                 "server=" + server +
                 ", containers=" + containers +
                 ", operation='" + operation + '\'' +

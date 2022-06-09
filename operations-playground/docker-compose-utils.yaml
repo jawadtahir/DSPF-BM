@@ -43,6 +43,24 @@ services:
           - "node.labels.vmname==utils"
 
 
+  pumbasrvrclient:
+    image: jawadtahir/pumbasrvrclient
+    hostname: pumbasrvrclient
+    networks:
+      infra:
+    configs:
+      - source: experiment
+        target: /PumbaSrvrClient/experiment.yaml
+
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      placement:
+        constraints:
+          - "node.labels.vmname==utils"
+
+
 configs:
   log4j2_latcal:
     file: ./conf/log4j2-latcal.xml
@@ -50,6 +68,8 @@ configs:
   log4j2_datagen:
     file: ./conf/log4j2-datagen.xml
 
+  experiment:
+    file: ./conf/experiment.yaml
 
 
 

@@ -33,6 +33,12 @@ export DELAY_COUNT=3
 echo "Starting utils containers..."
 docker stack deploy -c docker-compose-utils.yaml utils
 
+echo "Sleeping for 360s"
+sleep 360s
+
+echo "Removing datagen container..."
+docker service rm utils_datagen
+
 
 
 

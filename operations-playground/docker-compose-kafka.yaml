@@ -98,7 +98,7 @@ services:
       KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS: 3
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
-      KAFKA_CREATE_TOPICS: "click:3:3, update:3:3, output:3:3"
+#      KAFKA_CREATE_TOPICS: "click:3:3, update:3:3, output:3:3"
 #    volumes:
 #      - kafka1:/kafka
     networks:
