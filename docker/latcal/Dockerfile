@@ -10,11 +10,16 @@ RUN mvn package
 FROM openjdk:11-jre-slim
 
 COPY --from=maven /latcal/target/latcal*.jar /jar/latcal.jar
-COPY --from=maven /latcal/target/classes/log4j2.xml /jar/log4j2.xml
+#COPY --from=maven /latcal/target/classes/log4j2.xml /jar/log4j2.xml
 WORKDIR /jar
+VOLUME /reports
 
 ENV KAFKA_BOOTSTRAP="kafka:9092"
 
+
+
 EXPOSE 52923
 
-ENTRYPOINT java -jar latcal.jar -kafka $KAFKA_BOOTSTRAP
+#ENTRYPOINT java -jar latcal.jar -kafka $KAFKA_BOOTSTRAP
+#ENTRYPOINT ["java", "-cp", "*:.", "de.tum.in.msrg.latcal.LatencyCalculator", "-kafka", "echo $KAFKA_BOOTSTRAP"]
+ENTRYPOINT java -cp *:. de.tum.in.msrg.latcal.LatencyCalculator -kafka $KAFKA_BOOTSTRAP

@@ -1,9 +1,22 @@
 ---
-servers:
-- address: "localhost:52923"
+tasks:
+- server:
+    address: "localhost"
+    port: 52923
   containers:
-  - "some-nginx"
-operation: "kill"
-operationOptns: []
-suboperation: ""
-suboperationOptns: []
+  - "some"
+  operation: "kill"
+  operationOptns: []
+  suboperation: ""
+  suboperationOptns: []
+  startDelay: 10
+- server:
+    address: "localhost"
+    port: 52923
+  containers:
+  - "some"
+  operation: "kill"
+  operationOptns: []
+  suboperation: ""
+  suboperationOptns: []
+  startDelay: 10

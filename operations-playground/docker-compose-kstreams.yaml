@@ -8,7 +8,7 @@ services:
     hostname: kstreams1
     environment:
       APPID: kafka-streams-count
-      KAFKA_BOOTSTRAP: "kafka1:9092"
+      KAFKA_BOOTSTRAP: "kafka1:9092,kafka2:9092,kafka3:9092"
       PROCESSING_GUARANTEE: "exactly_once_beta"
       STANDBY: 0
     configs:
@@ -45,7 +45,7 @@ services:
     hostname: kstreams2
     environment:
       APPID: kafka-streams-count
-      KAFKA_BOOTSTRAP: "kafka1:9092"
+      KAFKA_BOOTSTRAP: "kafka1:9092,kafka2:9092,kafka3:9092"
       PROCESSING_GUARANTEE: "exactly_once_beta"
       STANDBY: 0
 
@@ -82,7 +82,7 @@ services:
     hostname: kstreams3
     environment:
       APPID: kafka-streams-count
-      KAFKA_BOOTSTRAP: "kafka1:9092"
+      KAFKA_BOOTSTRAP: "kafka1:9092,kafka2:9092,kafka3:9092"
       PROCESSING_GUARANTEE: "exactly_once_beta"
       STANDBY: 0
 

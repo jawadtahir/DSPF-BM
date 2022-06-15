@@ -1,0 +1,54 @@
+package de.tum.in.msrg.latcal;
+
+import de.tum.in.msrg.datamodel.ClickEvent;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import java.time.Duration;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.Properties;
+
+public class PGVIn  implements Runnable{
+
+    private Map<Long, Boolean> idMap;
+    private Properties kafkaProperties;
+    private static final Logger LOGGER = LogManager.getLogger(PGVIn.class);
+
+    public PGVIn (Properties kafkaProperties, Map idMap){
+        this.kafkaProperties = (Properties) kafkaProperties.clone();
+        this.kafkaProperties.put(ConsumerConfig.GROUP_ID_CONFIG, "pgvInputReader");
+        this.kafkaProperties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ClickEventDeserializer.class.getCanonicalName());
+        LOGGER.info(String.format("Kafka properties: %s", this.kafkaProperties.toString()));
+
+        this.idMap = idMap;
+    }
+
+    @Override
+    public void run() {
+
+        LOGGER.info("Running thread...");
+        LOGGER.info("Creating kafka consumer");
+
+        try (KafkaConsumer<String, ClickEvent> consumer = new KafkaConsumer<String, ClickEvent>(this.kafkaProperties)) {
+
+            LOGGER.info("Subscribing to the click topic");
+            consumer.subscribe(Arrays.asList("click"));
+
+            while (true) {
+                ConsumerRecords<String, ClickEvent> records = consumer.poll(Duration.ofMillis(100));
+                LOGGER.debug(String.format("Polled %d messages", records.count()));
+
+                for (ConsumerRecord<String, ClickEvent> record : records) {
+                    this.idMap.put(record.value().getId(), false);
+                }
+
+            }
+        }
+
+    }
+}
