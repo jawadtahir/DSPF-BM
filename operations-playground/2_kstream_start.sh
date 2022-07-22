@@ -16,6 +16,10 @@ CREATE_TOPIC_SCRIPT="/home/foobar/Downloads/kafka_2.13-2.6.0/bin/kafka-topics.sh
 #  docker_swarm_volume_prune "$i"
 #done
 
+# Remove any previous utils containers
+echo "Removing any previous utils containers..."
+docker stack rm utils
+
 # Remove any previous KStreams containers
 echo "Removing any previous KStreams containers..."
 docker stack rm kstreams

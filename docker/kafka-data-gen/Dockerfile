@@ -10,8 +10,9 @@ RUN mvn package
 FROM openjdk:11-jre-slim
 
 COPY --from=maven /kafka-data-gen/target/kafka-data-gen*.jar /jar/datagen.jar
-COPY --from=maven /kafka-data-gen/target/classes/log4j2.xml /jar/log4j2.xml
+#COPY --from=maven /kafka-data-gen/target/classes/log4j2.xml /jar/log4j2.xml
 WORKDIR /jar
+VOLUME /reports
 
 ENV KAFKA_BOOTSTRAP="kafka:9092" DELAY_COUNT=1000
 

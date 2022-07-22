@@ -14,8 +14,14 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
@@ -60,6 +66,20 @@ public class KafkaDataGen
 
         KafkaDataGen dataGen = new KafkaDataGen(bootstrap, delay);
 
+        Path rootReportFolder = Paths.get("/reports", Instant.now().toString());
+        Path createdDir = Files.createDirectories(rootReportFolder);
+        FileWriter fileWriter = new FileWriter(createdDir.resolve("datagen.txt").toFile(), false);
+        BufferedWriter writer = new BufferedWriter(fileWriter);
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try {
+                writer.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }));
+
+
         Properties kafkaPros = dataGen.getKafkaProps();
         LOGGER.info(String.format("Kafka properties: %s", kafkaPros.toString()));
 
@@ -85,9 +105,16 @@ public class KafkaDataGen
                     updatePages(clickEvent, kafkaProducer, dataGen.objectMapper);
                     nextUpdate += WINDOW_SIZE.toMillis();
                 }
+
+
+
                 ProducerRecord<String, String> record = new ProducerRecord<>("click", clickEvent.getPage(), dataGen.objectMapper.writeValueAsString(clickEvent));
                 kafkaProducer.send(record);
                 counter++;
+
+                writer.write(Double.toString(recordsCounter.get()));
+                writer.newLine();
+                writer.flush();
 
                 recordsCounter.inc();
                 if (clickEvent.getId() == Long.MIN_VALUE){

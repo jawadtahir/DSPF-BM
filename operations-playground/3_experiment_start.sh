@@ -27,14 +27,18 @@ docker stack rm utils
 #  docker_swarm_volume_prune "$i"
 #done
 
-export DELAY_COUNT=3
+export DELAY_COUNT=5
 
 # Start utils containers
 echo "Starting utils containers..."
 docker stack deploy --prune -c docker-compose-utils.yaml utils
 
-echo "Sleeping for 360s"
-sleep 360s
+#sleep 150s
+##Node crash experiment
+#docker service rm kstreams_kstreams2
+
+echo "Sleeping for 480s (180+150+150)"
+sleep 480s
 
 echo "Removing datagen container..."
 docker service rm utils_datagen

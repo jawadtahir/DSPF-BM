@@ -15,6 +15,8 @@ services:
     configs:
       - source: log4j2_datagen
         target: /jar/log4j2.xml
+    volumes:
+      - datagen:/reports
 
     deploy:
       replicas: 1
@@ -56,7 +58,7 @@ services:
       - pgv:/reports
 
 #    entrypoint: ["java", "-cp", "*:.", "de.tum.in.msrg.latcal.PGV"]
-    entrypoint: java -cp *:. de.tum.in.msrg.latcal.PGV -kafka kafka1:9092 -report /reports
+    entrypoint: java -cp *:. de.tum.in.msrg.latcal.PGVNew -kafka kafka1:9092 -report /reports
 
     deploy:
       replicas: 1
@@ -65,22 +67,22 @@ services:
           - "node.labels.vmname==utils"
 
 
-  pumbasrvrclient:
-    image: jawadtahir/pumbasrvrclient
-    hostname: pumbasrvrclient
-    networks:
-      infra:
-    configs:
-      - source: experiment
-        target: /PumbaSrvrClient/experiment.yaml
-
-    deploy:
-      replicas: 1
-      restart_policy:
-        condition: on-failure
-      placement:
-        constraints:
-          - "node.labels.vmname==utils"
+#  pumbasrvrclient:
+#    image: jawadtahir/pumbasrvrclient
+#    hostname: pumbasrvrclient
+#    networks:
+#      infra:
+#    configs:
+#      - source: experiment
+#        target: /PumbaSrvrClient/experiment.yaml
+#
+#    deploy:
+#      replicas: 1
+#      restart_policy:
+#        condition: on-failure
+#      placement:
+#        constraints:
+#          - "node.labels.vmname==utils"
 
 
 configs:
@@ -96,6 +98,7 @@ configs:
 
 volumes:
   pgv:
+  datagen:
 
 
 
