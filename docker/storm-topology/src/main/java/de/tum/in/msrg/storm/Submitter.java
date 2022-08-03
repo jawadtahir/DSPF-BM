@@ -1,9 +1,10 @@
 package de.tum.in.msrg.storm;
 
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.tum.in.msrg.datamodel.ClickEvent;
-import de.tum.in.msrg.datamodel.ClickEventStatistics;
+import de.tum.in.msrg.datamodel.ClickUpdateEvent;
+import de.tum.in.msrg.datamodel.PageStatistics;
+import de.tum.in.msrg.datamodel.UpdateEvent;
 import de.tum.in.msrg.storm.topology.StormTopology;
 import org.apache.commons.cli.*;
 import org.apache.storm.Config;
@@ -30,10 +31,11 @@ public class Submitter
         Config stormConfig = getStormConfig(cmdLine.getOptionValue("nimbus", "nimbus"));
 
         String kafkaBroker = cmdLine.getOptionValue("kafka", "kafka:9092");
-        String inputTopic = cmdLine.getOptionValue("input", "input");
+        String inputTopic = cmdLine.getOptionValue("input", "click");
+        String updateTopic = cmdLine.getOptionValue("update", "update");
         String outputTopic = cmdLine.getOptionValue("output", "output");
 
-        TopologyBuilder tpBuilder = new StormTopology(kafkaBroker, inputTopic, outputTopic).getTopologyBuilder();
+        TopologyBuilder tpBuilder = new StormTopology(kafkaBroker, inputTopic, updateTopic, outputTopic).getTopologyBuilder();
 
         StormSubmitter.submitTopologyWithProgressBar("storm-click-count-job", stormConfig, tpBuilder.createTopology());
 
@@ -46,7 +48,9 @@ public class Submitter
 
         config.put(Config.NIMBUS_SEEDS, Arrays.asList(nimbus));
         config.registerSerialization(ClickEvent.class);
-        config.registerSerialization(ClickEventStatistics.class);
+        config.registerSerialization(UpdateEvent.class);
+        config.registerSerialization(ClickUpdateEvent.class);
+        config.registerSerialization(PageStatistics.class);
 //        config.registerSerialization(ObjectMapper.class);
 
         return config;
@@ -73,13 +77,19 @@ public class Submitter
                 .desc("Kafka input topic for spout")
                 .build();
 
+        Option updateTopicOpt = Option.builder("update")
+                .argName("topic")
+                .hasArg()
+                .desc("Kafka update topic for spout")
+                .build();
+
         Option outputTopicOpt = Option.builder("output")
                 .argName("topic")
                 .hasArg()
-                .desc("Kafka input topic for spout")
+                .desc("Kafka output topic for bolt")
                 .build();
 
-        opts.addOption(kafkaOpt).addOption(nimbusOpt).addOption(inputTopicOpt).addOption(outputTopicOpt);
+        opts.addOption(kafkaOpt).addOption(nimbusOpt).addOption(inputTopicOpt).addOption(updateTopicOpt).addOption(outputTopicOpt);
 
         return opts;
 

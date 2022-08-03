@@ -2,7 +2,7 @@ package de.tum.in.msrg.storm.bolt;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import de.tum.in.msrg.datamodel.ClickEventStatistics;
+import de.tum.in.msrg.datamodel.PageStatistics;
 import org.apache.storm.kafka.bolt.mapper.TupleToKafkaMapper;
 import org.apache.storm.tuple.Tuple;
 
@@ -16,7 +16,7 @@ public class StatsToKafkaMapper implements TupleToKafkaMapper<String, String> {
 
     @Override
     public String getMessageFromTuple(Tuple tuple) {
-        ClickEventStatistics stats = (ClickEventStatistics) tuple.getValueByField("stats");
+        PageStatistics stats = (PageStatistics) tuple.getValueByField("stats");
         System.out.println(stats);
         try {
             return new ObjectMapper().writeValueAsString(stats);

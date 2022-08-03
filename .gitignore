@@ -26,3 +26,5 @@ operations-playground/lib/frauddetection-0.1.jar
 /docker/latcal/settings.xml
 
 *.envrc
+tmp/
+reports/
