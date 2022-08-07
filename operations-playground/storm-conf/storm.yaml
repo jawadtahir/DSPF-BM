@@ -69,18 +69,15 @@ topology.enable.v2.metrics.tick: true
 topology.v2.metrics.tick.interval.seconds: 1
 topology.metrics.reporters:
   - class: "com.wizenoze.storm.metrics2.reporters.PrometheusStormReporter"
-    daemons:
-      - "supervisor"
-      - "nimbus"
-      - "worker"
     report.period: 1
     report.period.units: "SECONDS"
     prometheus.scheme: "http"
     prometheus.host: "prompgw"
     prometheus.port: 9091
-    filter:
-      class: "org.apache.storm.metrics2.filters.RegexFilter"
-      expression: "storm*"
+#    filter:
+#      class: "org.apache.storm.metrics2.filters.RegexFilter"
+##      expression: ".*.topology.*bolt.*"
+#      expression: "*"
 #      expression: "storm\\.worker\\..+\\..+\\..+\\.(?:.+\\.)?-?[\\d]+\\.\\d+-(emitted|acked|disruptor-executor.+-queue-(?:percent-full|overflow))"
 
 topology.kryo.register:

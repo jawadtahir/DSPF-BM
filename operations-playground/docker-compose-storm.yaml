@@ -184,6 +184,8 @@ services:
       placement:
         constraints:
           - "node.labels.vmname==utils2"
+      restart_policy:
+        condition: on-failure
 
   prompgw:
     image: prom/pushgateway

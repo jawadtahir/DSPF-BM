@@ -22,7 +22,7 @@ public class ClickParserBolt extends BaseRichBolt {
     @Override
     public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
         this.collector = collector;
-        counter = context.registerCounter("customThroughout");
+        counter = context.registerCounter("customThroughput");
     }
 
     @Override
