@@ -12,6 +12,7 @@ services:
     networks:
       infra:
     extra_hosts:
+      - ${node1}
       - ${node2}
       - ${node3}
       - ${node4}
@@ -24,11 +25,6 @@ services:
       - ${node11}
       - ${node12}
       - ${node13}
-      - ${nimbus}
-      - ${supervisor1}
-      - ${supervisor2}
-      - ${supervisor3}
-      - ${supervisor4}
     ports:
       - mode: host
         target: 9090

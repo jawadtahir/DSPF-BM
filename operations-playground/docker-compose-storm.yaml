@@ -19,7 +19,9 @@ services:
     hostname: nimbus
 #    volumes:
 #      - ./storm-conf/worker.xml:/apache-storm-2.4.0/log4j2/worker.xml
-    entrypoint: storm nimbus
+#    entrypoint: storm nimbus
+    environment:
+      COMMAND: "storm nimbus"
     depends_on:
       - zookeeper
     configs:
@@ -54,7 +56,9 @@ services:
       - nimbus
 #    volumes:
 #      - ./storm-conf/worker.xml:/apache-storm-2.4.0/log4j2/worker.xml
-    entrypoint: storm supervisor
+#    entrypoint: storm supervisor
+    environment:
+      COMMAND: "storm supervisor"
     configs:
       - source: storm_config
         target: /conf/storm.yaml
@@ -86,7 +90,9 @@ services:
       - nimbus
     #    volumes:
     #      - ./storm-conf/worker.xml:/apache-storm-2.4.0/log4j2/worker.xml
-    entrypoint: storm supervisor
+#    entrypoint: storm supervisor
+    environment:
+      COMMAND: "storm supervisor"
     configs:
       - source: storm_config
         target: /conf/storm.yaml
@@ -118,7 +124,9 @@ services:
       - nimbus
     #    volumes:
     #      - ./storm-conf/worker.xml:/apache-storm-2.4.0/log4j2/worker.xml
-    entrypoint: storm supervisor
+#    entrypoint: storm supervisor
+    environment:
+      COMMAND: "storm supervisor"
     configs:
       - source: storm_config
         target: /conf/storm.yaml
@@ -149,7 +157,9 @@ services:
 #    hostname: stormUI
     depends_on:
       - supervisor1
-    entrypoint: storm ui
+#    entrypoint: storm ui
+    environment:
+      COMMAND: "storm ui"
 #    volumes:
 #      - ./storm-conf/storm.yaml:/conf/storm.yaml
     configs:
@@ -173,11 +183,7 @@ services:
     depends_on:
       - nimbus
     environment:
-      - NIMBUS_SEED=nimbus
-      - KAFKA_SEED=kafka1:9092
-      - KAFKA_INPUT_TOPIC=click
-      - KAFKA_UPDATE_TOPIC=update
-      - KAFKA_OUTPUT_TPOIC=output
+      COMMAND: "storm jar /apache-storm-2.4.0/bin/storm-topology.jar de.tum.in.msrg.storm.Submitter -nimbus nimbus -kafka kafka1:9092 -input click -update update -output output"
     networks:
       infra:
     deploy:
@@ -187,28 +193,19 @@ services:
       restart_policy:
         condition: on-failure
 
-  prompgw:
-    image: prom/pushgateway
-    depends_on:
-      - nimbus
-    hostname: prompgw
-    networks:
-      infra:
-    deploy:
-      replicas: 1
-      placement:
-        constraints:
-          - "node.labels.vmname==utils2"
-
-#  stormTop:
-#    image: jawadtahir/storm
+#  prompgw:
+#    image: prom/pushgateway
 #    depends_on:
-#      - stormUI
-#    command: "storm jar /apache-storm-2.4.0/bin/ClickCountJob.jar de.tum.in.msrg.storm.StormTopology kafka:9092 nimbus"
-#    restart: on-failure
+#      - nimbus
+#    hostname: prompgw
 #    networks:
-#      storm:
-#
+#      infra:
+#    deploy:
+#      replicas: 1
+#      placement:
+#        constraints:
+#          - "node.labels.vmname==utils2"
+
 
 configs:
   storm_config:
