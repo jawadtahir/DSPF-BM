@@ -17,7 +17,7 @@ public class StatsToKafkaMapper implements TupleToKafkaMapper<String, String> {
     @Override
     public String getMessageFromTuple(Tuple tuple) {
         PageStatistics stats = (PageStatistics) tuple.getValueByField("stats");
-        System.out.println(stats);
+//        System.out.println(stats);
         try {
             return new ObjectMapper().writeValueAsString(stats);
         } catch (JsonProcessingException e) {

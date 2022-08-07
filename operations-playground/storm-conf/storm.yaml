@@ -16,17 +16,19 @@
 
 ########### These MUST be filled in for a storm configuration
 storm.zookeeper.servers:
-  - "zookeeper"
+  - "zookeeper1"
 #     - "server2"
 #
-nimbus.seeds: ["nimbus", "nimbus1"]
+#nimbus.seeds: ["nimbus", "nimbus1"]
+nimbus.seeds: ["nimbus"]
+#TODO Change
 nimbus.task.timeout.secs: 30 #30
 nimbus.supervisor.timeout.secs: 60 #60
 nimbus.code.sync.freq.secs: 10
 nimbus.min.replication.count: 2
 
 
-ui.host: nimbus
+ui.host: utils2
 ui.port: 8080
 
 storm.log.dir: /logs
@@ -35,7 +37,37 @@ storm.cluster.metrics.consumer.publish.interval.secs: 1
 #storm.local.hostname: localhost
 
 
-storm.metrics.reporters:
+
+
+
+
+supervisor.memory.capacity.mb: 18360 #15 GB
+supervisor.slots.ports:
+  - 6700
+supervisor.cpu.capacity: 400
+
+
+worker.childopts: "-Xmx%HEAP-MEM%m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=artifacts/heapdump"
+worker.heap.memory.mb: 14336 #1536
+
+executor.metrics.frequency.secs: 1
+
+
+topology.min.replication.count: 1
+topology.workers: 3
+topology.component.resources.onheap.memory.mb: 512.0
+topology.worker.max.heap.size.mb: 2048 #1536
+topology.builtin.metrics.bucket.size.secs: 1
+topology.message.timeout.secs: 190
+topology.ras.acker.executors.per.worker: 1
+#topology.state.provider: org.apache.storm.state.InMemoryKeyValueStateProvider
+topology.state.provider: org.apache.storm.redis.state.RedisKeyValueStateProvider
+topology.state.provider.config:  "{\"jedisPoolConfig\":{\"host\":\"redis\", \"port\":6379}}"
+topology.state.checkpoint.interval.ms: 5000
+topology.fall.back.on.java.serialization: true
+topology.enable.v2.metrics.tick: true
+topology.v2.metrics.tick.interval.seconds: 1
+topology.metrics.reporters:
   - class: "com.wizenoze.storm.metrics2.reporters.PrometheusStormReporter"
     daemons:
       - "supervisor"
@@ -46,38 +78,16 @@ storm.metrics.reporters:
     prometheus.scheme: "http"
     prometheus.host: "prompgw"
     prometheus.port: 9091
-#    filter:
-#      class: "org.apache.storm.metrics2.filters.RegexFilter"
-#      expression: ".*.topology.*bolt.*"
+    filter:
+      class: "org.apache.storm.metrics2.filters.RegexFilter"
+      expression: "storm*"
 #      expression: "storm\\.worker\\..+\\..+\\..+\\.(?:.+\\.)?-?[\\d]+\\.\\d+-(emitted|acked|disruptor-executor.+-queue-(?:percent-full|overflow))"
 
-
-supervisor.memory.capacity.mb: 15360 #15 GB
-supervisor.slots.ports:
-  - 6700
-supervisor.cpu.capacity: 400
-
-
-worker.childopts: "-Xmx%HEAP-MEM%m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=artifacts/heapdump"
-worker.heap.memory.mb: 10240 #1536
-
-executor.metrics.frequency.secs: 1
-
-
-topology.min.replication.count: 2
-topology.workers: 3
-topology.component.resources.onheap.memory.mb: 512.0
-topology.worker.max.heap.size.mb: 2048 #1536
-topology.builtin.metrics.bucket.size.secs: 1
-topology.message.timeout.secs: 90
-#topology.state.provider: org.apache.storm.state.InMemoryKeyValueStateProvider
-topology.state.provider: org.apache.storm.redis.state.RedisKeyValueStateProvider
-topology.state.provider.config:  "{\"jedisPoolConfig\":{\"host\":\"redis\", \"port\":6379}}"
-topology.state.checkpoint.interval.ms: 5000
-topology.fall.back.on.java.serialization: true
 topology.kryo.register:
-  - de.tum.in.msrg.datamodel.ClickEventStatistics
+  - de.tum.in.msrg.datamodel.PageStatistics
   - de.tum.in.msrg.datamodel.ClickEvent
+  - de.tum.in.msrg.datamodel.UpdateEvent
+  - de.tum.in.msrg.datamodel.ClickUpdateEvent
 
 
 

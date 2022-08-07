@@ -70,22 +70,22 @@ public class StormTopology {
 
         TopologyBuilder builder = new TopologyBuilder();
 
-        builder.setSpout("storm-click-spout", clickSpout);
-        builder.setSpout("storm-update-spout", updateSpout);
+        builder.setSpout("storm-click-spout", clickSpout, 3);
+        builder.setSpout("storm-update-spout", updateSpout, 3);
 
-        builder.setBolt("storm-click-parser", clickParserBolt)
+        builder.setBolt("storm-click-parser", clickParserBolt, 3)
                 .shuffleGrouping("storm-click-spout");
-        builder.setBolt("storm-update-parser", updateParserBolt)
+        builder.setBolt("storm-update-parser", updateParserBolt, 3)
                         .shuffleGrouping("storm-update-spout");
 
-        builder.setBolt("storm-clickupdate-join", clickUpdateJoinBolt)
+        builder.setBolt("storm-clickupdate-join", clickUpdateJoinBolt, 6)
                         .fieldsGrouping("storm-click-parser", new Fields("page"))
                         .fieldsGrouping("storm-update-parser", new Fields("page"));
 
-        builder.setBolt("storm-window-bolt", windowBolt)
+        builder.setBolt("storm-window-bolt", windowBolt, 6)
                 .fieldsGrouping("storm-clickupdate-join", new Fields("page"));
 
-        builder.setBolt("storm-kafka-bolt", kafkaBolt)
+        builder.setBolt("storm-kafka-bolt", kafkaBolt, 3)
                 .shuffleGrouping("storm-window-bolt");
 
         return builder;

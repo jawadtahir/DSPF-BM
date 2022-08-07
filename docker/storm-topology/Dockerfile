@@ -10,9 +10,6 @@ RUN mvn package
 FROM storm:2.4.0
 COPY --from=maven /storm-topology/target/storm-topology*.jar /apache-storm-2.4.0/bin/storm-topology.jar
 
-ENV NIMBUS_SEED=nimbus
-ENV KAFKA_SEED=kafka:9092
-ENV KAFKA_INPUT_TOPIC=input
-ENV KAFKA_OUTPUT_TPOIC=output
+ENV NIMBUS_SEED=nimbus KAFKA_SEED=kafka1:9092 KAFKA_INPUT_TOPIC=click KAFKA_INPUT_TOPIC=update KAFKA_OUTPUT_TPOIC=output
 
-ENTRYPOINT storm jar /apache-storm-2.4.0/bin/storm-topology.jar de.tum.in.msrg.storm.Submitter -nimbus $NIMBUS_SEED -kafka $KAFKA_SEED -input $KAFKA_INPUT_TOPIC -output $KAFKA_OUTPUT_TPOIC
+ENTRYPOINT ENTRYPOINT storm jar /apache-storm-2.4.0/bin/storm-topology.jar de.tum.in.msrg.storm.Submitter -nimbus $NIMBUS_SEED -kafka $KAFKA_SEED -input $KAFKA_INPUT_TOPIC -update $KAFKA_UPDATE_TOPIC -output $KAFKA_OUTPUT_TPOIC

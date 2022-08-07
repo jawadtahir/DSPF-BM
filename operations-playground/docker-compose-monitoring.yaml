@@ -24,11 +24,11 @@ services:
       - ${node11}
       - ${node12}
       - ${node13}
-      - ${storm1}
-      - ${storm2}
-      - ${storm3}
-      - ${storm4}
-      - ${storm5}
+      - ${nimbus}
+      - ${supervisor1}
+      - ${supervisor2}
+      - ${supervisor3}
+      - ${supervisor4}
     ports:
       - mode: host
         target: 9090
