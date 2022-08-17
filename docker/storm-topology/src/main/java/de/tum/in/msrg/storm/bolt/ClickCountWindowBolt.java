@@ -30,7 +30,7 @@ public class ClickCountWindowBolt extends BaseStatefulWindowedBolt<KeyValueState
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declare(new Fields("stats"));
+        declarer.declare(new Fields("page","stats"));
     }
 
     @Override
@@ -71,7 +71,7 @@ public class ClickCountWindowBolt extends BaseStatefulWindowedBolt<KeyValueState
 
         statsMap.forEach((s, pageStatistics) -> {
             this.collector.emit(new Values(
-                    pageStatistics
+                    s, pageStatistics
             ));
         });
 

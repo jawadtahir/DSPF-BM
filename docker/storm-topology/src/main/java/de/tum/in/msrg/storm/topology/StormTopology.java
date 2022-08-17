@@ -86,7 +86,7 @@ public class StormTopology {
                 .fieldsGrouping("storm-clickupdate-join", new Fields("page"));
 
         builder.setBolt("storm-kafka-bolt", kafkaBolt, 3)
-                .shuffleGrouping("storm-window-bolt");
+                .fieldsGrouping("storm-window-bolt", new Fields("page"));
 
         return builder;
     }

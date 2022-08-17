@@ -11,7 +11,8 @@ public class StatsToKafkaMapper implements TupleToKafkaMapper<String, String> {
 
     @Override
     public String getKeyFromTuple(Tuple tuple) {
-        return null;
+        PageStatistics stats = (PageStatistics) tuple.getValueByField("stats");
+        return stats.getPage();
     }
 
     @Override
