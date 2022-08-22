@@ -20,7 +20,7 @@
 # Build Click Count Job
 ###############################################################################
 
-FROM maven:3.6-jdk-8-slim AS builder
+FROM maven:3.6-jdk-11-slim AS builder
 
 # Get Click Count job and compile it
 COPY ./java/flink-playground-clickcountjob /opt/flink-playground-clickcountjob
@@ -32,9 +32,9 @@ RUN mvn clean install
 # Build Operations Playground Image
 ###############################################################################
 
-FROM apache/flink:1.13.2-scala_2.12-java8
-
+FROM apache/flink:1.14.4-scala_2.12-java11
 WORKDIR /opt/flink/bin
 
-# Copy Click Count Job
+# Copy Click Count Job for flink
 COPY --from=builder /opt/flink-playground-clickcountjob/target/flink-playground-clickcountjob-*.jar /opt/ClickCountJob.jar
+

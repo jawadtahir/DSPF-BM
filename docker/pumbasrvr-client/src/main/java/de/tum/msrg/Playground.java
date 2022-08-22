@@ -16,8 +16,8 @@ public class Playground {
         containers.add("some-nginx");
         Server server = new Server("localhost", 52923);
 
-        List<Server> servers = new ArrayList<>();
-        servers.add(server);
+//        List<Server> servers = new ArrayList<>();
+//        servers.add(server);
 
         String operation = "kill";
 //        OperationOptn operationOptn1 = new OperationOptn("-d", "10s");
@@ -33,11 +33,18 @@ public class Playground {
 //        suboperationoptns.add(suboperationoptn);
 
 
-        Chaos chaos = new Chaos(server, Collections.singletonList("some"), "kill", operationOptns, "", suboperationoptns, 10);
+        Task task1 = new Task(server, Collections.singletonList("some"), "kill", operationOptns, "", suboperationoptns, 10);
+        Task task2 = new Task(server, Collections.singletonList("some"), "kill", operationOptns, "", suboperationoptns, 10);
+
+        Experiment newExperiment = new Experiment();
+
+        newExperiment.addTask(task1);
+        newExperiment.addTask(task2);
 
         ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+        mapper.writeValueAsString(newExperiment);
 
-        mapper.writeValue(new File("experiment.yaml"), chaos);
+        mapper.writeValue(new File("experiment.yaml"), newExperiment);
 
 
     }

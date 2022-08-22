@@ -45,12 +45,13 @@ under the License.
     <properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<kafka.version>2.4.1</kafka.version>
-		<flink.version>1.13.2</flink.version>
+		<flink.version>1.14.4</flink.version>
 		<prometheus.version>0.8.1</prometheus.version>
-		<java.version>1.8</java.version>
+		<java.version>11</java.version>
 		<scala.binary.version>2.12</scala.binary.version>
 		<maven.compiler.source>${java.version}</maven.compiler.source>
 		<maven.compiler.target>${java.version}</maven.compiler.target>
+		<storm.version>2.2.0</storm.version>
 	</properties>
 
 	<dependencies>
@@ -104,7 +105,7 @@ under the License.
 		</dependency>
 		<dependency>
 			<groupId>org.apache.flink</groupId>
-			<artifactId>flink-metrics-prometheus_2.12</artifactId>
+			<artifactId>flink-metrics-prometheus</artifactId>
 			<version>${flink.version}</version>
 		</dependency>
 		<dependency>
@@ -147,7 +148,43 @@ under the License.
 			<artifactId>jackson-core</artifactId>
 			<version>2.13.0</version>
 		</dependency>
-	</dependencies>
+		<dependency>
+			<groupId>org.apache.hadoop</groupId>
+			<artifactId>hadoop-core</artifactId>
+			<version>1.2.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.flink</groupId>
+			<artifactId>flink-hadoop-fs</artifactId>
+			<version>${flink.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.storm</groupId>
+			<artifactId>storm-core</artifactId>
+			<version>${storm.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.storm</groupId>
+			<artifactId>storm-client</artifactId>
+			<version>${storm.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.storm</groupId>
+			<artifactId>storm-redis</artifactId>
+			<version>${storm.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.storm</groupId>
+			<artifactId>storm-kafka-client</artifactId>
+			<version>${storm.version}</version>
+		</dependency>
+        <dependency>
+            <groupId>org.jetbrains</groupId>
+            <artifactId>annotations</artifactId>
+            <version>RELEASE</version>
+            <scope>compile</scope>
+        </dependency>
+    </dependencies>
 
 	<build>
 		<plugins>
@@ -160,6 +197,11 @@ under the License.
 				<configuration>
 					<source>${java.version}</source>
 					<target>${java.version}</target>
+					<compilerArgs>
+						<arg>
+							--add-exports=java.base/sun.net.util=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED
+						</arg>
+					</compilerArgs>
 				</configuration>
 			</plugin>
 
@@ -181,6 +223,12 @@ under the License.
 								<excludes>
 									<exclude>org.apache.flink:force-shading</exclude>
 									<exclude>com.google.code.findbugs:jsr305</exclude>
+									<exclude>org.apache.storm:storm-core</exclude>
+									<exclude>org.apache.storm:storm-client</exclude>
+<!--									<exclude>org.apache.storm:storm-redis</exclude>-->
+<!--									<exclude>org.apache.storm:storm-kafka-client</exclude>-->
+									<exclude>org.apache.storm:storm-clojure</exclude>
+									<exclude>org.apache.storm:storm-shaded-deps</exclude>
 <!--									<exclude>org.slf4j:*</exclude>-->
 <!--									<exclude>log4j:*</exclude>-->
 								</excludes>

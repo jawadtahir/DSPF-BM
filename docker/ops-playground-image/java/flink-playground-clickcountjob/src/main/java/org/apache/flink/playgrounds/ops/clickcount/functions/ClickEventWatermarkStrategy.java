@@ -8,7 +8,9 @@ import java.time.Duration;
 public class ClickEventWatermarkStrategy implements WatermarkStrategy<ClickEvent> {
     @Override
     public WatermarkGenerator<ClickEvent> createWatermarkGenerator(WatermarkGeneratorSupplier.Context context) {
-        return new BoundedOutOfOrdernessWatermarks<ClickEvent>(Duration.ofMillis(200));
+        BoundedOutOfOrdernessWatermarks<ClickEvent> wmGen = new BoundedOutOfOrdernessWatermarks<ClickEvent>(Duration.ofMillis(200));
+
+        return new WatermarksWithIdleness<ClickEvent>(wmGen, Duration.ofMillis(5000));
     }
 
     @Override

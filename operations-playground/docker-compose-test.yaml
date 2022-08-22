@@ -1,0 +1,216 @@
+version: '3.9'
+
+
+services:
+  redis:
+    image: redis
+    hostname: redis
+    networks:
+      storm:
+
+  zookeeper:
+    image: zookeeper:3.5.9
+    hostname: zookeeper
+    depends_on:
+      - redis
+    networks:
+      storm:
+
+
+  kafka:
+    image: wurstmeister/kafka:2.12-2.2.1
+    networks:
+      - storm
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
+      KAFKA_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
+      KAFKA_CREATE_TOPICS: "input:3:1, output:3:1"
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LOG_RETENTION_BYTES: 3758096384 #3.5 GB
+      KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS: 60000 # 1 minutes
+    volumes:
+      - kafka-logs:/kafka
+
+
+  nimbus:
+    image: storm:2.4.0
+    hostname: nimbus
+    depends_on:
+      - zookeeper
+    volumes:
+      - ./storm-conf/storm.yaml:/conf/storm.yaml
+      - logs:/logs
+      - tempData:/data
+      - ./lib/storm-metrics-reporter-prometheus.jar:/apache-storm-2.4.0/extlib/storm-metrics-reporter-prometheus.jar
+      - ./lib/storm-metrics-reporter-prometheus.jar:/apache-storm-2.4.0/extlib-daemon/storm-metrics-reporter-prometheus.jar
+    command: storm nimbus
+
+    networks:
+      storm:
+
+
+  nimbus1:
+    image: storm:2.4.0
+    hostname: nimbus1
+    depends_on:
+      - zookeeper
+    volumes:
+      - ./storm-conf/storm.yaml:/conf/storm.yaml
+      - logsN:/logs
+      - tempDataN:/data
+      - ./lib/storm-metrics-reporter-prometheus.jar:/apache-storm-2.4.0/extlib/storm-metrics-reporter-prometheus.jar
+      - ./lib/storm-metrics-reporter-prometheus.jar:/apache-storm-2.4.0/extlib-daemon/storm-metrics-reporter-prometheus.jar
+    command: storm nimbus
+
+    networks:
+      storm:
+
+
+
+  supervisor:
+    image: storm:2.4.0
+    hostname: supervisor
+    depends_on:
+      - nimbus
+    volumes:
+      - ./storm-conf/storm.yaml:/conf/storm.yaml
+      - logsS:/logs
+      - tempDataS:/data
+      - ./lib/storm-metrics-reporter-prometheus.jar:/apache-storm-2.4.0/extlib/storm-metrics-reporter-prometheus.jar
+      - ./lib/storm-metrics-reporter-prometheus.jar:/apache-storm-2.4.0/extlib-daemon/storm-metrics-reporter-prometheus.jar
+    command: storm supervisor
+    networks:
+      storm:
+
+
+  supervisor1:
+    image: storm:2.4.0
+    hostname: supervisor1
+    depends_on:
+      - nimbus
+    volumes:
+      - ./storm-conf/storm.yaml:/conf/storm.yaml
+      - logsS1:/logs
+      - tempDataS1:/data
+      - ./lib/storm-metrics-reporter-prometheus.jar:/apache-storm-2.4.0/extlib/storm-metrics-reporter-prometheus.jar
+      - ./lib/storm-metrics-reporter-prometheus.jar:/apache-storm-2.4.0/extlib-daemon/storm-metrics-reporter-prometheus.jar
+    command: storm supervisor
+    networks:
+      storm:
+#
+  supervisor2:
+    image: storm:2.4.0
+    hostname: supervisor2
+    depends_on:
+      - nimbus
+    volumes:
+      - ./storm-conf/storm.yaml:/conf/storm.yaml
+      - logsS2:/logs
+      - tempDataS2:/data
+      - ./lib/storm-metrics-reporter-prometheus.jar:/apache-storm-2.4.0/extlib/storm-metrics-reporter-prometheus.jar
+      - ./lib/storm-metrics-reporter-prometheus.jar:/apache-storm-2.4.0/extlib-daemon/storm-metrics-reporter-prometheus.jar
+    command: storm supervisor
+    networks:
+      storm:
+
+
+
+  stormUI:
+    image: storm:2.4.0
+    hostname: stormUI
+    depends_on:
+      - supervisor
+    command: storm ui
+    volumes:
+      - ./storm-conf/storm.yaml:/conf/storm.yaml
+    networks:
+      storm:
+    ports:
+      - target: 8080
+        published: 58080
+        mode: host
+
+
+  stormTop:
+    image: jawadtahir/storm-topology
+    depends_on:
+      - stormUI
+    environment:
+      NIMBUS_SEED: nimbus
+      KAFKA_SEED: kafka:9092
+      KAFKA_INPUT_TOPIC: input
+      KAFKA_OUTPUT_TPOIC: output
+    restart: on-failure
+    networks:
+      storm:
+
+  clickevent-generator:
+    image: jawadtahir/kafka-data-gen
+    #image: flink-ops-playground
+    depends_on:
+      - stormTop
+    environment:
+      KAFKA_BOOTSTRAP: "kafka:9092"
+      KAFKA_TOPIC: "input"
+      DELAY_COUNT: 1
+    networks:
+      - storm
+
+  prompgw:
+    image: prom/pushgateway
+    depends_on:
+      - nimbus
+    hostname: prompgw
+    networks:
+      - storm
+
+  prometheus:
+    image: prom/prometheus
+    depends_on:
+      - prompgw
+    hostname: prometheus
+    networks:
+      - storm
+    entrypoint: /bin/prometheus --config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/prometheus --storage.tsdb.retention.size=10GB --web.console.libraries=/usr/share/prometheus/console_libraries --web.console.templates=/usr/share/prometheus/consoles
+    volumes:
+      - ./conf/storm-prometheus.yml:/etc/prometheus/prometheus.yml
+      - $DATA_DIR/prometheus:/prometheus
+
+
+  grafana:
+    image: grafana/grafana
+    networks:
+      - storm
+    depends_on:
+      - prometheus
+    volumes:
+      - grafana:/var/lib/grafana
+    ports:
+      - target: 3000
+        published: 43000
+        mode: host
+
+
+
+networks:
+  storm:
+
+volumes:
+  prom:
+  prompgw:
+  grafana:
+  logs:
+  logsN:
+  logsS:
+  logsS1:
+  logsS2:
+  tempData:
+  tempDataN:
+  tempDataS:
+  tempDataS1:
+  tempDataS2:
+  kafka-logs:

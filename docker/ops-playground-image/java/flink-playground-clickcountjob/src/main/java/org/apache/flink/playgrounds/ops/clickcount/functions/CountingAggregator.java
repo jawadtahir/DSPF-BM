@@ -18,8 +18,10 @@
 package org.apache.flink.playgrounds.ops.clickcount.functions;
 
 import org.apache.flink.api.common.functions.AggregateFunction;
+import org.apache.flink.api.common.functions.RichAggregateFunction;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.playgrounds.ops.clickcount.records.ClickEvent;
+import org.apache.flink.playgrounds.ops.clickcount.records.ClickEventStatistics;
 
 import java.time.Instant;
 import java.util.Date;
@@ -28,26 +30,78 @@ import java.util.Date;
  * An {@link AggregateFunction} which simply counts {@link ClickEvent}s.
  *
  */
-public class CountingAggregator implements AggregateFunction<ClickEvent, Tuple2<Long, Date>, Tuple2<Long, Date>> {
+public class CountingAggregator implements AggregateFunction<ClickEvent, Accum, ClickEventStatistics> {
 	@Override
-	public Tuple2<Long, Date> createAccumulator() {
-		return new Tuple2<>(0L, new Date(Long.MAX_VALUE)) ;
+	public Accum createAccumulator() {
+		return new Accum(0, Date.from(Instant.now()), Date.from(Instant.EPOCH)) ;
 	}
 
 	@Override
-	public Tuple2<Long, Date> add(final ClickEvent value, final Tuple2<Long, Date> accumulator) {
-		accumulator.f0 = accumulator.f0 + 1L;
-		accumulator.f1 = (value.getCreationTimestamp().before(accumulator.f1) )? value.getCreationTimestamp() : accumulator.f1;
-		return accumulator;
+	public Accum add(ClickEvent clickEvent, Accum accum) {
+		accum.setCount(accum.getCount()+1);
+		accum.setFirstDate(clickEvent.getTimestamp().before(accum.getFirstDate())? clickEvent.getTimestamp(): accum.getFirstDate());
+		accum.setLastDate(clickEvent.getTimestamp().after(accum.getLastDate())? clickEvent.getTimestamp(): accum.getLastDate());
+		return accum;
 	}
 
 	@Override
-	public Tuple2<Long, Date> getResult(final Tuple2<Long, Date> accumulator) {
-		return accumulator;
+	public ClickEventStatistics getResult(Accum accum) {
+		ClickEventStatistics stats = new ClickEventStatistics(accum.getFirstDate(), accum.getLastDate(),accum.getFirstDate(), "test", accum.getCount());
+		return stats;
 	}
 
 	@Override
-	public Tuple2<Long, Date> merge(final Tuple2<Long, Date> a, final Tuple2<Long, Date> b) {
-		return new Tuple2<Long, Date>(a.f0+b.f0,  a.f1.before(b.f1)?a.f1:b.f1);
+	public Accum merge(Accum accum, Accum acc1) {
+		Accum merged = new Accum(
+				accum.getCount()+acc1.getCount(),
+				accum.getFirstDate().before(acc1.getFirstDate()) ? accum.getFirstDate() : acc1.getFirstDate(),
+				accum.getLastDate().after(acc1.getLastDate()) ? accum.getLastDate() : acc1.getLastDate());
+		return merged;
+	}
+
+}
+
+class Accum{
+	private long count;
+	private Date firstDate;
+	private Date lastDate;
+
+	public Accum(long count, Date firstDate, Date lastDate) {
+		this.count = count;
+		this.firstDate = firstDate;
+		this.lastDate = lastDate;
+	}
+
+	public long getCount() {
+		return count;
+	}
+
+	public void setCount(long count) {
+		this.count = count;
+	}
+
+	public Date getFirstDate() {
+		return firstDate;
+	}
+
+	public void setFirstDate(Date firstDate) {
+		this.firstDate = firstDate;
+	}
+
+	public Date getLastDate() {
+		return lastDate;
+	}
+
+	public void setLastDate(Date lastDate) {
+		this.lastDate = lastDate;
+	}
+
+	@Override
+	public String toString() {
+		return "Accum{" +
+				"count=" + count +
+				", firstDate=" + firstDate +
+				", lastDate=" + lastDate +
+				'}';
 	}
 }

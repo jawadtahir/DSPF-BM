@@ -3,41 +3,52 @@ package de.tum.msrg;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import io.prometheus.client.Gauge;
+import io.prometheus.client.exporter.HTTPServer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class PumbaSrvrClient {
 
     private static final Logger LOGGER= LogManager.getLogger(PumbaSrvrClient.class);
 
-    private Chaos chaos;
+    private Experiment experiment;
 
-    public PumbaSrvrClient(Chaos chaos){
-        this.chaos = chaos;
+    private static HTTPServer httpServer;
+    private Gauge faultGauge;
+
+
+    public PumbaSrvrClient(Experiment experiment){
+        this.experiment = experiment;
+
+        try {
+            httpServer = new HTTPServer(9100);
+            faultGauge = Gauge.build("de_tum_in_msrg_pumbasrvrclient_fault", "Fault gauge for annotations").register();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
-    public void sendCommand(String command){
+    public void sendCommand(String command, Task task){
 
         try (Socket serverSocket = new Socket()) {
 
             //start delay
-            TimeUnit.SECONDS.sleep(chaos.getStartDelay());
+            TimeUnit.SECONDS.sleep(task.getStartDelay());
 
-            serverSocket.connect(new InetSocketAddress(chaos.getServer().getAddress(), chaos.getServer().getPort()));
+            serverSocket.connect(new InetSocketAddress(task.getServer().getAddress(), task.getServer().getPort()));
             serverSocket.getOutputStream().write(String.format("%s\n", command).getBytes(StandardCharsets.UTF_8));
             serverSocket.getOutputStream().flush();
 
@@ -49,70 +60,93 @@ public class PumbaSrvrClient {
 
     }
 
-    public String buildCommand(){
+    protected void annotate(Task task) throws InterruptedException {
+        if (httpServer != null){
+            if (task.getOperation().toLowerCase().equals("kill")){
+                    faultGauge.inc(5);
+                    TimeUnit.SECONDS.sleep(1);
+                    faultGauge.dec(5);
+            } else {
+                faultGauge.inc(5);
+                TimeUnit.SECONDS.sleep(task.getStartDelay());
+                faultGauge.dec(5);
+            }
+
+        }
+    }
+
+    public String buildCommand(Task task){
         String retVal = "";
 
-        if (chaos.getOperation().toString().equals("kill")){
-            retVal = buildKillCommand();
-        }else if (chaos.getOperation().equals("netem")){
-            retVal = buildNetemCommand();
+        if (task.getOperation().toString().equals("kill")){
+            retVal = buildKillCommand(task);
+        }else if (task.getOperation().equals("netem")){
+            retVal = buildNetemCommand(task);
         }
 
         LOGGER.info(String.format("Command built: %s", retVal));
         return retVal;
     }
 
-    protected String buildKillCommand(){
+    protected String buildKillCommand(Task task){
         StringBuilder sb = new StringBuilder();
         sb.append("kill ");
 
-        configureCommandOptions(sb);
+        configureCommandOptions(sb, task);
 
-        configureContainers(sb);
+        configureContainers(sb, task);
 
 
         return sb.toString();
     }
 
-    protected String buildNetemCommand(){
+    protected String buildNetemCommand(Task task){
         StringBuilder sb = new StringBuilder();
 
         sb.append("netem ");
 
-        configureCommandOptions(sb);
+        configureCommandOptions(sb, task);
 
-        sb.append(chaos.getSuboperation()).append(" ");
+        sb.append(task.getSuboperation()).append(" ");
 
-        configureSubCmdOptions(sb);
-        configureContainers(sb);
+        configureSubCmdOptions(sb, task);
+        configureContainers(sb, task);
 
 
 
         return sb.toString();
     }
 
-    protected void configureCommandOptions(StringBuilder sb){
-        if (chaos.getOperation() != null && !chaos.getOperationOptns().isEmpty()){
-            for (OperationOptn option : chaos.getOperationOptns()){
+    protected void configureCommandOptions(StringBuilder sb, Task task){
+        if (task.getOperation() != null && !task.getOperationOptns().isEmpty()){
+            for (OperationOptn option : task.getOperationOptns()){
                 sb.append(String.format("%s=%s ", option.getOption(), option.getValue()));
             }
         }
     }
 
-    protected void configureContainers(StringBuilder sb){
-        if (chaos.getContainers() != null && !chaos.getContainers().isEmpty()){
-            for (String container: chaos.getContainers()){
+    protected void configureContainers(StringBuilder sb, Task task){
+        if (task.getContainers() != null && !task.getContainers().isEmpty()){
+            for (String container: task.getContainers()){
                 sb.append(String.format("'re2:%s*' ", container));
             }
         }
     }
 
 
-    protected void configureSubCmdOptions(StringBuilder sb){
-        if (chaos.getSuboperation() != null && !chaos.getSuboperationOptns().isEmpty()){
-            for (OperationOptn option : chaos.getSuboperationOptns()){
+    protected void configureSubCmdOptions(StringBuilder sb, Task task){
+        if (task.getSuboperation() != null && !task.getSuboperationOptns().isEmpty()){
+            for (OperationOptn option : task.getSuboperationOptns()){
                 sb.append(String.format("%s=%s ", option.getOption(), option.getValue()));
             }
+        }
+    }
+
+    protected void runExperiment() throws InterruptedException {
+        for (Task task :
+                experiment.getTasks()) {
+            sendCommand(buildCommand(task), task);
+            annotate(task);
         }
     }
 
@@ -122,21 +156,27 @@ public class PumbaSrvrClient {
 
         try {
 
-            String resourceDir = System.getenv().getOrDefault("PUMBA_SRVR_CLIENT_RESOURCE_DIR", "");
-            String yamlFileName = "experiment.yaml";
-            String fileToRead = Paths.get(resourceDir, yamlFileName).toString();
-            File yamlFile = new File(fileToRead);
+//            String resourceDir = System.getenv().getOrDefault("PUMBA_SRVR_CLIENT_RESOURCE_DIR", "");
+//            String yamlFileName = "experiment.yaml";
+//            String fileToRead = Paths.get(resourceDir, yamlFileName).toString();
+
+            System.out.println(System.getProperty("java.class.path"));
+            InputStream yamlFile = PumbaSrvrClient.class.getResourceAsStream("/experiment.yaml");
+            LOGGER.info(yamlFile);
+//            File yamlFile = new File(yamlFilepath);
             ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
             mapper.findAndRegisterModules();
-            Chaos chaos = mapper.readValue(yamlFile, Chaos.class);
+            Experiment experiment = mapper.readValue(yamlFile, Experiment.class);
 
-            LOGGER.info(chaos.toString());
+            LOGGER.info(experiment.toString());
 
-            PumbaSrvrClient client = new PumbaSrvrClient(chaos);
+            PumbaSrvrClient client = new PumbaSrvrClient(experiment);
 
-            client.sendCommand(client.buildCommand());
+            client.runExperiment();
 
-        } catch (IOException e) {
+//            client.sendCommand(client.buildCommand());
+
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
 

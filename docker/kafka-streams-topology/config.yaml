@@ -1,0 +1,7 @@
+---
+hostPort: localhost:52923
+username:
+password:
+
+#rules:
+#  - pattern: ".*"
