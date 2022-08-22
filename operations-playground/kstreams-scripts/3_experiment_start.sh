@@ -1,17 +1,5 @@
 #!/usr/bin/env bash
 
-docker_swarm_volume_prune()
-{
-  NODE_NAME=$1
-  echo "SSH into ${NODE_NAME}"
-  ssh -o StrictHostKeyChecking=no ubuntu@$NODE_NAME docker volume prune -f
-}
-
-NODE_LIST=("node1")
-
-#for i in "${NODE_LIST[@]}"; do
-#  docker_swarm_volume_prune "$i"
-#done
 
 # Remove any previous utils containers
 echo "Removing any previous utils containers..."

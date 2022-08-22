@@ -1,20 +1,8 @@
 #!/usr/bin/env bash
 
-docker_swarm_volume_prune()
-{
-  NODE_NAME=$1
-  echo "SSH into ${NODE_NAME}"
-  ssh -o StrictHostKeyChecking=no ubuntu@$NODE_NAME docker volume prune -f
-}
-
-#NODE_LIST=("kafka1" "kafka2" "kafka3" "kafka4" "kafka5" "kafka6" "kafka7")
-NODE_LIST=("node6" "node7" "node8" "node9" "node10" "node11" "node12")
 
 CREATE_TOPIC_SCRIPT="/home/foobar/Downloads/kafka_2.13-2.6.0/bin/kafka-topics.sh"
 
-#for i in "${NODE_LIST[@]}"; do
-#  docker_swarm_volume_prune "$i"
-#done
 
 # Remove any previous utils containers
 echo "Removing any previous utils containers..."
