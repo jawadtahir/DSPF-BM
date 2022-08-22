@@ -55,8 +55,9 @@ executor.metrics.frequency.secs: 1
 
 topology.min.replication.count: 1
 topology.workers: 3
-topology.component.resources.onheap.memory.mb: 512.0
-topology.worker.max.heap.size.mb: 14336 #1536
+topology.component.resources.onheap.memory.mb: 1024.0
+topology.component.resources.offheap.memory.mb: 128.0
+topology.worker.max.heap.size.mb: 14336.0 #1536
 topology.builtin.metrics.bucket.size.secs: 1
 topology.message.timeout.secs: 190
 topology.ras.acker.executors.per.worker: 1

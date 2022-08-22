@@ -12,10 +12,7 @@ services:
 ##      ZOO_TICK_TIME: 20000
 #      ZOO_INIT_LIMIT: 60
 #      ZOO_SYNC_LIMIT: 60
-#    volumes:
-#      - zk1data:/data
-#      - zk1datalog:/datalog
-#      - zk1log:/logs
+
     networks:
       infra:
 
@@ -25,57 +22,6 @@ services:
         constraints:
           - "node.labels.vmname==kafka1"
 
-
-#  zookeeper2:
-#    image: zookeeper:3.8.0
-#    depends_on:
-#      - zookeeper1
-#    restart: always
-#    hostname: zookeeper2
-##    environment:
-##      ZOO_MY_ID: 2
-##      ZOO_SERVERS: server.1=zookeeper1:2888:3888;2181 server.2=zookeeper2:2888:3888;2181 server.3=zookeeper3:2888:3888;2181
-###      ZOO_TICK_TIME: 20000
-##      ZOO_INIT_LIMIT: 60
-##      ZOO_SYNC_LIMIT: 60
-##    volumes:
-##      - zk2data:/data
-##      - zk2datalog:/datalog
-##      - zk2log:/logs
-#    networks:
-#      infra:
-#
-#    deploy:
-#      replicas: 1
-#      placement:
-#        constraints:
-#          - "node.labels.vmname==kafka2"
-
-
-#  zookeeper3:
-#    image: zookeeper:3.8.0
-#    depends_on:
-#      - zookeeper2
-#    restart: always
-#    hostname: zookeeper3
-#    environment:
-#      ZOO_MY_ID: 3
-#      ZOO_SERVERS: server.1=zookeeper1:2888:3888;2181 server.2=zookeeper2:2888:3888;2181 server.3=zookeeper3:2888:3888;2181
-##      ZOO_TICK_TIME: 20000
-#      ZOO_INIT_LIMIT: 60
-#      ZOO_SYNC_LIMIT: 60
-##    volumes:
-##      - zk3data:/data
-##      - zk3datalog:/datalog
-##      - zk3log:/logs
-#    networks:
-#      infra:
-#
-#    deploy:
-#      replicas: 1
-#      placement:
-#        constraints:
-#          - "node.labels.vmname==kafka3"
 
   kafka1:
     image: wurstmeister/kafka:2.13-2.8.1
