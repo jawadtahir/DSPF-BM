@@ -85,8 +85,8 @@ public class StormTopology {
                         .fieldsGrouping("storm-click-parser", new Fields("page"))
                         .fieldsGrouping("storm-update-parser", new Fields("page"));
 
-//        builder.setBolt("storm-window-bolt", clickWindowBolt, 1)
-//                .fieldsGrouping("storm-click-parser", new Fields("page"));
+        builder.setBolt("storm-window-bolt", windowBolt, 6)
+                .fieldsGrouping("storm-clickupdate-join", new Fields("page"));
 
         builder.setBolt("storm-kafka-bolt", kafkaBolt, 3)
                 .fieldsGrouping("storm-window-bolt", new Fields("page"));
