@@ -1,10 +1,7 @@
 package de.tum.in.msrg.storm.topology;
 
 import de.tum.in.msrg.datamodel.PageStatistics;
-import de.tum.in.msrg.storm.bolt.ClickCountWindowBolt;
-import de.tum.in.msrg.storm.bolt.ClickParserBolt;
-import de.tum.in.msrg.storm.bolt.StatsToKafkaMapper;
-import de.tum.in.msrg.storm.bolt.UpdateParserBolt;
+import de.tum.in.msrg.storm.bolt.*;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.storm.bolt.JoinBolt;
 import org.apache.storm.kafka.bolt.KafkaBolt;
@@ -63,6 +60,12 @@ public class StormTopology {
                 .withPersistence()
                 .withTimestampField("storm-click-parser:eventTimestamp");
 
+//        BaseStatefulWindowedBolt<KeyValueState<String, PageStatistics>> clickWindowBolt = new ClickWindowBolt()
+//                .withTumblingWindow(BaseWindowedBolt.Duration.seconds(60))
+//                .withLag(BaseWindowedBolt.Duration.seconds(0))
+//                .withPersistence()
+//                .withTimestampField("eventTimestamp");
+
         KafkaBolt<String, String> kafkaBolt = new KafkaBolt<String, String>()
                 .withTopicSelector(this.outputTopic)
                 .withTupleToKafkaMapper(new StatsToKafkaMapper())
@@ -82,8 +85,8 @@ public class StormTopology {
                         .fieldsGrouping("storm-click-parser", new Fields("page"))
                         .fieldsGrouping("storm-update-parser", new Fields("page"));
 
-        builder.setBolt("storm-window-bolt", windowBolt, 6)
-                .fieldsGrouping("storm-clickupdate-join", new Fields("page"));
+//        builder.setBolt("storm-window-bolt", clickWindowBolt, 1)
+//                .fieldsGrouping("storm-click-parser", new Fields("page"));
 
         builder.setBolt("storm-kafka-bolt", kafkaBolt, 3)
                 .fieldsGrouping("storm-window-bolt", new Fields("page"));

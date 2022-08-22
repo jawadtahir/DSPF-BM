@@ -4,6 +4,7 @@ package de.tum.in.msrg.latcal;
 import de.tum.in.msrg.datamodel.PageStatistics;
 import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
+import io.prometheus.client.Histogram;
 import io.prometheus.client.exporter.HTTPServer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -75,6 +76,7 @@ public class PGVOutNew implements Runnable {
             Gauge expectedWindowGauge = Gauge.build("de_tum_in_msrg_pgv_expected_windows", "Expected windows").labelNames("key").register();
             Counter receivedWindowCounter = Counter.build("de_tum_in_msrg_pgv_received_windows", "Received windows").labelNames("key").register();
             Gauge unprocessedGauge = Gauge.build("de_tum_in_msrg_pgv_unprocessed", "unprocessed windows").labelNames("key").register();
+            Histogram outputCounterHistogram = Histogram.build("de_tum_in_msrg_pgv_output_counter", "Output counter").labelNames("key").linearBuckets(4990,1,11).register();
 
             int polledMsgs = 0;
             LOGGER.info("Created probes...");
@@ -93,6 +95,7 @@ public class PGVOutNew implements Runnable {
                     receivedWindowCounter.labels(record.value().getPage()).inc();
 
                     LOGGER.debug("Verifying correctness");
+                    outputCounterHistogram.labels(window.getPage()).observeWithExemplar(record.value().getCount(), Map.of("start", record.value().getWindowStart().toString()));
                     if (record.value().getCount() == 5000){
                         correctOutputCounter.labels(window.getPage()).inc();
                     }else {
