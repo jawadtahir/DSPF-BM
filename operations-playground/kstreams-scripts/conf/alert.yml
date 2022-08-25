@@ -1,0 +1,7 @@
+groups:
+  - name: "fault-alert"
+    rules:
+      - alert: fault-injection
+        expr: de_tum_in_msrg_pumbasrvrclient_fault > 1
+        annotations:
+          state: "fault inject"

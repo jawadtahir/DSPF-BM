@@ -14,7 +14,7 @@ public class PageTSKey {
 
     public PageTSKey(String page, Date TS) {
         this.page = page;
-        this.TS = DateUtils.truncate(TS, Calendar.MINUTE);
+        this.TS = DateUtils.ceiling(DateUtils.truncate(TS, Calendar.MINUTE), Calendar.MINUTE);
     }
 
     public String getPage() {

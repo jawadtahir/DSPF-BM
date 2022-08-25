@@ -112,8 +112,9 @@ public class KafkaDataGen
                 if (counter == dataGen.delay){
                     Thread.sleep(1);
                     counter = 0;
-                    kafkaProducer.flush();
+
                 }
+                kafkaProducer.flush();
 
             }
 
