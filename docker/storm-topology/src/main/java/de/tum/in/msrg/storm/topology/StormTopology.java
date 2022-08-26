@@ -98,7 +98,7 @@ public class StormTopology {
         Properties props = new Properties();
 
         props.put("bootstrap.servers", this.kafkaBroker);
-        props.put("transaction.timeout.ms", "60000");
+        props.put("transaction.timeout.ms", "3000");
         props.put("key.serializer", StringSerializer.class.getCanonicalName());
         props.put("value.serializer", StringSerializer.class.getCanonicalName());
 

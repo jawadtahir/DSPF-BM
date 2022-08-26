@@ -11,7 +11,7 @@
         </File>
     </Appenders>
     <Loggers>
-        <Logger name="de.tum.in.msrg.latcal" level="info" additivity="false">
+        <Logger name="de.tum.in.msrg.latcal" level="debug" additivity="false">
             <AppenderRef ref="LogToFile"/>
             <AppenderRef ref="LogToConsole"/>
         </Logger>

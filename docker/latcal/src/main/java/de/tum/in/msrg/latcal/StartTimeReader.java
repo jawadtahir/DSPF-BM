@@ -48,14 +48,7 @@ public class StartTimeReader implements Runnable{
 
                 for (ConsumerRecord<String, ClickEvent> record : records){
                     PageTSKey  key = new PageTSKey(record.value().getPage(), record.value().getTimestamp());
-                    Date prevVal = pageInsertionTimeMap.getOrDefault(key, null);
-                    if (prevVal == null){
-
-                        Date ingestionTime = new Date(record.timestamp());
-                        pageInsertionTimeMap.put(key, ingestionTime);
-                        LOGGER.debug(String.format("Ingestion time of %s is %s", key, ingestionTime));
-
-                    }
+                    pageInsertionTimeMap.put(key, new Date(record.timestamp()));
                 }
             }
 
