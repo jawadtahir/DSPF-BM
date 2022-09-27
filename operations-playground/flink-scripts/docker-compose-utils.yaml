@@ -1,0 +1,109 @@
+version: '3.9'
+
+services:
+  datagen:
+    image: jawadtahir/kafka-data-gen
+    build:
+      context: ../docker/kafka-data-gen
+    hostname: datagen
+    networks:
+      infra:
+    environment:
+      DELAY_COUNT:
+      KAFKA_BOOTSTRAP: kafka1:9092
+
+    configs:
+      - source: log4j2_datagen
+        target: /jar/log4j2.xml
+    volumes:
+      - datagen:/reports
+
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - "node.labels.vmname==utils"
+
+
+  latcal:
+    image: jawadtahir/latcal
+    build:
+      context: ../docker/latcal
+    hostname: latcal
+    networks:
+      infra:
+    environment:
+      KAFKA_BOOTSTRAP: kafka1:9092
+    configs:
+      - source: log4j2_latcal
+        target: /jar/log4j2.xml
+
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - "node.labels.vmname==utils"
+
+  pgv:
+    image: jawadtahir/latcal
+    build:
+      context: ../docker/latcal
+    hostname: pgv
+    networks:
+      infra:
+    configs:
+      - source: log4j2_latcal
+        target: /jar/log4j2.xml
+    volumes:
+      - pgv:/reports
+
+#    entrypoint: ["java", "-cp", "*:.", "de.tum.in.msrg.latcal.PGV"]
+    entrypoint: java -cp *:. de.tum.in.msrg.latcal.PGVNew -kafka kafka1:9092 -report /reports
+
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - "node.labels.vmname==utils"
+
+
+#  pumbasrvrclient:
+#    image: jawadtahir/pumbasrvrclient
+#    hostname: pumbasrvrclient
+#    networks:
+#      infra:
+#    configs:
+#      - source: experiment
+#        target: /PumbaSrvrClient/experiment.yaml
+#
+#    deploy:
+#      replicas: 1
+#      restart_policy:
+#        condition: on-failure
+#      placement:
+#        constraints:
+#          - "node.labels.vmname==utils2"
+
+
+configs:
+  log4j2_latcal:
+    file: ./conf/log4j2-latcal.xml
+
+  log4j2_datagen:
+    file: ./conf/log4j2-datagen.xml
+
+  experiment:
+    file: ./conf/experiment.yaml
+
+
+volumes:
+  pgv:
+  datagen:
+
+
+
+
+networks:
+  infra:
+    name: infra
+    external: true

@@ -28,3 +28,4 @@ operations-playground/lib/frauddetection-0.1.jar
 *.envrc
 tmp/
 reports/
+/docker/flink-topology/settings.xml

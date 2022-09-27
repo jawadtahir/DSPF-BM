@@ -18,4 +18,4 @@ ENV KAFKA_BOOTSTRAP="kafka:9092" DELAY_COUNT=1000
 
 EXPOSE 52923
 
-ENTRYPOINT java -jar datagen.jar -kafka $KAFKA_BOOTSTRAP -delay $DELAY_COUNT
+ENTRYPOINT java -cp *:. de.tum.in.msrg.datagen.KafkaDataGen -kafka $KAFKA_BOOTSTRAP -delay $DELAY_COUNT
