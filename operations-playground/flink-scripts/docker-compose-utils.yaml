@@ -67,22 +67,22 @@ services:
           - "node.labels.vmname==utils"
 
 
-#  pumbasrvrclient:
-#    image: jawadtahir/pumbasrvrclient
-#    hostname: pumbasrvrclient
-#    networks:
-#      infra:
-#    configs:
-#      - source: experiment
-#        target: /PumbaSrvrClient/experiment.yaml
-#
-#    deploy:
-#      replicas: 1
-#      restart_policy:
-#        condition: on-failure
-#      placement:
-#        constraints:
-#          - "node.labels.vmname==utils2"
+  pumbasrvrclient:
+    image: jawadtahir/pumbasrvrclient
+    hostname: pumbasrvrclient
+    networks:
+      infra:
+    configs:
+      - source: experiment
+        target: /PumbaSrvrClient/experiment.yaml
+
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      placement:
+        constraints:
+          - "node.labels.vmname==utils2"
 
 
 configs:
