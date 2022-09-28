@@ -31,12 +31,6 @@ services:
       - source: workers_conf
         target: /opt/flink/conf/workers
 
-      - source: flink_log
-        target: /opt/flink/conf/log4j.properties
-
-      - source: flink_cli_log
-        target: /opt/flink/conf/log4j-cli.properties
-
       - source: flink_console_log
         target: /opt/flink/conf/log4j-console.properties
 
@@ -73,6 +67,9 @@ services:
 
       - source: workers_conf
         target: /opt/flink/conf/workers
+
+      - source: flink_console_log
+        target: /opt/flink/conf/log4j-console.properties
     environment:
       - JOB_MANAGER_RPC_ADDRESS=jobmanager
       - HADOOP_CLASSPATH=/hadoop/etc/hadoop:/hadoop/share/hadoop/common/lib/*:/hadoop/share/hadoop/common/*:/hadoop/share/hadoop/hdfs:/hadoop/share/hadoop/hdfs/lib/*:/hadoop/share/hadoop/hdfs/*:/hadoop/share/hadoop/mapreduce/*:/hadoop/share/hadoop/yarn:/hadoop/share/hadoop/yarn/lib/*:/hadoop/share/hadoop/yarn/*:/hadoop/bin/hadoop
@@ -119,6 +116,9 @@ services:
 
       - source: workers_conf
         target: /opt/flink/conf/workers
+
+      - source: flink_console_log
+        target: /opt/flink/conf/log4j-console.properties
     environment:
       - JOB_MANAGER_RPC_ADDRESS=jobmanager
       - HADOOP_CLASSPATH=/hadoop/etc/hadoop:/hadoop/share/hadoop/common/lib/*:/hadoop/share/hadoop/common/*:/hadoop/share/hadoop/hdfs:/hadoop/share/hadoop/hdfs/lib/*:/hadoop/share/hadoop/hdfs/*:/hadoop/share/hadoop/mapreduce/*:/hadoop/share/hadoop/yarn:/hadoop/share/hadoop/yarn/lib/*:/hadoop/share/hadoop/yarn/*:/hadoop/bin/hadoop
@@ -164,6 +164,9 @@ services:
 
       - source: workers_conf
         target: /opt/flink/conf/workers
+
+      - source: flink_console_log
+        target: /opt/flink/conf/log4j-console.properties
     environment:
       - JOB_MANAGER_RPC_ADDRESS=jobmanager
       - HADOOP_CLASSPATH=/hadoop/etc/hadoop:/hadoop/share/hadoop/common/lib/*:/hadoop/share/hadoop/common/*:/hadoop/share/hadoop/hdfs:/hadoop/share/hadoop/hdfs/lib/*:/hadoop/share/hadoop/hdfs/*:/hadoop/share/hadoop/mapreduce/*:/hadoop/share/hadoop/yarn:/hadoop/share/hadoop/yarn/lib/*:/hadoop/share/hadoop/yarn/*:/hadoop/bin/hadoop
@@ -228,12 +231,6 @@ configs:
 
   workers_conf:
     file: ./conf/workers
-
-  flink_log:
-    file: ./conf/log4j.properties
-
-  flink_cli_log:
-    file: ./conf/log4j-cli.properties
 
   flink_console_log:
     file: ./conf/log4j-console.properties

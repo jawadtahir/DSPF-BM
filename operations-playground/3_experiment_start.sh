@@ -5,7 +5,8 @@
 echo "Removing any previous utils containers..."
 docker stack rm utils
 
-export DELAY_COUNT=15
+export DELAY_COUNT=4
+export DELAY_LENGTH=1
 
 # Start utils containers
 echo "Starting utils containers..."

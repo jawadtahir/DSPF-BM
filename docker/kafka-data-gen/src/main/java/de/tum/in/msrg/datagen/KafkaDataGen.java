@@ -62,7 +62,10 @@ public class KafkaDataGen
         LOGGER.info(String.format("Kafka bootstrap server: %s", bootstrap));
 //        String topic = cmdLine.getOptionValue("topic","input");
         long delay = Long.parseLong(cmdLine.getOptionValue("delay", "1000"));
-        LOGGER.info(String.format("Thread sleep for 1 ms after %d records", delay));
+        LOGGER.info(String.format("Thread sleep after %d records", delay));
+
+        long delayLength = Long.parseLong(cmdLine.getOptionValue("length", "1"));
+        LOGGER.info(String.format("Thread sleep for %d ms", delayLength));
 
         KafkaDataGen dataGen = new KafkaDataGen(bootstrap, delay);
 
@@ -110,7 +113,7 @@ public class KafkaDataGen
                 }
 
                 if (counter == dataGen.delay){
-                    Thread.sleep(1);
+                    Thread.sleep(delayLength);
                     counter = 0;
                     kafkaProducer.flush();
                 }
@@ -162,7 +165,13 @@ public class KafkaDataGen
         Option delayOptn = Option.builder("delay")
                 .argName("count")
                 .hasArg()
-                .desc("Delay of 1ms after count events")
+                .desc("Insert delay after count events")
+                .build();
+
+        Option delayLengthOptn = Option.builder("length")
+                .argName("delayLength")
+                .hasArg()
+                .desc("Length of delay after count events [ms]")
                 .build();
 
 
@@ -170,6 +179,7 @@ public class KafkaDataGen
         options.addOption(kafkaOptn);
 //        options.addOption(topicOptn);
         options.addOption(delayOptn);
+        options.addOption(delayLengthOptn);
 
 
         return options;

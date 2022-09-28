@@ -11,7 +11,7 @@ services:
     environment:
       DELAY_COUNT:
       KAFKA_BOOTSTRAP: kafka1:9092
-
+      DELAY_LENGTH:
     configs:
       - source: log4j2_datagen
         target: /jar/log4j2.xml

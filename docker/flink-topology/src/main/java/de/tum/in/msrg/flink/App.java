@@ -62,8 +62,8 @@ public class App
 
 
 
-//        CustomKafkaSource<ClickEvent> clickSource = CustomKafkaSource.<ClickEvent>builder()
-        KafkaSource<ClickEvent> clickSource = KafkaSource.<ClickEvent>builder()
+        CustomKafkaSource<ClickEvent> clickSource = CustomKafkaSource.<ClickEvent>builder()
+//        KafkaSource<ClickEvent> clickSource = KafkaSource.<ClickEvent>builder()
                 .setTopics("click")
                 .setBootstrapServers(kafka)
                 .setStartingOffsets(OffsetsInitializer.earliest())
@@ -72,7 +72,8 @@ public class App
                 .setValueOnlyDeserializer(new ClickEventDeserializer())
                 .build();
 
-        KafkaSource<UpdateEvent> updateSource = KafkaSource.<UpdateEvent>builder()
+        CustomKafkaSource<UpdateEvent> updateSource = CustomKafkaSource.<UpdateEvent>builder()
+//        KafkaSource<UpdateEvent> updateSource = KafkaSource.<UpdateEvent>builder()
                 .setTopics("update")
                 .setBootstrapServers(kafka)
                 .setProperties(srcProperties)

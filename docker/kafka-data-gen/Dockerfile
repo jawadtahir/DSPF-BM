@@ -14,8 +14,8 @@ COPY --from=maven /kafka-data-gen/target/kafka-data-gen*.jar /jar/datagen.jar
 WORKDIR /jar
 VOLUME /reports
 
-ENV KAFKA_BOOTSTRAP="kafka:9092" DELAY_COUNT=1000
+ENV KAFKA_BOOTSTRAP="kafka1:9092" DELAY_COUNT=1000 DELAY_LENGTH=1
 
 EXPOSE 52923
 
-ENTRYPOINT java -cp *:. de.tum.in.msrg.datagen.KafkaDataGen -kafka $KAFKA_BOOTSTRAP -delay $DELAY_COUNT
+ENTRYPOINT java -cp *:. de.tum.in.msrg.datagen.KafkaDataGen -kafka $KAFKA_BOOTSTRAP -delay $DELAY_COUNT -length $DELAY_LENGTH
