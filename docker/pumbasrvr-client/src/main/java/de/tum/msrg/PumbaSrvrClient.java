@@ -82,6 +82,8 @@ public class PumbaSrvrClient {
             retVal = buildKillCommand(task);
         }else if (task.getOperation().equals("netem")){
             retVal = buildNetemCommand(task);
+        }else if (task.getOperation().equals("pause")){
+            retVal = buildPauseCommand(task);
         }
 
         LOGGER.info(String.format("Command built: %s", retVal));
@@ -99,6 +101,19 @@ public class PumbaSrvrClient {
 
         return sb.toString();
     }
+
+    protected String buildPauseCommand(Task task){
+        StringBuilder sb = new StringBuilder();
+        sb.append("pause ");
+
+        configureCommandOptions(sb, task);
+
+        configureContainers(sb, task);
+
+
+        return sb.toString();
+    }
+
 
     protected String buildNetemCommand(Task task){
         StringBuilder sb = new StringBuilder();

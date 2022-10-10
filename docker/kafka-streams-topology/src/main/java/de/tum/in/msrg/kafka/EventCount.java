@@ -178,6 +178,7 @@ public class EventCount {
         props.put(StreamsConfig.METRICS_SAMPLE_WINDOW_MS_CONFIG, "1000");
         props.put(StreamsConfig.METRICS_RECORDING_LEVEL_CONFIG, "DEBUG");
         props.put(StreamsConfig.NUM_STREAM_THREADS_CONFIG, "2");
+        props.put(StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG, "10737418240");
 
         props.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, 3000);
         props.put(ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG, 1000);
