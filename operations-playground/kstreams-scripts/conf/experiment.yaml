@@ -16,11 +16,29 @@ tasks:
       - option: "--tc-image"
         value: "gaiadocker/iproute2"
 
-    suboperation: "delay"
+    suboperation: "corrupt"
     suboperationOptns:
-      - option: "--time"
-        value: "5000"
+      - option: "--percent"
+        value: "20"
     startDelay: 180
+
+
+#tasks:
+#  - server:
+#      address: "pumba_ks2"
+#      port: 52923
+#    containers:
+#      - "kstreams_kstreams"
+#    operation: "pause"
+#    operationOptns:
+#      - option: "--duration"
+#        value: "150s"
+#
+#    suboperation: ""
+#    suboperationOptns: []
+#    startDelay: 180
+
+
 
 #  - server:
 #      address: "127.0.0.1"

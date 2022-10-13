@@ -5,7 +5,7 @@
 echo "Removing any previous utils containers..."
 docker stack rm utils
 
-export DELAY_COUNT=3
+export DELAY_COUNT=2
 export DELAY_LENGTH=1
 
 # Start utils containers
@@ -16,13 +16,13 @@ docker stack deploy --prune -c docker-compose-utils.yaml utils
 #sleep 180s
 ##Node crash experiment
 #echo "Removing container..."
-#docker service rm kstreams_kstreams2
+#docker service rm flink_taskmanager2
 #
 #echo "Sleeping for 150s..."
 #sleep 150s
 #
 #echo "Redeploying container..."
-#docker stack deploy --prune -c docker-compose-kstreams.yaml kstreams
+#docker stack deploy --prune -c docker-compose-flink.yaml flink
 #
 #echo "Sleeping for 150s..."
 #sleep 150s

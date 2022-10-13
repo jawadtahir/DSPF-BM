@@ -15,7 +15,7 @@ docker stack rm utils
 #  docker_swarm_volume_prune "$i"
 #done
 
-export DELAY_COUNT=1
+export DELAY_COUNT=4
 export DELAY_LENGTH=1
 
 # Start utils containers

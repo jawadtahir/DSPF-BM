@@ -30,10 +30,10 @@ scrape_configs:
 #    static_configs:
 #      - targets: ["taskmanager:9249", "taskmanager1:9249", "taskmanager2:9249", "jobmanager:9249", "benchmarker:9249"]
 #      - targets: ["prompgw:9091"]
-  - job_name: "node_exporter"
-    static_configs:
-#      - [nimbus, super1, super2, super3, super4, kafka1, kafka2, kafka3, ks1, ks2, ks3, ks4]
-      - targets: ["node1:9100", "node2:9100", "node3:9100", "node4:9100", "node5:9100", "node6:9100", "node7:9100", "node8:9100", "node9:9100", "node10:9100", "node11:9100", "node12:9100", "node13:9100", "node14:9100", "node15:9100", "node16:9100", "node17:9100"]
+#  - job_name: "node_exporter"
+#    static_configs:
+##      - [nimbus, super1, super2, super3, super4, kafka1, kafka2, kafka3, ks1, ks2, ks3, ks4]
+#      - targets: ["node1:9100", "node2:9100", "node3:9100", "node4:9100", "node5:9100", "node6:9100", "node7:9100", "node8:9100", "node9:9100", "node10:9100", "node11:9100", "node12:9100", "node13:9100", "node14:9100", "node15:9100", "node16:9100", "node17:9100"]
 
   - job_name: "utils"
     static_configs:

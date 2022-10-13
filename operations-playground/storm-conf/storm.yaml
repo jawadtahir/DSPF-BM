@@ -23,10 +23,10 @@ storm.zookeeper.servers:
 nimbus.seeds: ["nimbus"]
 #TODO Change
 nimbus.task.timeout.secs: 30 #30
-nimbus.supervisor.timeout.secs: 60 #60
+nimbus.supervisor.timeout.secs: 3 #60
 nimbus.code.sync.freq.secs: 10
-nimbus.min.replication.count: 2
-
+#nimbus.min.replication.count: 2
+nimbus.min.replication.count: 1
 
 ui.host: utils2
 ui.port: 8080

@@ -82,7 +82,7 @@ services:
         condition: on-failure
       placement:
         constraints:
-          - "node.labels.vmname==utils"
+          - "node.labels.vmname==utils2"
 
 
 configs:

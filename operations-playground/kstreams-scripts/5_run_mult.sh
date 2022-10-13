@@ -5,6 +5,6 @@ for i in {1..3} ; do
     ./2_kstream_start.sh
     sleep 10s
     ./3_experiment_start.sh
-    echo "Sleeping for 120s"
-    sleep 120s
+#    echo "Sleeping for 120s"
+#    sleep 120s
 done

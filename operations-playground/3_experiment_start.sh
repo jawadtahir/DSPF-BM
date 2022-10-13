@@ -5,7 +5,7 @@
 echo "Removing any previous utils containers..."
 docker stack rm utils
 
-export DELAY_COUNT=4
+export DELAY_COUNT=1
 export DELAY_LENGTH=1
 
 # Start utils containers
@@ -16,13 +16,14 @@ docker stack deploy --prune -c docker-compose-utils.yaml utils
 #sleep 180s
 ##Node crash experiment
 #echo "Removing container..."
-#docker service rm kstreams_kstreams2
+#docker service rm storm_supervisor2
 #
 #echo "Sleeping for 150s..."
 #sleep 150s
 #
 #echo "Redeploying container..."
-#docker stack deploy --prune -c docker-compose-kstreams.yaml kstreams
+##docker stack deploy --prune -c docker-compose-storm.yaml storm
+#docker service create --replicas 1 --constraint node.labels.vmname==supervisor2 --network infra  --env COMMAND="storm supervisor" --hostname supervisor2 --config src=storm_storm_config,target="/conf/storm.yaml" --name storm_supervisor2 jawadtahir/storm
 #
 #echo "Sleeping for 150s..."
 #sleep 150s

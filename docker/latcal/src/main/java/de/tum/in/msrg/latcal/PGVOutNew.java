@@ -67,8 +67,11 @@ public class PGVOutNew implements Runnable {
             LOGGER.info("Subscribing to the out topic");
             consumer.subscribe(Arrays.asList("output"));
 
+            HashMap<PageTSKey, Integer> duplicateOutputKeys = new HashMap<>();
+
             Counter processedCounter = Counter.build("de_tum_in_msrg_pgv_processed", "Total processed events").labelNames("key").register();
             Counter duplicateCounter = Counter.build("de_tum_in_msrg_pgv_duplicate", "Duplicate processed events").labelNames("key").register();
+            Counter duplicateWindowCounter = Counter.build("de_tum_in_msrg_pgv_duplicate_window", "Outputs with PB events").labelNames("key").register();
             Counter correctOutputCounter = Counter.build("de_tum_in_msrg_pgv_correct_output", "Correct outputs").labelNames("key").register();
             Counter inCorrectOutputCounter = Counter.build("de_tum_in_msrg_pgv_incorrect_output", "incorrect outputs").labelNames("key").register();
             Counter inCorrectOutputHigherCounter = Counter.build("de_tum_in_msrg_pgv_incorrect_higher_output", "incorrect outputs, higher than expected").labelNames("key").register();
@@ -115,6 +118,10 @@ public class PGVOutNew implements Runnable {
                             if (found){
                                 processedCounter.labels(window.getPage()).inc();
                             }else{
+                                Integer val = duplicateOutputKeys.put(window, 1);
+                                if (val == null){
+                                    duplicateWindowCounter.labels(window.getPage()).inc();
+                                }
                                 duplicateCounter.labels(window.getPage()).inc();
                             }
                         }

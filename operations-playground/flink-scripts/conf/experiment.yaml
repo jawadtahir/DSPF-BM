@@ -7,20 +7,42 @@ tasks:
       port: 52923
     containers:
       - "flink_taskmanager2"
-    operation: "netem"
+    operation: "pause"
     operationOptns:
-#      - option: "--interface"
-#        value: "docker_gwbridge"
+      #      - option: "--interface"
+      #        value: "docker_gwbridge"
       - option: "--duration"
         value: "150s"
-      - option: "--tc-image"
-        value: "gaiadocker/iproute2"
+#      - option: "--tc-image"
+#        value: "gaiadocker/iproute2"
 
-    suboperation: "delay"
-    suboperationOptns:
-      - option: "--time"
-        value: "500"
+    suboperation: ""
+    suboperationOptns: []
+#      - option: "--percent"
+#        value: "80"
     startDelay: 180
+
+
+#tasks:
+#  - server:
+#      address: "pumba_tm2"
+#      port: 52923
+#    containers:
+#      - "flink_taskmanager2"
+#    operation: "netem"
+#    operationOptns:
+##      - option: "--interface"
+##        value: "docker_gwbridge"
+#      - option: "--duration"
+#        value: "150s"
+#      - option: "--tc-image"
+#        value: "gaiadocker/iproute2"
+#
+#    suboperation: "delay"
+#    suboperationOptns:
+#      - option: "--time"
+#        value: "5000"
+#    startDelay: 180
 
 #  - server:
 #      address: "127.0.0.1"

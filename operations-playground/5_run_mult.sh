@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-for i in {1..3} ; do
+for i in {1..2} ; do
     echo "run #$i"
     ./2_storm_start.sh
     sleep 10s
