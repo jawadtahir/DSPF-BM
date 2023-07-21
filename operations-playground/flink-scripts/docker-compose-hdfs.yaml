@@ -1,0 +1,38 @@
+version: '3.9'
+
+services:
+
+  hdfs:
+    image: apache/hadoop:3
+    restart: no
+    configs:
+      - source: core-site
+        target: /opt/hadoop/etc/hadoop/core-site.xml
+
+      - source: hdfs-site
+        target: /opt/hadoop/etc/hadoop/hdfs-site.xml
+
+      - source: log4j-hdfs
+        target: /opt/hadoop/etc/hadoop/log4j.properties
+
+
+    ports:
+      - target: 9870
+        published: 49870
+        mode: host
+
+      - target: 9864
+        published: 49864
+        mode: host
+
+    entrypoint: "sbin/start-all.sh"
+
+configs:
+  core-site:
+    file: conf/core-site.xml
+
+  hdfs-site:
+    file: conf/hdfs-site.xml
+
+  log4j-hdfs:
+    file: conf/log4j.properties

@@ -7,19 +7,18 @@ tasks:
       port: 52923
     containers:
       - "flink_taskmanager2"
-    operation: "pause"
+    operation: "noop"
     operationOptns:
-      #      - option: "--interface"
-      #        value: "docker_gwbridge"
       - option: "--duration"
-        value: "150s"
-#      - option: "--tc-image"
-#        value: "gaiadocker/iproute2"
+        value: "180s"
+      - option: "--tc-image"
+        value: "gaiadocker/iproute2"
 
-    suboperation: ""
-    suboperationOptns: []
-#      - option: "--percent"
-#        value: "80"
+    suboperation: "corrupt"
+#    suboperationOptns: []
+    suboperationOptns:
+      - option: "--percent"
+        value: "80"
     startDelay: 180
 
 

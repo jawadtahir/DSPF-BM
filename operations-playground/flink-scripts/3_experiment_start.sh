@@ -5,8 +5,8 @@
 echo "Removing any previous utils containers..."
 docker stack rm utils
 
-export DELAY_COUNT=2
-export DELAY_LENGTH=1
+export DELAY_COUNT=1
+export DELAY_LENGTH=2
 
 # Start utils containers
 echo "Starting utils containers..."
@@ -30,8 +30,8 @@ docker stack deploy --prune -c docker-compose-utils.yaml utils
 #echo "Removing datagen container..."
 #docker service rm utils_datagen
 
-echo "Sleeping for 480s (180+150+150)"
-sleep 480s
+echo "Sleeping for 540s (180+180+180)"
+sleep 540s
 
 echo "Removing datagen container..."
 docker service rm utils_datagen

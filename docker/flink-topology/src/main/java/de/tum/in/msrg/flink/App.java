@@ -93,18 +93,18 @@ public class App
                 .build();
 
         WatermarkStrategy<ClickEvent> clickEventWatermarkStrategy = WatermarkStrategy
-                .<ClickEvent>forBoundedOutOfOrderness(Duration.ofMillis(200))
-                .withIdleness(Duration.ofMillis(200))
+                .<ClickEvent>forBoundedOutOfOrderness(Duration.ofMillis(1))
+                .withIdleness(Duration.ofMillis(1))
                 .withTimestampAssigner((element, recordTimestamp) -> element.getTimestamp().getTime());
 
         WatermarkStrategy<UpdateEvent> updateEventWatermarkStrategy = WatermarkStrategy
-                .<UpdateEvent>forBoundedOutOfOrderness(Duration.ofMillis(200))
-                .withIdleness(Duration.ofMillis(200))
+                .<UpdateEvent>forBoundedOutOfOrderness(Duration.ofMillis(1))
+                .withIdleness(Duration.ofMillis(1))
                 .withTimestampAssigner((element, recordTimestamp) -> element.getTimestamp().getTime());
 
 
 
-        environment.enableCheckpointing(3000, CheckpointingMode.AT_LEAST_ONCE);
+        environment.enableCheckpointing(3000, CheckpointingMode.EXACTLY_ONCE);
         DataStreamSource<ClickEvent> clickSrc = environment.fromSource(clickSource, clickEventWatermarkStrategy, "ClickEvent-src");
         DataStreamSource<UpdateEvent> updateSrc = environment.fromSource(updateSource, updateEventWatermarkStrategy, "UpdateEvent-src");
 

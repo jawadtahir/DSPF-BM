@@ -48,7 +48,7 @@ public class EndTimeReader implements Runnable{
                 HTTPServer promServer = new HTTPServer(52923);
         ) {
             consumer.subscribe(Arrays.asList("output"));
-            latencyGauge = Gauge.build("de_tum_in_msrg_latcal_latency", "End to End latency").register();
+            latencyGauge = Gauge.build("de_tum_in_msrg_latcal_latency", "End to End latency").labelNames("key").register();
 
             while (true){
                 ConsumerRecords<String, PageStatistics> records = consumer.poll(Duration.ofMillis(100));
@@ -63,7 +63,7 @@ public class EndTimeReader implements Runnable{
                     Date egressTime = new Date(record.timestamp());
                     long latency = egressTime.getTime() - ingestionTime.getTime();
                     LOGGER.debug(String.format("The latency for %s is %d ms", key, latency));
-                    latencyGauge.set(latency);
+                    latencyGauge.labels(key.getPage()).set(latency);
                 }
             }
 
