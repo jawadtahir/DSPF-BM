@@ -1,0 +1,57 @@
+---
+
+- name: install docker
+
+  block:
+    - name: install prereq
+      ansible.builtin.apt:
+        name:
+          - ca-certificates
+          - curl
+          - gnupg
+
+    - name: create keyring dir
+      ansible.builtin.file:
+        name: /etc/apt/keyrings
+        mode: '755'
+
+    - name: add docker key in keyring
+      ansible.builtin.apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        keyring: /etc/apt/keyrings/docker.gpg
+
+    - name: set apt repo
+      ansible.builtin.apt_repository:
+        repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu   jammy stable"
+
+
+    - name: install docker deb
+      ansible.builtin.apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        update_cache: true
+
+
+- name: docker as non-root
+  ansible.builtin.user:
+    name: ubuntu
+    append: true
+    groups:
+      - docker
+
+- name: install pip3
+  ansible.builtin.apt:
+    name: python3-pip
+
+- name: install docker python SDK
+  ansible.builtin.pip:
+    name: docker
+
+
+#- name: install java
+#  ansible.builtin.apt:
+#    name: openjdk-19-jdk

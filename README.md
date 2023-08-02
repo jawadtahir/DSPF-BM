@@ -1,4 +1,48 @@
-# Apache Flink Playgrounds
+# DSPS-BM: SPS benchmarking under failures
+
+##Requirements
+
+###Hardware
+We set up our machines on our cluster running OpenNebula. However, you can run it with your AWS account as well. AWS Terraform file is under development and will be provided later.
+###Software
+```
+Terraform
+Ansible
+Docker
+direnv
+```
+
+##Set up infrastructure
+
+Enable local SSH on HDFS machine
+```shell
+ssh-keygen -t rsa
+cat .ssh/id_rsa.pub >> .ssh/authorized_keys
+```
+
+```shell
+cd infra/terraform
+terraform init
+terraform plan
+terraform apply
+cd ../ansible
+ansible-playbook -c ssh -i inventory.cfg setup-machines.yaml
+```
+* Go to `<hdfsIP>:9870`
+* Create `/tmp/flink-savepoints-directory` folder and make it writeable for all
+
+## Set up grafana dashboard 
+
+```shell
+cd ../../operations-plyground
+./1_monitoring_start
+```
+* Open browser and head over to `<utilsIP>:4300` (see `inventory.cfg` in `Infra/ansible`)
+* Set up data source; URL `http://prometheus:9090`, Scrape interval `1s`
+* Import the dashboard.
+
+#Old README.md (obsolete)
+## TODO: Remove
 
 This repository provides playgrounds to quickly and easily explore [Apache Flink](https://flink.apache.org)'s features.
 

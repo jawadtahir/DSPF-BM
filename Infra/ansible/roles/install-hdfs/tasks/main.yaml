@@ -1,0 +1,50 @@
+---
+- name: download hdfs binary
+  ansible.builtin.get_url:
+    dest: /home/ubuntu/hadoop-3.3.6.tar.gz
+    url: https://dlcdn.apache.org/hadoop/common/hadoop-3.3.6/hadoop-3.3.6.tar.gz
+    timeout: 60
+
+- name: create folder for hdfs
+  ansible.builtin.file:
+    name: /home/ubuntu/hadoop
+    state: directory
+    group: ubuntu
+
+- name: extract hdfs tarball
+  ansible.builtin.unarchive:
+    dest: /home/ubuntu/hadoop
+    src: /home/ubuntu/hadoop-3.3.6.tar.gz
+    copy: false
+
+- name: copy core config
+  ansible.builtin.copy:
+    src: core-site.xml
+    dest: /home/ubuntu/hadoop/hadoop-3.3.6/etc/hadoop/core-site.xml
+
+
+- name: copy hdfs config
+  ansible.builtin.copy:
+    src: hdfs-site.xml
+    dest: /home/ubuntu/hadoop/hadoop-3.3.6/etc/hadoop/hdfs-site.xml
+
+- name: copy env file
+  ansible.builtin.copy:
+    src: hadoop-env.sh
+    dest: /home/ubuntu/hadoop/hadoop-3.3.6/etc/hadoop/hadoop-env.sh
+
+- name: copy worker file
+  ansible.builtin.copy:
+    src: workers
+    dest: /home/ubuntu/hadoop/hadoop-3.3.6/etc/hadoop/workers
+
+#- name: format the drive
+#  ansible.builtin.command:
+#    chdir: /home/ubuntu/hadoop/hadoop-3.3.6
+#    cmd: 'bin/hdfs namenode -format'
+#    stdin: Y
+#
+#- name: start dfs
+#  ansible.builtin.command:
+#    chdir: /home/ubuntu/hadoop/hadoop-3.3.6
+#    cmd: 'sbin/start-dfs.sh'

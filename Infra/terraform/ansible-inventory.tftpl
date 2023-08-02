@@ -1,0 +1,36 @@
+
+
+[kafka]
+%{ for machine in kafka_machines}
+${machine}
+%{ endfor ~}
+
+[utils]
+%{ for machine in utils_machines}
+${machine}
+%{ endfor ~}
+
+[hdfs]
+%{ for machine in hdfs_machines}
+${machine}
+%{ endfor ~}
+
+[flink]
+%{ for machine in flink_machines}
+${machine}
+%{ endfor ~}
+
+[kstreams]
+%{ for machine in kstreams_machine}
+${machine}
+%{ endfor ~}
+
+[spark]
+%{ for machine in spark_machines}
+${machine}
+%{ endfor ~}
+
+[storm]
+%{ for machine in storm_machines}
+${machine}
+%{ endfor ~}

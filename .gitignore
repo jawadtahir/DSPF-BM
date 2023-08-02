@@ -29,3 +29,5 @@ operations-playground/lib/frauddetection-0.1.jar
 tmp/
 reports/
 /docker/flink-topology/settings.xml
+
+Infra/ansible/inventory.cfg

@@ -34,8 +34,8 @@ execution.checkpointing.mode: EXACTLY_ONCE
 
 state.backend: hashmap
 state.checkpoint-storage: filesystem
-state.checkpoints.dir: hdfs://172.24.33.69:9000/tmp/flink-checkpoints-directory #node5
-state.savepoints.dir: hdfs://172.24.33.69:9000/tmp/flink-savepoints-directory #node5
+state.checkpoints.dir: hdfs://172.24.33.86:9000/tmp/flink-checkpoints-directory #node6
+state.savepoints.dir: hdfs://172.24.33.86:9000/tmp/flink-savepoints-directory #node6
 state.checkpoints.num-retained: 5
 #state.backend.latency-track.keyed-state-enabled: true
 # state.savepoints.dir: file:///tmp/flink-savepoints-directory
