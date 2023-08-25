@@ -38,6 +38,7 @@ import org.apache.flink.connector.kafka.source.reader.deserializer.KafkaRecordDe
 import org.apache.flink.connector.kafka.source.split.KafkaPartitionSplit;
 import org.apache.flink.connector.kafka.source.split.KafkaPartitionSplitSerializer;
 import org.apache.flink.core.io.SimpleVersionedSerializer;
+import org.apache.flink.metrics.Counter;
 import org.apache.flink.metrics.Meter;
 import org.apache.flink.metrics.MeterView;
 import org.apache.flink.metrics.MetricGroup;
@@ -143,10 +144,12 @@ public class CustomKafkaSource<OUT>
                 new KafkaSourceReaderMetrics(readerContext.metricGroup());
 
         Meter throughputMeter = readerContext.metricGroup().meter("flinkRecordsConsumed", new MeterView(1));
+        Counter outputCounter = readerContext.metricGroup().counter("outputCounterReader");
 
         Supplier<CustomKafkaPartitionSplitReader> splitReaderSupplier =
                 () -> new CustomKafkaPartitionSplitReader(props, readerContext, throughputMeter, kafkaSourceReaderMetrics);
-        KafkaRecordEmitter<OUT> recordEmitter = new KafkaRecordEmitter<>(deserializationSchema);
+//        KafkaRecordEmitter<OUT> recordEmitter = new KafkaRecordEmitter<>(deserializationSchema);
+        CustomKafkaRecordEmitter<OUT> recordEmitter = new CustomKafkaRecordEmitter<>(deserializationSchema, outputCounter);
 
         return new CustomKafkaSourceReader<>(
                 elementsQueue,

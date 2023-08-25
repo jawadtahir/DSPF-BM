@@ -19,4 +19,4 @@ ENV KAFKA_BOOTSTRAP="kafka1:9092"
 
 EXPOSE 8081
 
-ENTRYPOINT flink run topology.jar -kafka $KAFKA_BOOTSTRAP
+ENTRYPOINT flink run --class de.tum.in.msrg.flink.App topology.jar -kafka $KAFKA_BOOTSTRAP
