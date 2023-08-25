@@ -1,6 +1,8 @@
 package de.tum.in.msrg.latcal;
 
 import de.tum.in.msrg.datamodel.ClickEvent;
+import io.prometheus.client.Counter;
+import io.prometheus.client.Gauge;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -37,15 +39,20 @@ public class PGVInNew implements Runnable{
             LOGGER.info("Subscribing to the click topic");
             consumer.subscribe(Arrays.asList("click"));
 
+            LOGGER.info("Creating probes...");
+            Counter expectedWindowCounter = Counter.build("de_tum_in_msrg_pgv_expected_windows", "Expected windows").labelNames("key").register();
+
             while (true) {
                 ConsumerRecords<String, ClickEvent> records = consumer.poll(Duration.ofMillis(100));
                 LOGGER.debug(String.format("Polled %d messages", records.count()));
+
 
                 for (ConsumerRecord<String, ClickEvent> record : records) {
                     PageTSKey window = new PageTSKey(record.value().getPage(), record.value().getTimestamp());
                     List<Long> eventIds = windowIdMap.getOrDefault(window, null);
                     if (eventIds == null){
                         LOGGER.debug(String.format("No event list found for: %s", window));
+                        expectedWindowCounter.labels(window.getPage()).inc();
                         List<Long> newList = Collections.synchronizedList(new ArrayList<Long>());
                         newList.add(record.value().getId());
                         windowIdMap.put(window, newList);

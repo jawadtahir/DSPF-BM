@@ -1,5 +1,6 @@
 package de.tum.in.msrg.latcal;
 
+import io.prometheus.client.exporter.HTTPServer;
 import org.apache.commons.cli.*;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -30,24 +31,23 @@ public class PGVNew {
         bootstrap = cmd.getOptionValue("kafka", "kafka1:9092");
         LOGGER.info(String.format("Kafka bootstrap server: %s", bootstrap));
 
-        reportFolder = cmd.getOptionValue("report", "/reports");
-        Path rootFolder = Paths.get(reportFolder);
-        Path createdPath = Files.createDirectories(rootFolder);
-        LOGGER.info(String.format("Created reports folder: %s", createdPath.toString()));
 
         Properties kafkaProperties = getKafkaProperties();
         kafkaProperties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap);
+
+        HTTPServer promServer = new HTTPServer(52923);
 
         ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(2);
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             threadPoolExecutor.shutdown();
+            promServer.close();
         }));
 
         ConcurrentHashMap<PageTSKey, List<Long>> idHashMap = new ConcurrentHashMap<>();
 
         PGVInNew pgvin = new PGVInNew(kafkaProperties, idHashMap);
-        PGVOutNew pgvOut = new PGVOutNew(kafkaProperties, idHashMap, createdPath);
+        PGVOutNew pgvOut = new PGVOutNew(kafkaProperties, idHashMap);
 
         threadPoolExecutor.submit(pgvin);
         threadPoolExecutor.submit(pgvOut);
@@ -63,14 +63,8 @@ public class PGVNew {
                 .desc("Bootstrap kafka server")
                 .build();
 
-        Option reportRoot = Option.builder("report")
-                .hasArg(true)
-                .argName("folder")
-                .desc("report folder")
-                .build();
 
         cliOptions.addOption(kafkaOptn);
-        cliOptions.addOption(reportRoot);
 
         return  cliOptions;
     }
