@@ -45,7 +45,6 @@ public class EndTimeReader implements Runnable{
         LOGGER.info("Starting Kafka consumer and prometheus server...");
         try (
                 KafkaConsumer<String, PageStatistics> consumer = new KafkaConsumer<String, PageStatistics>(this.kafkaProperties);
-                HTTPServer promServer = new HTTPServer(52923);
         ) {
             consumer.subscribe(Arrays.asList("output"));
             latencyGauge = Gauge.build("de_tum_in_msrg_latcal_latency", "End to End latency").register();
@@ -74,8 +73,6 @@ public class EndTimeReader implements Runnable{
                 }
             }
 
-        } catch (IOException e) {
-            e.printStackTrace();
         }
 
     }

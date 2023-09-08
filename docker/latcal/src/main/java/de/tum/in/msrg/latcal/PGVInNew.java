@@ -15,7 +15,7 @@ import java.util.*;
 
 public class PGVInNew implements Runnable{
 
-    private Map<PageTSKey, List<Long>> windowIdMap;
+    private final Map<PageTSKey, List<Long>> windowIdMap;
     private Properties kafkaProperties;
     private static final Logger LOGGER = LogManager.getLogger(PGVInNew.class);
 
@@ -49,15 +49,17 @@ public class PGVInNew implements Runnable{
 
                 for (ConsumerRecord<String, ClickEvent> record : records) {
                     PageTSKey window = new PageTSKey(record.value().getPage(), record.value().getTimestamp());
-                    List<Long> eventIds = windowIdMap.getOrDefault(window, null);
-                    if (eventIds == null){
-                        LOGGER.debug(String.format("No event list found for: %s", window));
-                        expectedWindowCounter.labels(window.getPage()).inc();
-                        List<Long> newList = Collections.synchronizedList(new ArrayList<Long>());
-                        newList.add(record.value().getId());
-                        windowIdMap.put(window, newList);
-                    }else{
-                        eventIds.add(record.value().getId());
+                    synchronized (windowIdMap) {
+                        List<Long> eventIds = windowIdMap.getOrDefault(window, null);
+                        if (eventIds == null) {
+                            LOGGER.debug(String.format("No event list found for: %s", window));
+                            expectedWindowCounter.labels(window.getPage()).inc();
+                            List<Long> newList = Collections.synchronizedList(new ArrayList<Long>());
+                            newList.add(record.value().getId());
+                            windowIdMap.put(window, newList);
+                        } else {
+                            eventIds.add(record.value().getId());
+                        }
                     }
                 }
 

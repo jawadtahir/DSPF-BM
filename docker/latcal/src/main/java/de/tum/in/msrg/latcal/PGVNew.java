@@ -23,6 +23,7 @@ public class PGVNew {
 
     private static String bootstrap;
     private static String reportFolder;
+    private static int eventsPerWindow;
 
     public static void main(String[] args) throws ParseException, IOException {
         DefaultParser parser = new DefaultParser();
@@ -30,6 +31,9 @@ public class PGVNew {
 
         bootstrap = cmd.getOptionValue("kafka", "kafka1:9092");
         LOGGER.info(String.format("Kafka bootstrap server: %s", bootstrap));
+
+        eventsPerWindow = Integer.parseInt(cmd.getOptionValue("events", "5000"));
+        LOGGER.info(String.format("Events per window: %d", eventsPerWindow));
 
 
         Properties kafkaProperties = getKafkaProperties();
@@ -47,7 +51,7 @@ public class PGVNew {
         ConcurrentHashMap<PageTSKey, List<Long>> idHashMap = new ConcurrentHashMap<>();
 
         PGVInNew pgvin = new PGVInNew(kafkaProperties, idHashMap);
-        PGVOutNew pgvOut = new PGVOutNew(kafkaProperties, idHashMap);
+        PGVOutNew pgvOut = new PGVOutNew(kafkaProperties, idHashMap, eventsPerWindow);
 
         threadPoolExecutor.submit(pgvin);
         threadPoolExecutor.submit(pgvOut);
@@ -63,8 +67,15 @@ public class PGVNew {
                 .desc("Bootstrap kafka server")
                 .build();
 
+        Option epwOptn = Option.builder("events")
+                .hasArg(true)
+                .argName("perWindow")
+                .desc("Events per window")
+                .build();
+
 
         cliOptions.addOption(kafkaOptn);
+        cliOptions.addOption(epwOptn);
 
         return  cliOptions;
     }

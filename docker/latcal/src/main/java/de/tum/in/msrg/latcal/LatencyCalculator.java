@@ -1,6 +1,7 @@
 package de.tum.in.msrg.latcal;
 
 import de.tum.in.msrg.datamodel.PageStatistics;
+import io.prometheus.client.exporter.HTTPServer;
 import org.apache.commons.cli.*;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -9,6 +10,7 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
@@ -26,7 +28,7 @@ public class LatencyCalculator
 
     private static String bootstrap;
 
-    public static void main( String[] args ) throws ParseException, InterruptedException {
+    public static void main( String[] args ) throws ParseException, InterruptedException, IOException {
         DefaultParser parser = new DefaultParser();
         CommandLine cmd = parser.parse(getCLIOptns(), args);
 
@@ -36,11 +38,16 @@ public class LatencyCalculator
         Properties kafkaProperties = getKafkaProperties();
         kafkaProperties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap);
 
+        HTTPServer promServer = new HTTPServer(52923);
+        ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(2);
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            threadPoolExecutor.shutdown();
+            promServer.close();
+        }));
+
         StartTimeReader startTimeReader = new StartTimeReader(kafkaProperties, pageWindowInsertionTime);
         EndTimeReader endTimeReader = new EndTimeReader(kafkaProperties, pageWindowInsertionTime);
 
-
-        ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(2);
 
         threadPoolExecutor.submit(startTimeReader);
         threadPoolExecutor.submit(endTimeReader);
@@ -61,7 +68,14 @@ public class LatencyCalculator
                 .desc("Bootstrap kafka server")
                 .build();
 
+        Option epwOptn = Option.builder("events")
+                .hasArg(true)
+                .argName("perWindow")
+                .desc("Events per window")
+                .build();
+
         cliOptions.addOption(kafkaOptn);
+        cliOptions.addOption(epwOptn);
 
         return  cliOptions;
     }

@@ -1,6 +1,7 @@
 package de.tum.in.msrg.latcal;
 
 
+import de.tum.in.msrg.datamodel.ClickUpdateEvent;
 import de.tum.in.msrg.datamodel.PageStatistics;
 import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
@@ -24,13 +25,14 @@ import java.util.*;
 
 public class PGVOutNew implements Runnable {
 
-    private Map<PageTSKey, List<Long>> windowIdMap;
-    private Properties kafkaProperties;
+    private final Map<PageTSKey, List<Long>> windowIdMap;
+    private final Properties kafkaProperties;
+    private final int numEventsPerWindow;
 
     private static final Logger LOGGER = LogManager.getLogger(PGVOutNew.class);
 
 
-    public PGVOutNew(Properties kafkaProperties, Map<PageTSKey, List<Long>> windowIdMap){
+    public PGVOutNew(Properties kafkaProperties, Map<PageTSKey, List<Long>> windowIdMap, int numEventsPerWindow){
         this.kafkaProperties = (Properties) kafkaProperties.clone();
 
         this.kafkaProperties.put(ConsumerConfig.GROUP_ID_CONFIG, "pgvOutputReader");
@@ -38,6 +40,7 @@ public class PGVOutNew implements Runnable {
         LOGGER.info(String.format("Kafka Properties: %s", this.kafkaProperties.toString()));
 
         this.windowIdMap = windowIdMap;
+        this.numEventsPerWindow = numEventsPerWindow;
 
     }
     @Override
@@ -54,21 +57,45 @@ public class PGVOutNew implements Runnable {
             consumer.subscribe(Arrays.asList("output"));
 
 
-            HashMap<PageTSKey, List<Long>> windowIdMapRecvd = new HashMap<>();
+            Map<PageTSKey, List<Long>> eventsProcessed = Collections.synchronizedMap(new HashMap<PageTSKey, List<Long>>());
 
             Counter processedCounter = Counter.build("de_tum_in_msrg_pgv_processed", "Total unique processed events").labelNames("key").register();
             Counter receivedCounter = Counter.build("de_tum_in_msrg_pgv_received", "Total received events").labelNames("key").register();
             Counter duplicateCounter = Counter.build("de_tum_in_msrg_pgv_duplicate", "Duplicate processed events").labelNames("key").register();
-            Counter debugCounter = Counter.build("de_tum_in_msrg_pgv_debug", "Wrong events").labelNames("key").register();
-//            Counter duplicateWindowCounter = Counter.build("de_tum_in_msrg_pgv_duplicate_window", "Outputs with PB events").labelNames("key").register();
+            Counter lateCounter = Counter.build("de_tum_in_msrg_pgv_late", "Dropped events due to late arrival").labelNames("key").register();
             Counter correctOutputCounter = Counter.build("de_tum_in_msrg_pgv_correct_output", "Correct outputs").labelNames("key").register();
             Counter inCorrectOutputCounter = Counter.build("de_tum_in_msrg_pgv_incorrect_output", "incorrect outputs").labelNames("key").register();
             Counter inCorrectOutputHigherCounter = Counter.build("de_tum_in_msrg_pgv_incorrect_higher_output", "incorrect outputs, higher than expected").labelNames("key").register();
             Counter inCorrectOutputLowerCounter = Counter.build("de_tum_in_msrg_pgv_incorrect_lower_output", "incorrect outputs, lower than expected").labelNames("key").register();
-//            Gauge expectedWindowGauge = Gauge.build("de_tum_in_msrg_pgv_expected_windows", "Expected windows").labelNames("key").register();
             Counter receivedWindowCounter = Counter.build("de_tum_in_msrg_pgv_received_windows", "Received windows").labelNames("key").register();
-            Gauge unprocessedGauge = Gauge.build("de_tum_in_msrg_pgv_unprocessed", "unprocessed windows").labelNames("key").register();
+            Gauge unprocessedGauge = Gauge.build("de_tum_in_msrg_pgv_unprocessed", "Unprocessed events").labelNames("key").register();
             Histogram outputCounterHistogram = Histogram.build("de_tum_in_msrg_pgv_output_counter", "Output counter").labelNames("key").linearBuckets(4990,1,11).register();
+
+            new Thread(() -> {
+                this.kafkaProperties.put(ConsumerConfig.GROUP_ID_CONFIG, "pgvLateOutputReader");
+                this.kafkaProperties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ClickUpdateEventDeserializer.class.getCanonicalName());
+
+                try (KafkaConsumer<String, ClickUpdateEvent> lateConsumer = new KafkaConsumer<String, ClickUpdateEvent>(this.kafkaProperties)){
+                    lateConsumer.subscribe(Arrays.asList("lateOutput"));
+                    while (true){
+                        ConsumerRecords<String, ClickUpdateEvent> records = lateConsumer.poll(Duration.ofMillis(100));
+                        for (ConsumerRecord<String, ClickUpdateEvent> lateRecord : records) {
+                                PageTSKey windowKey = new PageTSKey(lateRecord.value().getPage(), lateRecord.value().getTimestamp());
+                                Long eventId = lateRecord.value().getId();
+                                lateCounter.labels(windowKey.getPage()).inc();
+                                receivedCounter.labels(windowKey.getPage()).inc();
+                                List<Long> prvPrcsd = eventsProcessed.getOrDefault(windowKey, Collections.synchronizedList(new ArrayList<Long>()));
+                                if (prvPrcsd.contains(eventId)) {
+                                    duplicateCounter.labels(windowKey.getPage()).inc();
+                                } else {
+                                    prvPrcsd.add(lateRecord.value().getId());
+                                    eventsProcessed.put(windowKey, prvPrcsd);
+                                    processedCounter.labels(windowKey.getPage()).inc();
+                                }
+                        }
+                    }
+                }
+            }).start();
 
             int polledMsgs = 0;
             LOGGER.info("Created probes...");
@@ -89,11 +116,11 @@ public class PGVOutNew implements Runnable {
 
                     LOGGER.debug("Verifying correctness");
                     outputCounterHistogram.labels(window.getPage()).observeWithExemplar(record.value().getCount(), Map.of("start", record.value().getWindowStart().toString()));
-                    if (record.value().getCount() == 5000){
+                    if (record.value().getCount() == this.numEventsPerWindow){
                         correctOutputCounter.labels(window.getPage()).inc();
                     }else {
                         inCorrectOutputCounter.labels(window.getPage()).inc();
-                        if (record.value().getCount() > 5000){
+                        if (record.value().getCount() > this.numEventsPerWindow){
                             inCorrectOutputHigherCounter.labels(window.getPage()).inc();
                         }else{
                             inCorrectOutputLowerCounter.labels(window.getPage()).inc();
@@ -101,60 +128,48 @@ public class PGVOutNew implements Runnable {
                     }
 
                     LOGGER.debug("Verifying PGs");
-                    List<Long> expectedEvents = windowIdMap.getOrDefault(window, null);
-                    if (expectedEvents != null){
-                        for (Long eventId : record.value().getIds()){
+//                    List<Long> expectedEvents = windowIdMap.getOrDefault(window, null);
+                        List<Long> prvPrcsd = eventsProcessed.getOrDefault(window, Collections.synchronizedList(new ArrayList<Long>()));
+
+//                    assert expectedEvents != null;
+                        for (Long eventId : record.value().getIds()) {
                             receivedCounter.labels(window.getPage()).inc();
-                            // First check if the received output IDs can be found in reference output
-                            if (expectedEvents.contains(eventId)){
-                                // If yes, remove from expected and add it to processed.
-                                expectedEvents.remove(eventId);
-                                List<Long> prvPrcsd = windowIdMapRecvd.getOrDefault(window, Collections.synchronizedList(new ArrayList<Long>()));
-                                prvPrcsd.add(eventId);
-                                processedCounter.labels(window.getPage()).inc();
-                                windowIdMapRecvd.put(window, prvPrcsd);
+//                        assert expectedEvents.contains(eventId);
+                            if (prvPrcsd.contains(eventId)) {
+                                duplicateCounter.labels(window.getPage()).inc();
                             } else {
-                                // if not, see if we have already processed it.
-                                List<Long> prvPrcsd = windowIdMapRecvd.getOrDefault(window, null);
-                                if (prvPrcsd != null){
-                                    if (prvPrcsd.contains(eventId)){
-                                        duplicateCounter.labels(window.getPage()).inc();
-                                    } else {
-                                        // assert. The ID we received is neither in reference implementation nor in previously processed.
-                                        debugCounter.labels(window.getPage()).inc();
-                                    }
-                                }else {
-                                    // assert. The ID we received is neither in reference implementation nor in previously processed.
-                                    debugCounter.labels(window.getPage()).inc();
-                                }
+                                prvPrcsd.add(eventId);
+                                eventsProcessed.put(window, prvPrcsd);
+                                processedCounter.labels(window.getPage()).inc();
                             }
+
                         }
-                    }
                 }
 
 
 
-                if (polledMsgs != 0){
+//                if (polledMsgs != 0){
                     LOGGER.debug("Calculating unprocessed events...");
 //                    Map<String, Long> keyWindowCountMap = new HashMap<String, Long>();
                     Map<String, Long> keyUnprocWindowCountMap = new HashMap<String, Long>();
+                 Set<Map.Entry<PageTSKey, List<Long>>> entries = windowIdMap.entrySet();
+//                 System.out.printf("The size of the map is %d%n \r\n", entries.size());
+                 for (Map.Entry<PageTSKey, List<Long>> entry : entries){
+                        List<Long> expectedEvents = new ArrayList<>(entry.getValue());
+                        List<Long> processedEvents = eventsProcessed.get(entry.getKey());
+                        Long unprocCountPerKey = keyUnprocWindowCountMap.getOrDefault(entry.getKey().getPage(), 0L);
 
-                    for (Map.Entry<PageTSKey, List<Long>> entry : windowIdMap.entrySet()){
-                        List<Long> eventList = entry.getValue();
-                        PageTSKey key = entry.getKey();
-//                        Long windowCount = keyWindowCountMap.getOrDefault(key.getPage(), 0L);
-//                        keyWindowCountMap.put(key.getPage(), windowCount+1);
-//                        expectedWindowGauge.labels(key.getPage()).set(windowCount);
-
-                        if (eventList.size() != 0){
-                            Long unprocWindowCount = keyUnprocWindowCountMap.getOrDefault(key.getPage(), 0L);
-                            unprocWindowCount += 1;
-                            keyUnprocWindowCountMap.put(key.getPage(), unprocWindowCount);
-                            unprocessedGauge.labels(key.getPage()).set((double) unprocWindowCount);
+                        // Ensure we are only counting complete windows
+                        if (expectedEvents.size() == this.numEventsPerWindow && processedEvents != null){
+                            expectedEvents.removeAll(processedEvents);
+                            unprocCountPerKey += expectedEvents.size();
                         }
+                     keyUnprocWindowCountMap.put(entry.getKey().getPage(), unprocCountPerKey);
+
                     }
 
-                }
+                    keyUnprocWindowCountMap.forEach((s, aLong) -> unprocessedGauge.labels(s).set(aLong));
+//                }
             }
         } catch (Exception e) {
             e.printStackTrace();
