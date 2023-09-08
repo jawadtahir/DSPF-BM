@@ -33,16 +33,13 @@ import java.util.*;
 public class KafkaDataGen
 {
     public static final Duration WINDOW_SIZE = Duration.of(60, ChronoUnit.SECONDS );
-    public static final int EVENTS_PER_WINDOW = 5000;
     private static final List<String> pages = Arrays.asList("/help", "/index", "/shop", "/jobs", "/about", "/news");
-    //this calculation is only accurate as long as pages.size() * EVENTS_PER_WINDOW divides the
-    //window size
-    public static final long DELAY = WINDOW_SIZE.toMillis() / pages.size() / EVENTS_PER_WINDOW;
+
 
     private final String bootstrap;
     private final long delay;
     private final long delayLength;
-    private final boolean isRun = true;
+    private final int eventsPerWindow;
 
     private final HTTPServer promServer;
     private final KafkaProducer<byte[], byte[]> kafkaProducer;
@@ -52,11 +49,11 @@ public class KafkaDataGen
     private static final Logger LOGGER = LogManager.getLogger(KafkaDataGen.class);
 
 
-    public KafkaDataGen(String bootstrap, long delay, long delayLength, HTTPServer promServer, KafkaProducer<byte[], byte[]> kafkaProducer) throws IOException {
+    public KafkaDataGen(String bootstrap, long delay, long delayLength, int eventsPerWindow, HTTPServer promServer, KafkaProducer<byte[], byte[]> kafkaProducer) throws IOException {
         this.bootstrap = bootstrap;
         this.delay = delay;
         this.delayLength = delayLength;
-
+        this.eventsPerWindow = eventsPerWindow;
         this.promServer = promServer;
         this.kafkaProducer = kafkaProducer;
     }
@@ -72,14 +69,14 @@ public class KafkaDataGen
                 "Total number of times ID roll overed")
                 .register();
 
-        ClickIterator clickIterator = new ClickIterator();
+        ClickIterator clickIterator = new ClickIterator(this.eventsPerWindow);
 
         long counter = 0L;
         // Update the pages half way the window
         long nextUpdate = (WINDOW_SIZE.toMillis() / 2);
 
         LOGGER.info("Producing records...");
-        while (this.isRun == true) {
+        while (true) {
             ClickEvent clickEvent = clickIterator.next();
             if (clickEvent.getTimestamp().getTime() > nextUpdate) {
                 updatePages(clickEvent, kafkaProducer, objectMapper, clickIterator);
@@ -126,10 +123,13 @@ public class KafkaDataGen
         long delayLength = Long.parseLong(cmdLine.getOptionValue("length", "1"));
         LOGGER.info(String.format("Thread sleep for %d ms", delayLength));
 
+        int eventsPerWindow = Integer.parseInt(cmdLine.getOptionValue("events", "5000"));
+        LOGGER.info(String.format("Events per window: %d", eventsPerWindow));
+
         HTTPServer promServer = new HTTPServer(52923);
         KafkaProducer<byte[], byte[]> kafkaProducer = new KafkaProducer<byte[], byte[]>(getKafkaProps(bootstrap));
 
-        KafkaDataGen dataGen = new KafkaDataGen(bootstrap, delay, delayLength, promServer, kafkaProducer);
+        KafkaDataGen dataGen = new KafkaDataGen(bootstrap, delay, delayLength, eventsPerWindow, promServer, kafkaProducer);
 
         Runtime.getRuntime().addShutdownHook( new Thread(() -> {
             try {
@@ -169,11 +169,11 @@ public class KafkaDataGen
                 .desc("Kafka bootstrap server")
                 .build();
 
-//        Option topicOptn = Option.builder("topic")
-//                .argName("topic")
-//                .hasArg()
-//                .desc("Kafka input topic")
-//                .build();
+        Option epwOptn = Option.builder("events")
+                .argName("eventsPerWindow")
+                .hasArg()
+                .desc("Events per window")
+                .build();
 
         Option delayOptn = Option.builder("delay")
                 .argName("count")
@@ -189,7 +189,7 @@ public class KafkaDataGen
 
 
         options.addOption(kafkaOptn);
-//        options.addOption(topicOptn);
+        options.addOption(epwOptn);
         options.addOption(delayOptn);
         options.addOption(delayLengthOptn);
 
@@ -220,10 +220,18 @@ public class KafkaDataGen
         private Map<String, Long> nextTimestampPerKey;
         private int nextPageIndex;
         protected long id = 0L;
+        protected int eventPerWindow;
 
         ClickIterator() {
             nextTimestampPerKey = new HashMap<>();
             nextPageIndex = 0;
+            this.eventPerWindow = 5000;
+        }
+
+        ClickIterator(int eventsPerWindow){
+            nextTimestampPerKey = new HashMap<>();
+            nextPageIndex = 0;
+            this.eventPerWindow = eventsPerWindow;
         }
 
         ClickEvent next() {
@@ -238,7 +246,7 @@ public class KafkaDataGen
         private Date nextTimestamp(String page) {
             long nextTimestamp = nextTimestampPerKey.getOrDefault(page, 1L);
 //			nextTimestampPerKey.put(page, nextTimestamp + WINDOW_SIZE.toMilliseconds() / EVENTS_PER_WINDOW);
-            nextTimestampPerKey.put(page, nextTimestamp + (WINDOW_SIZE.toMillis()  / EVENTS_PER_WINDOW ) );
+            nextTimestampPerKey.put(page, nextTimestamp + (WINDOW_SIZE.toMillis()  / this.eventPerWindow ) );
             return new Date(nextTimestamp);
         }
 
