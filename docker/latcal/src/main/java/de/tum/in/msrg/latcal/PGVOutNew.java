@@ -28,11 +28,12 @@ public class PGVOutNew implements Runnable {
     private final Map<PageTSKey, List<Long>> windowIdMap;
     private final Properties kafkaProperties;
     private final int numEventsPerWindow;
+    private final Map<PageTSKey, List<Long>> eventsProcessed;
 
     private static final Logger LOGGER = LogManager.getLogger(PGVOutNew.class);
 
 
-    public PGVOutNew(Properties kafkaProperties, Map<PageTSKey, List<Long>> windowIdMap, int numEventsPerWindow){
+    public PGVOutNew(Properties kafkaProperties, Map<PageTSKey, List<Long>> windowIdMap, Map<PageTSKey, List<Long>> processedWindowIdMap, int numEventsPerWindow){
         this.kafkaProperties = (Properties) kafkaProperties.clone();
 
         this.kafkaProperties.put(ConsumerConfig.GROUP_ID_CONFIG, "pgvOutputReader");
@@ -40,6 +41,7 @@ public class PGVOutNew implements Runnable {
         LOGGER.info(String.format("Kafka Properties: %s", this.kafkaProperties.toString()));
 
         this.windowIdMap = windowIdMap;
+        this.eventsProcessed = processedWindowIdMap;
         this.numEventsPerWindow = numEventsPerWindow;
 
     }
@@ -57,7 +59,6 @@ public class PGVOutNew implements Runnable {
             consumer.subscribe(Arrays.asList("output"));
 
 
-            Map<PageTSKey, List<Long>> eventsProcessed = Collections.synchronizedMap(new HashMap<PageTSKey, List<Long>>());
 
             Counter processedCounter = Counter.build("de_tum_in_msrg_pgv_processed", "Total unique processed events").labelNames("key").register();
             Counter receivedCounter = Counter.build("de_tum_in_msrg_pgv_received", "Total received events").labelNames("key").register();
@@ -68,7 +69,7 @@ public class PGVOutNew implements Runnable {
             Counter inCorrectOutputHigherCounter = Counter.build("de_tum_in_msrg_pgv_incorrect_higher_output", "incorrect outputs, higher than expected").labelNames("key").register();
             Counter inCorrectOutputLowerCounter = Counter.build("de_tum_in_msrg_pgv_incorrect_lower_output", "incorrect outputs, lower than expected").labelNames("key").register();
             Counter receivedWindowCounter = Counter.build("de_tum_in_msrg_pgv_received_windows", "Received windows").labelNames("key").register();
-            Gauge unprocessedGauge = Gauge.build("de_tum_in_msrg_pgv_unprocessed", "Unprocessed events").labelNames("key").register();
+//            Gauge unprocessedGauge = Gauge.build("de_tum_in_msrg_pgv_unprocessed", "Unprocessed events").labelNames("key").register();
             Histogram outputCounterHistogram = Histogram.build("de_tum_in_msrg_pgv_output_counter", "Output counter").labelNames("key").linearBuckets(4990,1,11).register();
 
             new Thread(() -> {
@@ -84,12 +85,12 @@ public class PGVOutNew implements Runnable {
                                 Long eventId = lateRecord.value().getId();
                                 lateCounter.labels(windowKey.getPage()).inc();
                                 receivedCounter.labels(windowKey.getPage()).inc();
-                                List<Long> prvPrcsd = eventsProcessed.getOrDefault(windowKey, Collections.synchronizedList(new ArrayList<Long>()));
+                                List<Long> prvPrcsd = this.eventsProcessed.getOrDefault(windowKey, Collections.synchronizedList(new ArrayList<Long>()));
                                 if (prvPrcsd.contains(eventId)) {
                                     duplicateCounter.labels(windowKey.getPage()).inc();
                                 } else {
                                     prvPrcsd.add(lateRecord.value().getId());
-                                    eventsProcessed.put(windowKey, prvPrcsd);
+                                    this.eventsProcessed.put(windowKey, prvPrcsd);
                                     processedCounter.labels(windowKey.getPage()).inc();
                                 }
                         }
@@ -129,7 +130,7 @@ public class PGVOutNew implements Runnable {
 
                     LOGGER.debug("Verifying PGs");
 //                    List<Long> expectedEvents = windowIdMap.getOrDefault(window, null);
-                        List<Long> prvPrcsd = eventsProcessed.getOrDefault(window, Collections.synchronizedList(new ArrayList<Long>()));
+                        List<Long> prvPrcsd = this.eventsProcessed.getOrDefault(window, Collections.synchronizedList(new ArrayList<Long>()));
 
 //                    assert expectedEvents != null;
                         for (Long eventId : record.value().getIds()) {
@@ -139,7 +140,7 @@ public class PGVOutNew implements Runnable {
                                 duplicateCounter.labels(window.getPage()).inc();
                             } else {
                                 prvPrcsd.add(eventId);
-                                eventsProcessed.put(window, prvPrcsd);
+                                this.eventsProcessed.put(window, prvPrcsd);
                                 processedCounter.labels(window.getPage()).inc();
                             }
 
@@ -149,26 +150,7 @@ public class PGVOutNew implements Runnable {
 
 
 //                if (polledMsgs != 0){
-                    LOGGER.debug("Calculating unprocessed events...");
-//                    Map<String, Long> keyWindowCountMap = new HashMap<String, Long>();
-                    Map<String, Long> keyUnprocWindowCountMap = new HashMap<String, Long>();
-                 Set<Map.Entry<PageTSKey, List<Long>>> entries = windowIdMap.entrySet();
-//                 System.out.printf("The size of the map is %d%n \r\n", entries.size());
-                 for (Map.Entry<PageTSKey, List<Long>> entry : entries){
-                        List<Long> expectedEvents = new ArrayList<>(entry.getValue());
-                        List<Long> processedEvents = eventsProcessed.get(entry.getKey());
-                        Long unprocCountPerKey = keyUnprocWindowCountMap.getOrDefault(entry.getKey().getPage(), 0L);
 
-                        // Ensure we are only counting complete windows
-                        if (expectedEvents.size() == this.numEventsPerWindow && processedEvents != null){
-                            expectedEvents.removeAll(processedEvents);
-                            unprocCountPerKey += expectedEvents.size();
-                        }
-                     keyUnprocWindowCountMap.put(entry.getKey().getPage(), unprocCountPerKey);
-
-                    }
-
-                    keyUnprocWindowCountMap.forEach((s, aLong) -> unprocessedGauge.labels(s).set(aLong));
 //                }
             }
         } catch (Exception e) {

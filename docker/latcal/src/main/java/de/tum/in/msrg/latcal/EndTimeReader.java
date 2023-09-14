@@ -47,33 +47,40 @@ public class EndTimeReader implements Runnable{
                 KafkaConsumer<String, PageStatistics> consumer = new KafkaConsumer<String, PageStatistics>(this.kafkaProperties);
         ) {
             consumer.subscribe(Arrays.asList("output"));
-            latencyGauge = Gauge.build("de_tum_in_msrg_latcal_latency", "End to End latency").register();
-            Date previousIngestion = null;
+            latencyGauge = Gauge.build("de_tum_in_msrg_latcal_latency", "End to End latency").labelNames("key").register();
 
             while (true){
                 ConsumerRecords<String, PageStatistics> records = consumer.poll(Duration.ofMillis(100));
                 LOGGER.debug(String.format("Polled %d messages", records.count()));
 
                 for (ConsumerRecord<String, PageStatistics> record : records){
+                    LOGGER.debug("Next message");
                     PageTSKey key = new PageTSKey(record.value().getPage(), record.value().getWindowEnd());
-                    Date ingestionTime = this.pageTSKeyDateMap.getOrDefault(key, null);
-
-                    // assert ingestionTime != null;
-                    // it may happen that a node fires windows for all keys on the first firing event
-                    // i.e. a window is fired yet its firing event is not received.
-                    if (ingestionTime == null){
-                        ingestionTime = previousIngestion;
-                    }
+                    Date ingestionTime = getIngestionTime(this.pageTSKeyDateMap, key);
 
                     Date egressTime = new Date(record.timestamp());
                     long latency = egressTime.getTime() - ingestionTime.getTime();
                     LOGGER.debug(String.format("The latency for %s is %d ms", key, latency));
-                    latencyGauge.set(latency);
-                    previousIngestion = ingestionTime;
+                    latencyGauge.labels(key.getPage()).set(latency);
                 }
             }
 
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
 
+    }
+
+    private Date getIngestionTime(Map<PageTSKey, Date> pageTSKeyDateMap, PageTSKey key) throws InterruptedException {
+        Date retVal = null;
+
+        while (retVal == null) {
+            retVal = pageTSKeyDateMap.get(key);
+            if (retVal == null){
+                Thread.sleep(100);
+            }
+        }
+
+        return retVal;
     }
 }

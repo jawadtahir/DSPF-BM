@@ -41,7 +41,7 @@ public class PGVNew {
 
         HTTPServer promServer = new HTTPServer(52923);
 
-        ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(2);
+        ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(3);
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             threadPoolExecutor.shutdown();
@@ -49,12 +49,15 @@ public class PGVNew {
         }));
 
         ConcurrentHashMap<PageTSKey, List<Long>> idHashMap = new ConcurrentHashMap<>();
+        ConcurrentHashMap<PageTSKey, List<Long>> processedIdHashMap = new ConcurrentHashMap<>();
 
         PGVInNew pgvin = new PGVInNew(kafkaProperties, idHashMap);
-        PGVOutNew pgvOut = new PGVOutNew(kafkaProperties, idHashMap, eventsPerWindow);
+        PGVOutNew pgvOut = new PGVOutNew(kafkaProperties, idHashMap, processedIdHashMap, eventsPerWindow);
+        PGVUnproc pgvUnproc = new PGVUnproc(idHashMap, processedIdHashMap, eventsPerWindow);
 
         threadPoolExecutor.submit(pgvin);
         threadPoolExecutor.submit(pgvOut);
+        threadPoolExecutor.submit(pgvUnproc);
 
     }
 
