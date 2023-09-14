@@ -7,7 +7,7 @@ WORKDIR /flink-topology
 
 RUN mvn clean install
 
-FROM apache/flink:1.15.2-java11
+FROM apache/flink:1.17.1-java11
 
 COPY --from=maven /flink-topology/target/flink-topology*.jar /opt/flink/bin/topology.jar
 
@@ -19,4 +19,4 @@ ENV KAFKA_BOOTSTRAP="kafka1:9092"
 
 EXPOSE 8081
 
-ENTRYPOINT flink run --class de.tum.in.msrg.flink.App topology.jar -kafka $KAFKA_BOOTSTRAP
+ENTRYPOINT flink run --class de.tum.in.msrg.flink.App1 topology.jar -kafka $KAFKA_BOOTSTRAP

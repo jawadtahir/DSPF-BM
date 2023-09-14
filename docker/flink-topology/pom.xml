@@ -17,8 +17,8 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>
-    <flink.version>1.15.2</flink.version>
-    <kafka.version>2.8.1</kafka.version>
+    <flink.version>1.17.1</flink.version>
+    <kafka.version>3.2.3</kafka.version>
     <prometheus.version>0.16.0</prometheus.version>
   </properties>
 
