@@ -1,6 +1,7 @@
 package de.tum.in.msrg.latcal;
 
 import de.tum.in.msrg.datamodel.PageStatistics;
+import io.prometheus.client.Gauge;
 import io.prometheus.client.exporter.HTTPServer;
 import org.apache.commons.cli.*;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -24,7 +25,8 @@ public class LatencyCalculator
 
     private static final String TOPIC = "output";
     private static final Logger LOGGER = LogManager.getLogger(LatencyCalculator.class);
-    protected static Map<PageTSKey, Date> pageWindowInsertionTime = new ConcurrentHashMap<>();
+    protected static Map<PageTSKey, Date> inTime = new ConcurrentHashMap<>();
+    protected static Map<PageTSKey, Date> outTime = new ConcurrentHashMap<>();
 
     private static String bootstrap;
 
@@ -39,14 +41,15 @@ public class LatencyCalculator
         kafkaProperties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap);
 
         HTTPServer promServer = new HTTPServer(52923);
+        Gauge latencyGauge = Gauge.build("de_tum_in_msrg_latcal_latency", "End-to-end latency").labelNames("key").register();
         ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(2);
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             threadPoolExecutor.shutdown();
             promServer.close();
         }));
 
-        StartTimeReader startTimeReader = new StartTimeReader(kafkaProperties, pageWindowInsertionTime);
-        EndTimeReader endTimeReader = new EndTimeReader(kafkaProperties, pageWindowInsertionTime);
+        StartTimeReader startTimeReader = new StartTimeReader(kafkaProperties, inTime, outTime, latencyGauge);
+        EndTimeReader endTimeReader = new EndTimeReader(kafkaProperties, inTime, outTime, latencyGauge);
 
 
         threadPoolExecutor.submit(startTimeReader);
