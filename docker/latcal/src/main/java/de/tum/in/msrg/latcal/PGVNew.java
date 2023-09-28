@@ -1,5 +1,6 @@
 package de.tum.in.msrg.latcal;
 
+import io.prometheus.client.Gauge;
 import io.prometheus.client.exporter.HTTPServer;
 import org.apache.commons.cli.*;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -12,8 +13,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 
@@ -40,6 +43,10 @@ public class PGVNew {
         kafkaProperties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap);
 
         HTTPServer promServer = new HTTPServer(52923);
+        Gauge unprocessedGauge = Gauge.build("de_tum_in_msrg_pgv_unprocessed", "Unprocessed events").labelNames("key").register();
+
+        Integer cpuCount = Runtime.getRuntime().availableProcessors();
+        LOGGER.info(String.format("Found %d cores. Creating thread pool", cpuCount));
 
         ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(3);
 
@@ -49,15 +56,30 @@ public class PGVNew {
         }));
 
         ConcurrentHashMap<PageTSKey, List<Long>> idHashMap = new ConcurrentHashMap<>();
-        ConcurrentHashMap<PageTSKey, List<Long>> processedIdHashMap = new ConcurrentHashMap<>();
+        ConcurrentHashMap<PageTSKey, Map<Long, Long>> processedIdHashMap = new ConcurrentHashMap<>();
+        ConcurrentHashMap<PageTSKey, Integer> unprocessedCountMap = new ConcurrentHashMap<>();
 
-        PGVInNew pgvin = new PGVInNew(kafkaProperties, idHashMap);
-        PGVOutNew pgvOut = new PGVOutNew(kafkaProperties, idHashMap, processedIdHashMap, eventsPerWindow);
-        PGVUnproc pgvUnproc = new PGVUnproc(idHashMap, processedIdHashMap, eventsPerWindow);
+        PGVInNew pgvin = new PGVInNew(
+                kafkaProperties,
+                idHashMap,
+                processedIdHashMap,
+                unprocessedCountMap,
+                unprocessedGauge,
+                eventsPerWindow);
+
+        PGVOutNew pgvOut = new PGVOutNew(
+                threadPoolExecutor,
+                kafkaProperties,
+                idHashMap,
+                processedIdHashMap,
+                unprocessedCountMap,
+                unprocessedGauge,
+                eventsPerWindow);
+//        PGVUnproc pgvUnproc = new PGVUnproc(idHashMap, processedIdHashMap, eventsPerWindow);
 
         threadPoolExecutor.submit(pgvin);
         threadPoolExecutor.submit(pgvOut);
-        threadPoolExecutor.submit(pgvUnproc);
+//        threadPoolExecutor.submit(pgvUnproc);
 
     }
 
