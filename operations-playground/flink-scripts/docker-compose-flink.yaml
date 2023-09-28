@@ -2,7 +2,7 @@ version: '3.9'
 
 services:
   jobmanager:
-    image: jawadtahir/flink-ops-playground
+    image: jawadtahir/flink-ops-playground:latest
 #    image: flink:1.15.2-scala_2.12-java11
     networks:
       - infra
@@ -49,7 +49,7 @@ services:
 
 
   taskmanager1:
-    image: jawadtahir/flink-ops-playground
+    image: jawadtahir/flink-ops-playground:latest
 #    image: flink:1.15.2-scala_2.12-java11
     networks:
       - infra
@@ -83,6 +83,41 @@ services:
         constraints:
           - "node.labels.vmname==tm1"
 
+#  taskmanager1a:
+#    image: jawadtahir/flink-ops-playground
+#    #    image: flink:1.15.2-scala_2.12-java11
+#    networks:
+#      - infra
+#    entrypoint: "taskmanager.sh start-foreground"
+#    volumes:
+#      - /home/ubuntu/hadoop/hadoop-3.3.6:/hadoop
+#      - /usr/lib/jvm/java-11-openjdk-amd64:/usr/lib/jvm/java-11-openjdk-amd64
+#
+#    configs:
+#      - source: flink_conf
+#        target: /opt/flink/conf/flink-conf.yaml
+#
+#      - source: masters_conf
+#        target: /opt/flink/conf/masters
+#
+#      - source: workers_conf
+#        target: /opt/flink/conf/workers
+#
+#      - source: flink_console_log
+#        target: /opt/flink/conf/log4j-console.properties
+#    environment:
+#      - JOB_MANAGER_RPC_ADDRESS=jobmanager
+#      - HADOOP_CLASSPATH=/hadoop/etc/hadoop:/hadoop/share/hadoop/common/lib/*:/hadoop/share/hadoop/common/*:/hadoop/share/hadoop/hdfs:/hadoop/share/hadoop/hdfs/lib/*:/hadoop/share/hadoop/hdfs/*:/hadoop/share/hadoop/mapreduce/*:/hadoop/share/hadoop/yarn:/hadoop/share/hadoop/yarn/lib/*:/hadoop/share/hadoop/yarn/*:/hadoop/bin/hadoop
+#      - KAFKA_BOOTSTRAP=kafka1:9092
+#      - HADOOP_HOME=/hadoop
+#    hostname: taskmanager1a
+#    deploy:
+#
+#      replicas: 1
+#      placement:
+#        constraints:
+#          - "node.labels.vmname==tm1"
+
   pumba_tm1:
     image: jawadtahir/pumbasrvr
     hostname: pumba_tm1
@@ -98,7 +133,7 @@ services:
 
 
   taskmanager2:
-    image: jawadtahir/flink-ops-playground
+    image: jawadtahir/flink-ops-playground:latest
 #    image: flink:1.15.2-scala_2.12-java11
     networks:
       - infra
@@ -131,6 +166,41 @@ services:
         constraints:
           - "node.labels.vmname==tm2"
 
+
+#  taskmanager2a:
+#    image: jawadtahir/flink-ops-playground
+#    #    image: flink:1.15.2-scala_2.12-java11
+#    networks:
+#      - infra
+#    entrypoint: "taskmanager.sh start-foreground"
+#    volumes:
+#      - /home/ubuntu/hadoop/hadoop-3.3.6:/hadoop
+#      - /usr/lib/jvm/java-11-openjdk-amd64:/usr/lib/jvm/java-11-openjdk-amd64
+#
+#    configs:
+#      - source: flink_conf
+#        target: /opt/flink/conf/flink-conf.yaml
+#
+#      - source: masters_conf
+#        target: /opt/flink/conf/masters
+#
+#      - source: workers_conf
+#        target: /opt/flink/conf/workers
+#
+#      - source: flink_console_log
+#        target: /opt/flink/conf/log4j-console.properties
+#    environment:
+#      - JOB_MANAGER_RPC_ADDRESS=jobmanager
+#      - HADOOP_CLASSPATH=/hadoop/etc/hadoop:/hadoop/share/hadoop/common/lib/*:/hadoop/share/hadoop/common/*:/hadoop/share/hadoop/hdfs:/hadoop/share/hadoop/hdfs/lib/*:/hadoop/share/hadoop/hdfs/*:/hadoop/share/hadoop/mapreduce/*:/hadoop/share/hadoop/yarn:/hadoop/share/hadoop/yarn/lib/*:/hadoop/share/hadoop/yarn/*:/hadoop/bin/hadoop
+#      - KAFKA_BOOTSTRAP=kafka1:9092
+#    hostname: taskmanager2a
+#    deploy:
+#
+#      replicas: 1
+#      placement:
+#        constraints:
+#          - "node.labels.vmname==tm2"
+#
   pumba_tm2:
     image: jawadtahir/pumbasrvr
     hostname: pumba_tm2
@@ -146,7 +216,7 @@ services:
 
 
   taskmanager3:
-    image: jawadtahir/flink-ops-playground
+    image: jawadtahir/flink-ops-playground:latest
 #    image: flink:1.15.2-scala_2.12-java11
     networks:
       - infra
@@ -180,6 +250,41 @@ services:
           - "node.labels.vmname==tm3"
 
 
+#  taskmanager3a:
+#    image: jawadtahir/flink-ops-playground
+#    #    image: flink:1.15.2-scala_2.12-java11
+#    networks:
+#      - infra
+#    entrypoint: "taskmanager.sh start-foreground"
+#    volumes:
+#      - /home/ubuntu/hadoop/hadoop-3.3.6:/hadoop
+#      - /usr/lib/jvm/java-11-openjdk-amd64:/usr/lib/jvm/java-11-openjdk-amd64
+#
+#    configs:
+#      - source: flink_conf
+#        target: /opt/flink/conf/flink-conf.yaml
+#
+#      - source: masters_conf
+#        target: /opt/flink/conf/masters
+#
+#      - source: workers_conf
+#        target: /opt/flink/conf/workers
+#
+#      - source: flink_console_log
+#        target: /opt/flink/conf/log4j-console.properties
+#    environment:
+#      - JOB_MANAGER_RPC_ADDRESS=jobmanager
+#      - HADOOP_CLASSPATH=/hadoop/etc/hadoop:/hadoop/share/hadoop/common/lib/*:/hadoop/share/hadoop/common/*:/hadoop/share/hadoop/hdfs:/hadoop/share/hadoop/hdfs/lib/*:/hadoop/share/hadoop/hdfs/*:/hadoop/share/hadoop/mapreduce/*:/hadoop/share/hadoop/yarn:/hadoop/share/hadoop/yarn/lib/*:/hadoop/share/hadoop/yarn/*:/hadoop/bin/hadoop
+#      - KAFKA_BOOTSTRAP=kafka1:9092
+#    hostname: taskmanager3a
+#    deploy:
+#
+#      replicas: 1
+#      placement:
+#        constraints:
+#          - "node.labels.vmname==tm3"
+#
+#
   pumba_tm3:
     image: jawadtahir/pumbasrvr
     hostname: pumba_tm3
@@ -194,7 +299,7 @@ services:
           - "node.labels.vmname==tm3"
 
   flink_client:
-    image: jawadtahir/flink-ops-playground
+    image: jawadtahir/flink-ops-playground:latest
     networks:
       - infra
     depends_on:

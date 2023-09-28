@@ -2,7 +2,7 @@ version: '3.9'
 
 services:
   datagen:
-    image: jawadtahir/kafka-data-gen
+    image: jawadtahir/kafka-data-gen:latest
     build:
       context: ../docker/kafka-data-gen
     hostname: datagen
@@ -12,11 +12,13 @@ services:
       DELAY_COUNT:
       KAFKA_BOOTSTRAP: kafka1:9092
       DELAY_LENGTH:
+      EVENTS_PER_WINDOW:
+      SHORT_DATA:
     configs:
       - source: log4j2_datagen
         target: /jar/log4j2.xml
-    volumes:
-      - datagen:/reports
+#    volumes:
+#      - datagen:/reports
 
     deploy:
       replicas: 1
@@ -26,7 +28,7 @@ services:
 
 
   latcal:
-    image: jawadtahir/latcal
+    image: jawadtahir/latcal:latest
     build:
       context: ../docker/latcal
     hostname: latcal
@@ -44,31 +46,34 @@ services:
         constraints:
           - "node.labels.vmname==utils"
 
-  pgv:
-    image: jawadtahir/latcal
-    build:
-      context: ../docker/latcal
-    hostname: pgv
-    networks:
-      infra:
-    configs:
-      - source: log4j2_latcal
-        target: /jar/log4j2.xml
-    volumes:
-      - pgv:/reports
-
-#    entrypoint: ["java", "-cp", "*:.", "de.tum.in.msrg.latcal.PGV"]
-    entrypoint: java -cp *:. de.tum.in.msrg.latcal.PGVNew -kafka kafka1:9092 -report /reports
-
-    deploy:
-      replicas: 1
-      placement:
-        constraints:
-          - "node.labels.vmname==utils"
+#  pgv:
+#    image: jawadtahir/latcal:latest
+#    build:
+#      context: ../docker/latcal
+#    hostname: pgv
+#    networks:
+#      infra:
+#    environment:
+#      KAFKA_BOOTSTRAP: kafka1:9092
+#      EVENTS_PER_WINDOW:
+#    configs:
+#      - source: log4j2_latcal
+#        target: /jar/log4j2.xml
+#    volumes:
+#      - pgv:/reports
+#
+##    entrypoint: ["java", "-cp", "*:.", "de.tum.in.msrg.latcal.PGV"]
+#    entrypoint: java -XX:ParallelGCThreads=4 -XX:ConcGCThreads=4 -Xmx15g -cp *:. de.tum.in.msrg.latcal.PGVNew -kafka $KAFKA_BOOTSTRAP -events $EVENTS_PER_WINDOW
+#
+#    deploy:
+#      replicas: 1
+#      placement:
+#        constraints:
+#          - "node.labels.vmname==utils2"
 
 
   pumbasrvrclient:
-    image: jawadtahir/pumbasrvrclient
+    image: jawadtahir/pumbasrvrclient:latest
     hostname: pumbasrvrclient
     networks:
       infra:

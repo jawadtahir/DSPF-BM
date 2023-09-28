@@ -15,6 +15,22 @@
             <AppenderRef ref="LogToFile"/>
             <AppenderRef ref="LogToConsole"/>
         </Logger>
+        <Logger name="de.tum.in.msrg.latcal.EndTimeReader" level="info" additivity="false">
+            <AppenderRef ref="LogToFile"/>
+            <AppenderRef ref="LogToConsole"/>
+        </Logger>
+        <Logger name="de.tum.in.msrg.latcal.StartTimeReader" level="info" additivity="false">
+            <AppenderRef ref="LogToFile"/>
+            <AppenderRef ref="LogToConsole"/>
+        </Logger>
+        <Logger name="de.tum.in.msrg.latcal.PGVOutNew" level="info" additivity="false">
+            <AppenderRef ref="LogToFile"/>
+            <AppenderRef ref="LogToConsole"/>
+        </Logger>
+        <Logger name="de.tum.in.msrg.latcal.PGVInNew" level="info" additivity="false">
+            <AppenderRef ref="LogToFile"/>
+            <AppenderRef ref="LogToConsole"/>
+        </Logger>
         <Root level="info">
             <AppenderRef ref="LogToFile"/>
             <AppenderRef ref="LogToConsole"/>
