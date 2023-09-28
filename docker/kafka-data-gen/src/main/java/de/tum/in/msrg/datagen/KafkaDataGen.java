@@ -11,18 +11,11 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
-import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Duration;
-import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
@@ -33,13 +26,15 @@ import java.util.*;
 public class KafkaDataGen
 {
     public static final Duration WINDOW_SIZE = Duration.of(60, ChronoUnit.SECONDS );
-    private static final List<String> pages = Arrays.asList("/help", "/index", "/shop", "/jobs", "/about", "/news");
+    private static final List<String> PAGES = Arrays.asList("/help", "/index", "/shop", "/jobs", "/about", "/news");
+    private static final List<String> SHORT_PAGES = Arrays.asList("/jobs", "/about", "/news");
 
 
     private final String bootstrap;
     private final long delay;
     private final long delayLength;
     private final int eventsPerWindow;
+    private final List<String> pages;
 
     private final HTTPServer promServer;
     private final KafkaProducer<byte[], byte[]> kafkaProducer;
@@ -49,11 +44,20 @@ public class KafkaDataGen
     private static final Logger LOGGER = LogManager.getLogger(KafkaDataGen.class);
 
 
-    public KafkaDataGen(String bootstrap, long delay, long delayLength, int eventsPerWindow, HTTPServer promServer, KafkaProducer<byte[], byte[]> kafkaProducer) throws IOException {
+    public KafkaDataGen(
+            String bootstrap,
+            long delay,
+            long delayLength,
+            int eventsPerWindow,
+            List<String> pages,
+            HTTPServer promServer,
+            KafkaProducer<byte[], byte[]> kafkaProducer) throws IOException {
+
         this.bootstrap = bootstrap;
         this.delay = delay;
         this.delayLength = delayLength;
         this.eventsPerWindow = eventsPerWindow;
+        this.pages = pages;
         this.promServer = promServer;
         this.kafkaProducer = kafkaProducer;
     }
@@ -69,14 +73,17 @@ public class KafkaDataGen
                 "Total number of times ID roll overed")
                 .register();
 
-        ClickIterator clickIterator = new ClickIterator(this.eventsPerWindow);
+        ClickIterator clickIterator = new ClickIterator(this.eventsPerWindow, this.pages);
 
         long counter = 0L;
         // Update the pages half way the window
         long nextUpdate = (WINDOW_SIZE.toMillis() / 2);
 
+        kafkaProducer.initTransactions();
+        kafkaProducer.beginTransaction();
         LOGGER.info("Producing records...");
         while (true) {
+
             ClickEvent clickEvent = clickIterator.next();
             if (clickEvent.getTimestamp().getTime() > nextUpdate) {
                 updatePages(clickEvent, kafkaProducer, objectMapper, clickIterator);
@@ -102,7 +109,8 @@ public class KafkaDataGen
             if (counter == this.delay) {
                 Thread.sleep(delayLength);
                 counter = 0;
-                this.kafkaProducer.flush();
+                this.kafkaProducer.commitTransaction();
+                kafkaProducer.beginTransaction();
             }
         }
     }
@@ -126,16 +134,25 @@ public class KafkaDataGen
         int eventsPerWindow = Integer.parseInt(cmdLine.getOptionValue("events", "5000"));
         LOGGER.info(String.format("Events per window: %d", eventsPerWindow));
 
+        boolean shortPagesFlag = cmdLine.hasOption("short");
+        List<String> pages = null;
+        if (shortPagesFlag){
+            pages = SHORT_PAGES;
+        } else {
+            pages = PAGES;
+        }
+
         HTTPServer promServer = new HTTPServer(52923);
         KafkaProducer<byte[], byte[]> kafkaProducer = new KafkaProducer<byte[], byte[]>(getKafkaProps(bootstrap));
 
-        KafkaDataGen dataGen = new KafkaDataGen(bootstrap, delay, delayLength, eventsPerWindow, promServer, kafkaProducer);
+        KafkaDataGen dataGen = new KafkaDataGen(bootstrap, delay, delayLength, eventsPerWindow, pages, promServer, kafkaProducer);
 
         Runtime.getRuntime().addShutdownHook( new Thread(() -> {
             try {
-                kafkaProducer.flush();
-                kafkaProducer.close();
                 Thread.sleep(15000);
+                kafkaProducer.abortTransaction();
+                kafkaProducer.close();
+
                 LOGGER.info(promServer.getPort());
                 promServer.close();
                 LOGGER.info(promServer.getPort());
@@ -145,17 +162,7 @@ public class KafkaDataGen
             }
         }));
 
-//        Path rootReportFolder = Paths.get("/reports", Instant.now().toString());
-//        Path createdDir = Files.createDirectories(rootReportFolder);
-//        FileWriter fileWriter = new FileWriter(createdDir.resolve("datagen.txt").toFile(), false);
-
-
         dataGen.start();
-
-
-
-
-
 
         }
 
@@ -187,17 +194,23 @@ public class KafkaDataGen
                 .desc("Length of delay after count events [ms]")
                 .build();
 
+        Option pagesFlag = Option.builder("short")
+                .hasArg(false)
+                .desc("if we should use short pages")
+                .build();
+
 
         options.addOption(kafkaOptn);
         options.addOption(epwOptn);
         options.addOption(delayOptn);
         options.addOption(delayLengthOptn);
+        options.addOption(pagesFlag);
 
 
         return options;
     }
     protected void updatePages(ClickEvent clickEvent, KafkaProducer<byte[], byte[]> kafkaProducer, ObjectMapper objectMapper, ClickIterator clickIterator) throws JsonProcessingException {
-        for (String page : pages){
+        for (String page : this.pages){
             UpdateEvent updateEvent = new UpdateEvent(clickIterator.id, clickEvent.getTimestamp(), page, "");
             ProducerRecord<byte[], byte[]> producerRecord = new ProducerRecord<>("update", objectMapper.writeValueAsBytes(updateEvent.getPage()), objectMapper.writeValueAsBytes(updateEvent));
             kafkaProducer.send(producerRecord);
@@ -211,6 +224,9 @@ public class KafkaDataGen
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap);
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getCanonicalName());
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getCanonicalName());
+//        props.put(ProducerConfig.BATCH_SIZE_CONFIG, 131072);
+//        props.put(ProducerConfig.LINGER_MS_CONFIG, 100);
+        props.put(ProducerConfig.TRANSACTIONAL_ID_CONFIG, "datagen");
 
 
         return props;
@@ -221,6 +237,7 @@ public class KafkaDataGen
         private int nextPageIndex;
         protected long id = 0L;
         protected int eventPerWindow;
+        protected List<String> pages;
 
         ClickIterator() {
             nextTimestampPerKey = new HashMap<>();
@@ -228,10 +245,11 @@ public class KafkaDataGen
             this.eventPerWindow = 5000;
         }
 
-        ClickIterator(int eventsPerWindow){
+        ClickIterator(int eventsPerWindow, List<String> pages){
             nextTimestampPerKey = new HashMap<>();
             nextPageIndex = 0;
             this.eventPerWindow = eventsPerWindow;
+            this.pages = pages;
         }
 
         ClickEvent next() {
@@ -251,8 +269,8 @@ public class KafkaDataGen
         }
 
         private String nextPage() {
-            String nextPage = pages.get(nextPageIndex);
-            if (nextPageIndex == pages.size() - 1) {
+            String nextPage = this.pages.get(nextPageIndex);
+            if (nextPageIndex == this.pages.size() - 1) {
                 nextPageIndex = 0;
             } else {
                 nextPageIndex++;
