@@ -26,11 +26,14 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.util.OutputTag;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.OffsetResetStrategy;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.IsolationLevel;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.time.Duration;
 import java.util.Properties;
 
 /**
@@ -66,6 +69,7 @@ public class App1
                 .setGroupId("clickReader")
                 .setStartingOffsets(OffsetsInitializer.committedOffsets(OffsetResetStrategy.EARLIEST))
                 .setValueOnlyDeserializer(new ClickEventDeserializer())
+                .setProperty(ConsumerConfig.ISOLATION_LEVEL_CONFIG, "read_committed")
                 .build();
 
         KafkaSource<UpdateEvent> updateSource = KafkaSource.<UpdateEvent>builder()
@@ -74,6 +78,7 @@ public class App1
                 .setGroupId("updateReader")
                 .setStartingOffsets(OffsetsInitializer.committedOffsets(OffsetResetStrategy.EARLIEST))
                 .setValueOnlyDeserializer(new UpdateEventDeserializer())
+                .setProperty(ConsumerConfig.ISOLATION_LEVEL_CONFIG, "read_committed")
                 .build();
 
 
@@ -104,11 +109,13 @@ public class App1
 
 
         WatermarkStrategy<ClickEvent> clickEventWatermarkStrategy = WatermarkStrategy
-                .<ClickEvent>forMonotonousTimestamps()
+                .<ClickEvent>forBoundedOutOfOrderness(Duration.ofMillis(200))
+//                .withWatermarkAlignment("clickAligner", Duration.ofMillis(200))
                 .withTimestampAssigner((element, recordTimestamp) -> element.getTimestamp().getTime());
 
         WatermarkStrategy<UpdateEvent> updateEventWatermarkStrategy = WatermarkStrategy
-                .<UpdateEvent>forMonotonousTimestamps()
+                .<UpdateEvent>forBoundedOutOfOrderness(Duration.ofMillis(200))
+//                .withWatermarkAlignment("updateAligner", Duration.ofMillis(200))
                 .withTimestampAssigner((element, recordTimestamp) -> element.getTimestamp().getTime());
 
 
