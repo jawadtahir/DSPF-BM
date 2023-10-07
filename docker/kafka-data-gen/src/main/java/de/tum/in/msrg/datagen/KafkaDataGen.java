@@ -20,6 +20,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 /**
  * Hello world!
@@ -35,7 +37,7 @@ public class KafkaDataGen
     private final long delay;
     private final long delayLength;
     private final int eventsPerWindow;
-    private final List<String> pages;
+    private final int streamsAmount;
     private final Map<PageTSKey, Date> inputTimeMap;
     private final Map<PageTSKey, List<Long>> inputIdMap;
     private final Counter recordsCounter;
@@ -53,6 +55,7 @@ public class KafkaDataGen
             long delay,
             long delayLength,
             int eventsPerWindow,
+            int streamsAmount,
             Map<PageTSKey, Date> inputTimeMap,
             Map<PageTSKey, List<Long>> inputIdMap,
             Counter recordsCounter,
@@ -63,7 +66,7 @@ public class KafkaDataGen
         this.delay = delay;
         this.delayLength = delayLength;
         this.eventsPerWindow = eventsPerWindow;
-        this.pages = Constants.PAGES;
+        this.streamsAmount = streamsAmount;
         this.inputTimeMap = inputTimeMap;
         this.inputIdMap = inputIdMap;
         this.recordsCounter = recordsCounter;
@@ -79,6 +82,16 @@ public class KafkaDataGen
         // Update the pages half way the window
         long nextUpdate = (Constants.WINDOW_SIZE.toMillis() / 2);
 
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            LOGGER.info("Shutdown hook.");
+            try {
+                Thread.sleep(6000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            LOGGER.info("Shutdown hook completed.");
+        }));
+
         try (KafkaProducer<byte [], byte []> kafkaProducer = new KafkaProducer<byte[], byte[]>(getKafkaProps(bootstrap, delay))) {
 
 
@@ -88,18 +101,25 @@ public class KafkaDataGen
             Instant benchmarkEndTime = Instant.now().plusSeconds(benchmarkLength);
             LOGGER.info(benchmarkEndTime.toString());
 
-            while (benchmarkEndTime.isAfter(Instant.now())) {
-                LOGGER.debug(Instant.now().toString());
+            boolean isFinished = false;
+            while (!isFinished) {
+                isFinished = benchmarkEndTime.isBefore(Instant.now());
 
                  ClickEvent clickEvent = clickDataset.next();
-                if (clickEvent.getTimestamp().getTime() > nextUpdate) {
-                    for (String page : Constants.PAGES){
-                        UpdateEvent updateEvent = updateDataset.next(clickEvent.getTimestamp());
-                        ProducerRecord<byte[], byte[]> producerRecord = new ProducerRecord<>("update", objectMapper.writeValueAsBytes(updateEvent.getPage()), objectMapper.writeValueAsBytes(updateEvent));
-                        kafkaProducer.send(producerRecord, new UpdateCallback(updateEvent, inputIdMap, recordsCounter));
-                    }
-                    nextUpdate += Constants.WINDOW_SIZE.toMillis();
-                }
+
+                 if (streamsAmount != 1) {
+                     if (clickEvent.getTimestamp().getTime() > nextUpdate) {
+                         for (String page : Constants.PAGES) {
+                             UpdateEvent updateEvent = updateDataset.next(clickEvent.getTimestamp());
+                             ProducerRecord<byte[], byte[]> producerRecord = new ProducerRecord<>("update", objectMapper.writeValueAsBytes(updateEvent.getPage()), objectMapper.writeValueAsBytes(updateEvent));
+                             Future<RecordMetadata> future = kafkaProducer.send(producerRecord, new UpdateCallback(updateEvent, inputIdMap, recordsCounter));
+                             if (isFinished) {
+                                 future.get();
+                             }
+                         }
+                         nextUpdate += Constants.WINDOW_SIZE.toMillis();
+                     }
+                 }
 
 
                 ProducerRecord<byte[], byte[]> record = new ProducerRecord<>(
@@ -107,7 +127,10 @@ public class KafkaDataGen
                         this.objectMapper.writeValueAsBytes(clickEvent.getPage()),
                         this.objectMapper.writeValueAsBytes(clickEvent));
 
-                kafkaProducer.send(record, new SendCallback(clickEvent, inputTimeMap, inputIdMap, recordsCounter, expectedCounter));
+                Future<RecordMetadata> future = kafkaProducer.send(record, new SendCallback(clickEvent, inputTimeMap, inputIdMap, recordsCounter, expectedCounter));
+                if (isFinished){
+                    future.get();
+                }
                 counter++;
 
 
@@ -121,6 +144,15 @@ public class KafkaDataGen
 //                kafkaProducer.beginTransaction();
                 }
             }
+//            LOGGER.info("Finished data generation. Sleeping...");
+//
+//            kafkaProducer.flush();
+//            Thread.sleep(6000);
+//
+//            LOGGER.info("Closing data gen...");
+
+        } catch (ExecutionException e) {
+            e.printStackTrace();
         }
     }
 

@@ -1,5 +1,6 @@
 package de.tum.in.msrg.utils;
 
+import de.tum.in.msrg.common.Constants;
 import de.tum.in.msrg.common.PageStatisticsDeserializer;
 import de.tum.in.msrg.common.PageTSKey;
 import de.tum.in.msrg.datamodel.PageStatistics;
@@ -52,13 +53,15 @@ public class Verify implements Runnable {
         Counter inCorrectOutputLowerCounter = Counter.build("de_tum_in_msrg_pgv_incorrect_lower_output", "incorrect outputs, lower than expected").labelNames("key").register();
 
         try (KafkaConsumer<String, PageStatistics> kafkaConsumer = new KafkaConsumer<String, PageStatistics>(getKafkaProperties())) {
-            kafkaConsumer.subscribe(Arrays.asList("output"));
+            kafkaConsumer.subscribe(Arrays.asList(Constants.OUTPUT_TOPIC));
             while (true){
                 ConsumerRecords<String, PageStatistics> consumerRecords = kafkaConsumer.poll(Duration.ofMillis(200));
                 for (ConsumerRecord<String, PageStatistics> record : consumerRecords){
                     PageTSKey key = new PageTSKey(record.value().getPage(), record.value().getWindowStart());
                     PageTSKey next1key = new PageTSKey(record.value().getPage(), record.value().getWindowEnd());
                     PageTSKey next2key = new PageTSKey(record.value().getPage(), new Date(record.value().getWindowEnd().getTime() + 60_000) );
+
+                    List<Long> processedIds = processedMap.getOrDefault(key, Collections.synchronizedList(new ArrayList<>()));
 
                     List<Long> receivedIds = record.value().getClickIds();
                     receivedIds.addAll(record.value().getUpdateIds());
@@ -71,7 +74,7 @@ public class Verify implements Runnable {
                     long latency = egressTime.getTime() - ingestionTime.getTime();
                     latencyGauge.labels(next1key.getPage()).set(latency);
 
-                    List<Long> processedIds = processedMap.getOrDefault(key, Collections.synchronizedList(new ArrayList<Long>()));
+
 
                     for (Long id : receivedIds){
                         receivedInputCounter.labels(key.getPage()).inc();

@@ -17,6 +17,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class VerifyLate implements Runnable{
 
@@ -67,24 +68,35 @@ public class VerifyLate implements Runnable{
 
 
                     PageTSKey key = new PageTSKey(record.value().getPage(), record.value().getClickTimestamp());
-                    Long id = record.value().getClickId();
+                    Long clickId = record.value().getClickId();
+                    Long updateId = record.value().getUpdateId();
 
                     LOGGER.debug(String.format("Key: %s",key.toString() ));
 
                     LOGGER.debug(String.format("Map contains key: %s", processedMap.containsKey(key)));
-                    List<Long> prevProcList = processedMap.getOrDefault(key, Collections.synchronizedList(new ArrayList<>()) );
+                    List<Long> previousIds = processedMap.getOrDefault(key, Collections.synchronizedList(new ArrayList<>()) );
 
 //                    LOGGER.debug(String.format("Already processed: %s", Arrays.deepToString(prevProcMap.keySet().toArray())));
 
-                    if (prevProcList.contains(id)){
+                    if (previousIds.contains(clickId)){
                         duplicateCounter.labels(key.getPage()).inc();
                     } else {
                         processedCounter.labels(key.getPage()).inc();
-                        prevProcList.add(id);
+                        previousIds.add(clickId);
                     }
 
+                    if (updateId != 0L){
+                        if (previousIds.contains(updateId)){
+                            duplicateCounter.labels(key.getPage()).inc();
+                        } else {
+                            processedCounter.labels(key.getPage()).inc();
+                            previousIds.add(updateId);
+                        }
+                    }
+
+
                     LOGGER.debug("Updating processed...");
-                    processedMap.put(key, prevProcList);
+                    processedMap.put(key, previousIds);
 
                 }
             }
