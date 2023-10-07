@@ -6,53 +6,54 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class VerifyE1 implements Runnable {
 
     Map<PageTSKey, List<Long>> inputIdMap;
-    Map<PageTSKey, Map<Long, Long>> processedMap;
-    int eventsPerWindow;
-    AtomicLong largestWatermark;
-    Gauge unprocessedGauge;
+    Map<PageTSKey, List<Long>> processedMap;
+    Gauge unprocessedEventsGauge;
+    Gauge unprocessedOutputsGauge;
 
     private static final Logger LOGGER = LogManager.getLogger(VerifyE1.class);
 
-    public VerifyE1(Map<PageTSKey, List<Long>> inputIdMap, Map<PageTSKey, Map<Long, Long>> processedMap, int eventsPerWindow, AtomicLong largestWatermark, Gauge unprocessedGauge) {
+    public VerifyE1(
+            Map<PageTSKey, List<Long>> inputIdMap,
+            Map<PageTSKey, List<Long>> processedMap,
+            Gauge unprocessedEventsGauge,
+            Gauge unprocessedOutputsGauge) {
         this.inputIdMap = inputIdMap;
         this.processedMap = processedMap;
-        this.eventsPerWindow = eventsPerWindow;
-        this.largestWatermark = largestWatermark;
-        this.unprocessedGauge = unprocessedGauge;
+        this.unprocessedEventsGauge = unprocessedEventsGauge;
+        this.unprocessedOutputsGauge = unprocessedOutputsGauge;
     }
 
     @Override
     public void run() {
-        Map<String, Long> unprocessedMap = new HashMap<>();
+        Map<String, Long> unprocessedEventsMap = new HashMap<>();
+        Map<String, Long> unprocessedOutputsMap = new HashMap<>();
         for (Map.Entry<PageTSKey, List<Long>> entry : inputIdMap.entrySet()){
-            long watermark = entry.getKey().getTS().getTime();
-            long largestWM = largestWatermark.getOpaque();
+
             List<Long> expectedIds = entry.getValue();
-            Map<Long, Long> processedIds = processedMap.get(entry.getKey());
+            List<Long> processedIds = processedMap.getOrDefault(entry.getKey(), Collections.synchronizedList(new ArrayList<>()));
 
-            int expectedSize = 0;
-            int processedSize = 0;
+            int expectedSize = expectedIds.size();
+            int processedSize = processedIds.size();
 
-            expectedSize = expectedIds.size();
-            if (processedIds != null){
-                processedSize = processedIds.keySet().size();
+            long unprocEventsPerKey = unprocessedEventsMap.getOrDefault(entry.getKey().getPage(), 0L);
+            long unprocOutputsPerKey = unprocessedOutputsMap.getOrDefault(entry.getKey().getPage(), 0L);
+
+            if (expectedSize == processedSize){
+                continue;
+            } else {
+                LOGGER.debug(String.format("Expected size: %d\nProcessed size: %d\nKey: %s", expectedSize, processedSize, entry.getKey()));
+                unprocOutputsPerKey += 1;
+                unprocEventsPerKey += expectedSize - processedSize;
             }
 
-            long unprocPerKey = unprocessedMap.getOrDefault(entry.getKey().getPage(), 0L);
-            if (entry.getValue().size() == eventsPerWindow) {
-
-                unprocPerKey += expectedSize - processedSize;
-            }
-//            }else {
-//                LOGGER.info(String.format("ASSERT!! \nCurr WM: %d\nLarge WM: %d", watermark, largestWM));
-//            }
-            unprocessedMap.put(entry.getKey().getPage(), unprocPerKey);
+            unprocessedEventsMap.put(entry.getKey().getPage(), unprocEventsPerKey);
+            unprocessedOutputsMap.put(entry.getKey().getPage(), unprocOutputsPerKey);
         }
-        unprocessedMap.forEach((s, aLong) -> unprocessedGauge.labels(s).set(aLong));
+        unprocessedEventsMap.forEach((s, aLong) -> unprocessedEventsGauge.labels(s).set(aLong));
+        unprocessedOutputsMap.forEach((s, aLong) -> unprocessedOutputsGauge.labels(s).set(aLong));
     }
 }

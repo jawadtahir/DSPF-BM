@@ -20,9 +20,7 @@ public class Verify implements Runnable {
 
     final String bootstrap;
     Map<PageTSKey, Date> inputTimeMap;
-    Map<PageTSKey, Map<Long, Long>> processedMap;
-    int eventPerWindow;
-    AtomicLong largestWatermark;
+    Map<PageTSKey, List<Long>> processedMap;
     Counter processedCounter;
     Counter duplicateCounter;
     Counter receivedInputCounter;
@@ -31,8 +29,7 @@ public class Verify implements Runnable {
     public Verify(
             String bootstrap,
             Map<PageTSKey, Date> inputTimeMap,
-            Map<PageTSKey, Map<Long, Long>> processedMap, int eventPerWindow,
-            AtomicLong largestWatermark,
+            Map<PageTSKey, List<Long>> processedMap,
             Counter processedCounter,
             Counter duplicateCounter,
             Counter receivedInputCounter) {
@@ -40,8 +37,6 @@ public class Verify implements Runnable {
         this.bootstrap = bootstrap;
         this.inputTimeMap = inputTimeMap;
         this.processedMap = processedMap;
-        this.eventPerWindow = eventPerWindow;
-        this.largestWatermark = largestWatermark;
         this.processedCounter = processedCounter;
         this.duplicateCounter = duplicateCounter;
         this.receivedInputCounter = receivedInputCounter;
@@ -61,11 +56,12 @@ public class Verify implements Runnable {
             while (true){
                 ConsumerRecords<String, PageStatistics> consumerRecords = kafkaConsumer.poll(Duration.ofMillis(200));
                 for (ConsumerRecord<String, PageStatistics> record : consumerRecords){
-                    PageTSKey key = new PageTSKey(record.value().getPage(), record.value().getWindowEnd());
-                    PageTSKey next1key = new PageTSKey(record.value().getPage(), record.value().getWindowStart());
-                    PageTSKey next2key = new PageTSKey(record.value().getPage(), new Date(record.value().getWindowStart().getTime() + 60_000) );
+                    PageTSKey key = new PageTSKey(record.value().getPage(), record.value().getWindowStart());
+                    PageTSKey next1key = new PageTSKey(record.value().getPage(), record.value().getWindowEnd());
+                    PageTSKey next2key = new PageTSKey(record.value().getPage(), new Date(record.value().getWindowEnd().getTime() + 60_000) );
 
-                    List<Long> receivedIds = record.value().getIds();
+                    List<Long> receivedIds = record.value().getClickIds();
+                    receivedIds.addAll(record.value().getUpdateIds());
 
 
                     receivedCounter.labels(key.getPage()).inc();
@@ -75,36 +71,33 @@ public class Verify implements Runnable {
                     long latency = egressTime.getTime() - ingestionTime.getTime();
                     latencyGauge.labels(next1key.getPage()).set(latency);
 
-                    if (receivedIds.size() == eventPerWindow){
+                    List<Long> processedIds = processedMap.getOrDefault(key, Collections.synchronizedList(new ArrayList<Long>()));
+
+                    for (Long id : receivedIds){
+                        receivedInputCounter.labels(key.getPage()).inc();
+                        boolean found = processedIds.contains(id);
+                        if (found){
+                            duplicateCounter.labels(key.getPage()).inc();
+                        } else {
+                            processedIds.add(id);
+                            processedCounter.labels(key.getPage()).inc();
+                        }
+                    }
+
+
+                    if (receivedIds.size() == processedIds.size()){
                         correctOutputCounter.labels(key.getPage()).inc();
                     } else {
                         inCorrectOutputCounter.labels(key.getPage()).inc();
-                        if (receivedIds.size() < eventPerWindow){
+                        if (receivedIds.size() < processedIds.size()){
                             inCorrectOutputLowerCounter.labels(key.getPage()).inc();
                         } else {
                             inCorrectOutputHigherCounter.labels(key.getPage()).inc();
                         }
                     }
 
-                    Map<Long, Long> processedIds = processedMap.getOrDefault(key, new ConcurrentHashMap<Long, Long>());
-
-                    for (Long id : receivedIds){
-                        receivedInputCounter.labels(key.getPage()).inc();
-                        boolean found = processedIds.containsKey(id);
-                        if (found){
-                            processedIds.put(id, processedIds.get(id)+1);
-                            duplicateCounter.labels(key.getPage()).inc();
-                        } else {
-                            processedIds.put(id, 1L);
-                            processedCounter.labels(key.getPage()).inc();
-                        }
-                    }
                     processedMap.put(key, processedIds);
 
-                    long currentWM = record.value().getWindowEnd().getTime();
-                    if (currentWM > largestWatermark.getAcquire()){
-                        largestWatermark.setRelease(currentWM);
-                    }
 
                 }
             }

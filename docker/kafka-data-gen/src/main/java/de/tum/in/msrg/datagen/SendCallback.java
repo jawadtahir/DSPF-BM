@@ -35,8 +35,6 @@ public class SendCallback implements Callback {
         PageTSKey key = new PageTSKey(clickEvent.getPage(), clickEvent.getTimestamp());
         long id = clickEvent.getId();
 
-
-
         Date ingestionTime = new Date(metadata.timestamp());
 
         if (!inputTimeMap.containsKey(key)){

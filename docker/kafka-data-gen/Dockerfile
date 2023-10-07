@@ -14,8 +14,8 @@ COPY --from=maven /kafka-data-gen/target/kafka-data-gen*.jar /jar/datagen.jar
 WORKDIR /jar
 VOLUME /reports
 
-ENV KAFKA_BOOTSTRAP="kafka1:9092" DELAY_COUNT=1000 DELAY_LENGTH=1 EVENTS_PER_WINDOW=5000 BENCHMARK_LENGTH=180
+ENV KAFKA_BOOTSTRAP="kafka1:9092" DELAY_COUNT=1000 DELAY_LENGTH=1 EVENTS_PER_WINDOW=5000 BENCHMARK_LENGTH=180 NUM_PRODUCERS=1
 
 EXPOSE 52923
 
-ENTRYPOINT exec  java -cp *:. de.tum.in.msrg.datagen.KafkaDataGen -kafka $KAFKA_BOOTSTRAP -delay $DELAY_COUNT -length $DELAY_LENGTH -events $EVENTS_PER_WINDOW -benchmarkLength $BENCHMARK_LENGTH
+ENTRYPOINT exec  java -XX:ParallelGCThreads=4 -XX:ConcGCThreads=4 -Xmx15g -cp *:. de.tum.in.msrg.utils.Runner -benchmarkLength $BENCHMARK_LENGTH -kafka $KAFKA_BOOTSTRAP -producers $NUM_PRODUCERS -delay $DELAY_COUNT -length $DELAY_LENGTH -events $EVENTS_PER_WINDOW
