@@ -57,15 +57,23 @@ public class App
         sinkProperties.put(ProducerConfig.TRANSACTION_TIMEOUT_CONFIG, 30000);
 
 
-
-
         KafkaSource<ClickEvent> clickSource = KafkaSource.<ClickEvent>builder()
                 .setTopics("click")
                 .setBootstrapServers(kafka)
                 .setGroupId("clickReader")
                 .setStartingOffsets(OffsetsInitializer.committedOffsets(OffsetResetStrategy.EARLIEST))
                 .setValueOnlyDeserializer(new ClickEventDeserializer())
+//                .setProperty(ConsumerConfig.ISOLATION_LEVEL_CONFIG, "read_committed")
                 .build();
+
+//        KafkaSource<UpdateEvent> updateSource = KafkaSource.<UpdateEvent>builder()
+//                .setTopics("update")
+//                .setBootstrapServers(kafka)
+//                .setGroupId("updateReader")
+//                .setStartingOffsets(OffsetsInitializer.committedOffsets(OffsetResetStrategy.EARLIEST))
+//                .setValueOnlyDeserializer(new UpdateEventDeserializer())
+//                .setProperty(ConsumerConfig.ISOLATION_LEVEL_CONFIG, "read_committed")
+//                .build();
 
 
         KafkaSink<PageStatistics> statsSink = KafkaSink.<PageStatistics>builder()
@@ -95,11 +103,19 @@ public class App
 
 
         WatermarkStrategy<ClickEvent> clickEventWatermarkStrategy = WatermarkStrategy
-                .<ClickEvent>forMonotonousTimestamps()
+                .<ClickEvent>forBoundedOutOfOrderness(Duration.ofMillis(200))
+//                .withWatermarkAlignment("clickAligner", Duration.ofMillis(200))
                 .withTimestampAssigner((element, recordTimestamp) -> element.getTimestamp().getTime());
+
+//        WatermarkStrategy<UpdateEvent> updateEventWatermarkStrategy = WatermarkStrategy
+//                .<UpdateEvent>forBoundedOutOfOrderness(Duration.ofMillis(200))
+////                .withWatermarkAlignment("updateAligner", Duration.ofMillis(200))
+//                .withTimestampAssigner((element, recordTimestamp) -> element.getTimestamp().getTime());
+
 
 
         DataStreamSource<ClickEvent> clickSrc = environment.fromSource(clickSource, clickEventWatermarkStrategy, "ClickEvent-src");
+//        DataStreamSource<UpdateEvent> updateSrc = environment.fromSource(updateSource, updateEventWatermarkStrategy, "UpdateEvent-src");
 
         OutputTag<ClickUpdateEvent> outputTag = new OutputTag<ClickUpdateEvent>("lateEvent", TypeInformation.of(ClickUpdateEvent.class));
 

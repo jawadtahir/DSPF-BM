@@ -11,17 +11,21 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
+import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.base.DeliveryGuarantee;
 import org.apache.flink.connector.kafka.sink.KafkaRecordSerializationSchema;
 import org.apache.flink.connector.kafka.sink.KafkaSink;
 import org.apache.flink.connector.kafka.source.KafkaSource;
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
+import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
+import org.apache.flink.streaming.api.environment.CheckpointConfig;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
@@ -69,7 +73,7 @@ public class App1
                 .setGroupId("clickReader")
                 .setStartingOffsets(OffsetsInitializer.committedOffsets(OffsetResetStrategy.EARLIEST))
                 .setValueOnlyDeserializer(new ClickEventDeserializer())
-                .setProperty(ConsumerConfig.ISOLATION_LEVEL_CONFIG, "read_committed")
+//                .setProperty(ConsumerConfig.ISOLATION_LEVEL_CONFIG, "read_committed")
                 .build();
 
         KafkaSource<UpdateEvent> updateSource = KafkaSource.<UpdateEvent>builder()
@@ -78,7 +82,7 @@ public class App1
                 .setGroupId("updateReader")
                 .setStartingOffsets(OffsetsInitializer.committedOffsets(OffsetResetStrategy.EARLIEST))
                 .setValueOnlyDeserializer(new UpdateEventDeserializer())
-                .setProperty(ConsumerConfig.ISOLATION_LEVEL_CONFIG, "read_committed")
+//                .setProperty(ConsumerConfig.ISOLATION_LEVEL_CONFIG, "read_committed")
                 .build();
 
 
@@ -129,7 +133,7 @@ public class App1
                 .where(ClickEvent::getPage).equalTo(UpdateEvent::getPage)
                 .window(TumblingEventTimeWindows.of(Time.seconds(60)))
 //                .allowedLateness(Time.seconds(20))
-                .apply(new ClickUpdateJoinFunction());
+                .apply(ClickUpdateEvent::new);
 
 
 
