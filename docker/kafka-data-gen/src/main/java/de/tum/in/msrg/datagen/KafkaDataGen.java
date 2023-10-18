@@ -165,7 +165,7 @@ public class KafkaDataGen
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap);
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getCanonicalName());
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getCanonicalName());
-        props.put(ProducerConfig.BATCH_SIZE_CONFIG, (int)delay);
+//        props.put(ProducerConfig.BATCH_SIZE_CONFIG, (int)100);
         props.put(ProducerConfig.LINGER_MS_CONFIG, 100);
         props.put(ProducerConfig.CLIENT_ID_CONFIG, "datagen"+ RandomUtils.nextInt());
 //        props.put(ProducerConfig.TRANSACTIONAL_ID_CONFIG, "datagen");
