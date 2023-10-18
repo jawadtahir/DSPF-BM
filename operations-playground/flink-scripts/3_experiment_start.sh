@@ -9,11 +9,14 @@ docker stack rm analysis
 echo "Removing any previous utils containers..."
 docker stack rm utils
 
-export DELAY_COUNT=1000
+export DELAY_COUNT=10000000
+#export DELAY_COUNT=1000
 export DELAY_LENGTH=1
-export EVENTS_PER_WINDOW=5000
+export EVENTS_PER_WINDOW=500
 export KAFKA_BOOTSTRAP=kafka1:9092
-export SHORT_DATA=""
+export BENCHMARK_LENGTH="120"
+export NUM_PRODUCERS=1
+export NUM_STREAMS=1
 
 # Start utils containers
 echo "Starting utils containers..."
@@ -37,17 +40,17 @@ docker stack deploy --prune -c docker-compose-utils.yaml utils
 #echo "Removing datagen container..."
 #docker service rm utils_datagen
 
-echo "Sleeping for 50s (30+10+10)"
-sleep 50s
+#echo "Sleeping for 180s (60+30+30)"
+#sleep 180s
+#
+#echo "Removing datagen container..."
+#docker service rm utils_datagen
 
-echo "Removing datagen container..."
-docker service rm utils_datagen
-
-echo "Sleeping for 10s"
-sleep 10s
-
-echo "Running analysis scripts"
-docker stack deploy --prune -c docker-compose-analysis.yaml analysis
+#echo "Sleeping for 10s"
+#sleep 10s
+#
+#echo "Running analysis scripts"
+#docker stack deploy --prune -c docker-compose-analysis.yaml analysis
 
 
 

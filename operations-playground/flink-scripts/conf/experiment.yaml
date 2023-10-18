@@ -12,7 +12,7 @@ tasks:
       #      - option: "--interface"
       #        value: "docker_gwbridge"
       - option: "--duration"
-        value: "10s"
+        value: "30s"
       - option: "--tc-image"
         value: "gaiadocker/iproute2"
 
@@ -20,7 +20,7 @@ tasks:
     suboperationOptns:
       - option: "--percent"
         value: "50"
-    startDelay: 30
+    startDelay: 60
 
 
 #tasks:
