@@ -8,11 +8,17 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.streams.processor.TimestampExtractor;
 
 public class UpdateEventTimeExtractor implements TimestampExtractor {
+    private static final ObjectMapper mapper = new ObjectMapper();
 
 
     @Override
     public long extract(ConsumerRecord<Object, Object> record, long partitionTime) {
-        UpdateEvent event = (UpdateEvent) record.value();
-        return event.getTimestamp().getTime();
+        try{
+            UpdateEvent event = mapper.readValue((String) record.value(), UpdateEvent.class);
+            return event.getTimestamp().getTime();
+        } catch (JsonProcessingException e){
+            e.printStackTrace();
+            return -1;
+        }
     }
 }

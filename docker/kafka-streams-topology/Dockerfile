@@ -22,7 +22,7 @@ EXPOSE 12345 12346
 
 VOLUME /kafka-topology /tmp/kafka-streams
 WORKDIR /
-ENV APPID=kstreams-eventcount KAFKA_BOOTSTRAP=kafka:9092 PROCESSING_GUARANTEE=exactly_once_beta STANDBY=0
+ENV APPID=kstreams-eventcount KAFKA_BOOTSTRAP=kafka:9092 PROCESSING_GUARANTEE=exactly_once_beta STANDBY=0 NUM_STREAMS=1
 
 ENTRYPOINT ["./entrypoint.sh"]
 

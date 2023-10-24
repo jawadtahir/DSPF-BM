@@ -18,10 +18,12 @@ package de.tum.in.msrg.kafka;
 
 import de.tum.in.msrg.datamodel.ClickEvent;
 import de.tum.in.msrg.datamodel.ClickUpdateEvent;
-import de.tum.in.msrg.datamodel.PageStatistics;
 import de.tum.in.msrg.datamodel.UpdateEvent;
 import de.tum.in.msrg.kafka.processor.*;
-import de.tum.in.msrg.kafka.serdes.*;
+import de.tum.in.msrg.kafka.serdes.ClickEventSerde;
+import de.tum.in.msrg.kafka.serdes.ClickUpdateSerdes;
+import de.tum.in.msrg.kafka.serdes.PageStatisticsSerdes;
+import de.tum.in.msrg.kafka.serdes.UpdateEventSerdes;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
@@ -35,7 +37,6 @@ import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.Topology;
 import org.apache.kafka.streams.kstream.*;
-import org.apache.kafka.streams.state.TimestampedWindowStore;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -49,13 +50,14 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 
-public class EventCount {
+public class EventCount1 {
 
 
-
-    private static final Logger LOGGER = LogManager.getLogger(EventCount.class);
+    private static final Logger LOGGER = LogManager.getLogger(EventCount1.class);
 
     public void run(String kafkaBootstrap, String processingGuarantee, String appId, String numStdby) throws Exception {
+
+
 
 
         Properties props = getProperties();
@@ -98,15 +100,27 @@ public class EventCount {
     public static Topology getTopology(Metrics metrics) {
         StreamsBuilder builder = new StreamsBuilder();
 
-        KStream<byte[], ClickUpdateEvent> clickStream = builder.stream("click",
+        KStream<byte[], ClickEvent> clickStream = builder.stream("click",
                         Consumed.<byte[], String>with(new ClickEventTimeExtractor())
                                 .withKeySerde(new Serdes.ByteArraySerde())
                                 .withValueSerde(new Serdes.StringSerde()))
-                .flatMapValues(new ClickUpdateEventMapper(metrics));
+                .flatMapValues(new ClickEventMapper(metrics));
+
+        KStream<byte[], UpdateEvent> updateStream = builder.stream("update",
+                Consumed.<byte[], String>with(new UpdateEventTimeExtractor())
+                        .withKeySerde(new Serdes.ByteArraySerde())
+                        .withValueSerde(new Serdes.StringSerde()))
+                .flatMapValues(new UpdateEventMapper());
+
+        KStream<byte[], ClickUpdateEvent> joinStream = clickStream.leftJoin(
+                updateStream,
+                new ClickUpdateJoiner(),
+                JoinWindows.ofTimeDifferenceAndGrace(Duration.ofSeconds(60), Duration.ofMillis(2000)),
+                StreamJoined.<byte[], ClickEvent, UpdateEvent>with(new Serdes.ByteArraySerde(), new ClickEventSerde(), new UpdateEventSerdes()));
 
 
 
-        clickStream
+        joinStream
                 .groupBy((key, value) -> key, Grouped.with(new Serdes.ByteArraySerde(), new ClickUpdateSerdes()))
                 .windowedBy(
                         TimeWindows.ofSizeAndGrace(Duration.of(60, ChronoUnit.SECONDS),
@@ -162,41 +176,5 @@ public class EventCount {
         return metrics;
     }
 
-    private static Options createCLI(){
-        Options opts = new Options();
 
-        Option serverOptn = Option.builder("kafka")
-                .argName("bootstrap")
-                .hasArg()
-                .desc("Kafka bootstrap server")
-                .build();
-
-
-        Option pgOptn = Option.builder("guarantee")
-                .argName("guarantee")
-                .hasArg()
-                .desc("Processing guarantee")
-                .build();
-
-        Option idOptn = Option.builder("appid")
-                .argName("id")
-                .hasArg()
-                .desc("Application ID")
-                .build();
-
-        Option standbyOptn = Option.builder("standby")
-                .argName("num")
-                .hasArg()
-                .desc("Number of standby replicas")
-                .build();
-
-        opts
-                .addOption(serverOptn)
-                .addOption(pgOptn)
-                .addOption(idOptn)
-                .addOption(standbyOptn);
-
-        return opts;
-
-    }
 }
