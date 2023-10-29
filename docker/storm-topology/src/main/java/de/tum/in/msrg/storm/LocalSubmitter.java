@@ -4,6 +4,7 @@ import de.tum.in.msrg.datamodel.ClickEvent;
 import de.tum.in.msrg.datamodel.PageStatistics;
 import de.tum.in.msrg.datamodel.UpdateEvent;
 import de.tum.in.msrg.storm.topology.StormTopology;
+import de.tum.in.msrg.storm.topology.StormTopology1;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
 
@@ -23,11 +24,8 @@ public class LocalSubmitter {
         cluster.submitTopology(
                 "local-storm-click-count",
                 config,
-                new StormTopology(
-                        ":49094",
-                        "click",
-                        "update",
-                        "output")
+                new StormTopology1(
+                        "node1:9094")
                 .getTopologyBuilder().createTopology());
 
     }

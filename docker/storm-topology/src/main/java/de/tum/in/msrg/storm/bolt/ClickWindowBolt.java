@@ -43,7 +43,7 @@ public class ClickWindowBolt extends BaseStatefulWindowedBolt<KeyValueState<Stri
         while (iterator.hasNext()){
             Tuple tuple = iterator.next();
             String page = tuple.getStringByField("page");
-            ClickEvent clickEvent = (ClickEvent) tuple.getValueByField("clickEvent");
+            ClickUpdateEvent clickUpdateEvent = (ClickUpdateEvent) tuple.getValueByField("clickUpdateEvent");
 //            UpdateEvent updateEvent = (UpdateEvent) tuple.getValueByField("updateEvent");
 //            ClickUpdateEvent joinEvent = new ClickUpdateEvent(clickEvent, updateEvent);
 
@@ -53,18 +53,16 @@ public class ClickWindowBolt extends BaseStatefulWindowedBolt<KeyValueState<Stri
                 tempStat.setWindowStart(windowStart);
                 tempStat.setWindowEnd(windowEnd);
                 tempStat.setPage(page);
-                tempStat.setCount(1);
-                tempStat.getIds().add(clickEvent.getId());
-                tempStat.setLastUpdateTS(clickEvent.getTimestamp());
-
+                tempStat.getClickIds().add(clickUpdateEvent.getClickId());
+                if (clickUpdateEvent.getUpdateId()!=0) {
+                    tempStat.getUpdateIds().add(clickUpdateEvent.getUpdateId());
+                }
                 statsMap.put(page, tempStat);
             }else{
-                stats.setCount(stats.getCount()+1);
-                stats.getIds().add(clickEvent.getId());
-//                if (!stats.getLastUpdateTS().equals(joinEvent.getUpdateTimestamp())){
-//                    stats.setLastUpdateTS(joinEvent.getUpdateTimestamp());
-//                    stats.setUpdateCount(stats.getUpdateCount()+1);
-//                }
+                stats.getClickIds().add(clickUpdateEvent.getClickId());
+                if (clickUpdateEvent.getUpdateId()!=0) {
+                    stats.getUpdateIds().add(clickUpdateEvent.getUpdateId());
+                }
             }
 
         }

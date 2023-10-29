@@ -53,17 +53,15 @@ public class ClickCountWindowBolt extends BaseStatefulWindowedBolt<KeyValueState
                 tempStat.setWindowStart(windowStart);
                 tempStat.setWindowEnd(windowEnd);
                 tempStat.setPage(page);
-                tempStat.setCount(1);
-                tempStat.getIds().add(joinEvent.getId());
-                tempStat.setLastUpdateTS(joinEvent.getUpdateTimestamp());
-
+                tempStat.getClickIds().add(joinEvent.getClickId());
+                if (joinEvent.getUpdateId() != 0){
+                    tempStat.getUpdateIds().add(joinEvent.getUpdateId());
+                }
                 statsMap.put(page, tempStat);
             }else{
-                stats.setCount(stats.getCount()+1);
-                stats.getIds().add(joinEvent.getId());
-                if (!stats.getLastUpdateTS().equals(joinEvent.getUpdateTimestamp())){
-                    stats.setLastUpdateTS(joinEvent.getUpdateTimestamp());
-                    stats.setUpdateCount(stats.getUpdateCount()+1);
+                stats.getClickIds().add(joinEvent.getClickId());
+                if (joinEvent.getUpdateId() != 0 && !stats.getUpdateIds().contains(joinEvent.getUpdateId())){
+                    stats.getUpdateIds().add(joinEvent.getUpdateId());
                 }
             }
 

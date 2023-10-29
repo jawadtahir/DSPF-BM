@@ -6,13 +6,20 @@ import de.tum.in.msrg.datamodel.PageStatistics;
 import org.apache.storm.kafka.bolt.mapper.TupleToKafkaMapper;
 import org.apache.storm.tuple.Tuple;
 
-public class StatsToKafkaMapper implements TupleToKafkaMapper<String, String> {
+public class StatsToKafkaMapper implements TupleToKafkaMapper<byte[], String> {
+
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
 
     @Override
-    public String getKeyFromTuple(Tuple tuple) {
+    public byte[] getKeyFromTuple(Tuple tuple) {
         PageStatistics stats = (PageStatistics) tuple.getValueByField("stats");
-        return stats.getPage();
+        try {
+            return MAPPER.writeValueAsBytes(stats.getPage());
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     @Override
@@ -20,7 +27,7 @@ public class StatsToKafkaMapper implements TupleToKafkaMapper<String, String> {
         PageStatistics stats = (PageStatistics) tuple.getValueByField("stats");
 //        System.out.println(stats);
         try {
-            return new ObjectMapper().writeValueAsString(stats);
+            return MAPPER.writeValueAsString(stats);
         } catch (JsonProcessingException e) {
             e.printStackTrace();
             return null;
