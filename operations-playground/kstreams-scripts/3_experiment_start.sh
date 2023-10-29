@@ -5,18 +5,14 @@
 echo "Removing any previous utils containers..."
 docker stack rm utils
 
-#echo "Sleeping for 15 seconds"
-#sleep 15s
-#
-## Remove any previous volumes
-#echo "Removing any orphan volumes..."
-##docker volume prune -f
-#for i in "${NODE_LIST[@]}"; do
-#  docker_swarm_volume_prune "$i"
-#done
-
-export DELAY_COUNT=4
+export DELAY_COUNT=5
+#export DELAY_COUNT=1000
 export DELAY_LENGTH=1
+export EVENTS_PER_WINDOW=5000
+export KAFKA_BOOTSTRAP=kafka1:9092
+export BENCHMARK_LENGTH="120"
+export NUM_PRODUCERS=2
+export NUM_STREAMS=2
 
 # Start utils containers
 echo "Starting utils containers..."
@@ -40,11 +36,11 @@ docker stack deploy --prune -c docker-compose-utils.yaml utils
 #echo "Removing datagen container..."
 #docker service rm utils_datagen
 
-echo "Sleeping for 480s (180+150+150)"
-sleep 480s
-
-echo "Removing datagen container..."
-docker service rm utils_datagen
+#echo "Sleeping for 480s (180+150+150)"
+#sleep 480s
+#
+#echo "Removing datagen container..."
+#docker service rm utils_datagen
 
 
 

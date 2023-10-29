@@ -2,7 +2,7 @@ version: '3.9'
 
 services:
   kstreams1:
-    image: jawadtahir/kafka-streams-topology
+    image: jawadtahir/kafka-streams-topology:latest
     hostname: kstreams1
     environment:
       APPID: kafka-streams-count
@@ -10,6 +10,7 @@ services:
 #      PROCESSING_GUARANTEE: "at_least_once"
       PROCESSING_GUARANTEE: "exactly_once_beta"
       STANDBY: 0
+      NUM_STREAMS:
     configs:
       - source: kstreams_log_config
         target: /kafka-topology/log4j2.xml
@@ -24,7 +25,7 @@ services:
 
 
   pumba_ks1:
-    image: jawadtahir/pumbasrvr
+    image: jawadtahir/pumbasrvr:latest
     hostname: pumba_ks1
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -38,7 +39,7 @@ services:
 
 
   kstreams2:
-    image: jawadtahir/kafka-streams-topology
+    image: jawadtahir/kafka-streams-topology:latest
     hostname: kstreams2
     environment:
       APPID: kafka-streams-count
@@ -46,7 +47,7 @@ services:
 #      PROCESSING_GUARANTEE: "at_least_once"
       PROCESSING_GUARANTEE: "exactly_once_beta"
       STANDBY: 0
-
+      NUM_STREAMS:
 
     configs:
       - source: kstreams_log_config
@@ -61,7 +62,7 @@ services:
           - "node.labels.vmname==kstreams2"
 
   pumba_ks2:
-    image: jawadtahir/pumbasrvr
+    image: jawadtahir/pumbasrvr:latest
     hostname: pumba_ks2
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -74,7 +75,7 @@ services:
           - "node.labels.vmname==kstreams2"
 
   kstreams3:
-    image: jawadtahir/kafka-streams-topology
+    image: jawadtahir/kafka-streams-topology:latest
     hostname: kstreams3
     environment:
       APPID: kafka-streams-count
@@ -82,7 +83,7 @@ services:
 #      PROCESSING_GUARANTEE: "at_least_once"
       PROCESSING_GUARANTEE: "exactly_once_beta"
       STANDBY: 0
-
+      NUM_STREAMS:
 
     configs:
       - source: kstreams_log_config
@@ -98,7 +99,7 @@ services:
           - "node.labels.vmname==kstreams3"
 
   pumba_ks3:
-    image: jawadtahir/pumbasrvr
+    image: jawadtahir/pumbasrvr:latest
     hostname: pumba_ks3
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
