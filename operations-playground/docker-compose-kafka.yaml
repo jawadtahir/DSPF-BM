@@ -55,6 +55,10 @@ services:
         published: 9094
         target: 9094
 
+    configs:
+      - source: kafka_config
+        target: opt/kafka/config/log4j.properties
+
     deploy:
       replicas: 1
       placement:
@@ -92,6 +96,10 @@ services:
       - mode: host
         published: 9094
         target: 9094
+
+    configs:
+      - source: kafka_config
+        target: opt/kafka/config/log4j.properties
 
     deploy:
       replicas: 1
@@ -131,12 +139,20 @@ services:
         published: 9094
         target: 9094
 
+    configs:
+      - source: kafka_config
+        target: opt/kafka/config/log4j.properties
+
     deploy:
       replicas: 1
       placement:
         constraints:
           - "node.labels.vmname==kafka3"
 
+
+configs:
+  kafka_config:
+    file: ./conf/log4j-kafka.properties
 
 networks:
   infra:
