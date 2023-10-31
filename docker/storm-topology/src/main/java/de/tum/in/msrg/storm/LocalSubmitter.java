@@ -12,7 +12,7 @@ public class LocalSubmitter {
 
     public static void main(String args[]) throws Exception {
 
-        SingleLocalCluster cluster = new SingleLocalCluster();
+    SingleLocalCluster cluster = new SingleLocalCluster();
 
         Config config = new Config();
 

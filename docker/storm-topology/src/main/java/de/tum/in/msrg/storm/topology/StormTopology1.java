@@ -58,8 +58,8 @@ public class StormTopology1 {
                 .leftJoin("storm-update-parser", "page", "storm-click-parser")
                 .select("page,storm-click-parser:eventTimestamp,clickEvent,storm-update-parser:eventTimestamp,updateEvent")
                 .withTumblingWindow(BaseWindowedBolt.Duration.seconds(60))
-                .withTimestampField("eventTimestamp")
-                .withLateTupleStream("lateJoinEvents");
+                .withTimestampField("eventTimestamp");
+//                .withLateTupleStream("lateJoinEvents");
 
 
         BaseStatefulWindowedBolt windowBolt = new ClickCountWindowBolt()
@@ -86,27 +86,27 @@ public class StormTopology1 {
 
         TopologyBuilder builder = new TopologyBuilder();
 
-        builder.setSpout("storm-click-spout", clickSpout, 3);
-        builder.setSpout("storm-update-spout", updateSpout, 3);
+        builder.setSpout("storm-click-spout", clickSpout);
+        builder.setSpout("storm-update-spout", updateSpout);
 
-        builder.setBolt("storm-click-parser", clickParserBolt, 3)
-                .shuffleGrouping("storm-click-spout");
-        builder.setBolt("storm-update-parser", updateParserBolt, 3)
-                        .shuffleGrouping("storm-update-spout");
+        builder.setBolt("storm-click-parser", clickParserBolt)
+                .fieldsGrouping("storm-click-spout", new Fields("key"));
+        builder.setBolt("storm-update-parser", updateParserBolt)
+                        .fieldsGrouping("storm-update-spout", new Fields("key"));
 
-        builder.setBolt("storm-clickupdate-join", clickUpdateJoinBolt, 6)
+        builder.setBolt("storm-clickupdate-join", clickUpdateJoinBolt)
                         .fieldsGrouping("storm-click-parser", new Fields("page"))
                         .fieldsGrouping("storm-update-parser", new Fields("page"));
 
-        builder.setBolt("storm-window-bolt", windowBolt, 6)
+        builder.setBolt("storm-window-bolt", windowBolt)
                 .fieldsGrouping("storm-clickupdate-join", new Fields("page"));
 
-        builder.setBolt("storm-kafka-bolt", kafkaBolt, 3)
+        builder.setBolt("storm-kafka-bolt", kafkaBolt)
                 .fieldsGrouping("storm-window-bolt", new Fields("page"));
 
-        builder.setBolt("storm-late-bolt", lateKafkaBolt, 3)
-                .shuffleGrouping("storm-window-bolt", "lateEvents")
-                .shuffleGrouping("storm-clickupdate-join", "lateJoinEvents");
+        builder.setBolt("storm-late-bolt", lateKafkaBolt)
+                .shuffleGrouping("storm-window-bolt", "lateEvents");
+//                .shuffleGrouping("storm-clickupdate-join", "lateJoinEvents");
 
         return builder;
     }
