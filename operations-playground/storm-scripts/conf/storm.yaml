@@ -54,6 +54,7 @@ executor.metrics.frequency.secs: 1
 
 
 topology.min.replication.count: 1
+topology.tasks: 3
 topology.workers: 3
 topology.component.resources.onheap.memory.mb: 1024.0
 topology.component.resources.offheap.memory.mb: 128.0
@@ -63,7 +64,7 @@ topology.message.timeout.secs: 190
 topology.ras.acker.executors.per.worker: 1
 #topology.state.provider: org.apache.storm.state.InMemoryKeyValueStateProvider
 topology.state.provider: org.apache.storm.redis.state.RedisKeyValueStateProvider
-topology.state.provider.config:  "{\"jedisPoolConfig\":{\"host\":\"redis\", \"port\":6379}}"
+topology.state.provider.config:  "{ \"jedisPoolConfig\":{\"host\":\"redis\", \"port\":6379}}"
 topology.state.checkpoint.interval.ms: 5000
 topology.fall.back.on.java.serialization: true
 topology.enable.v2.metrics.tick: true
@@ -72,12 +73,6 @@ topology.metrics.reporters:
   - class: "org.apache.storm.metrics2.reporters.JmxStormReporter"
     report.period: 1
     report.period.units: "SECONDS"
-
-topology.kryo.register:
-  - de.tum.in.msrg.datamodel.PageStatistics
-  - de.tum.in.msrg.datamodel.ClickEvent
-  - de.tum.in.msrg.datamodel.UpdateEvent
-  - de.tum.in.msrg.datamodel.ClickUpdateEvent
 
 
 
