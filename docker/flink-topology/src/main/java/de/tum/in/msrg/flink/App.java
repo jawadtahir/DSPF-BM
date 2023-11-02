@@ -39,13 +39,19 @@ public class App
 {
     private static final Logger LOGGER = LogManager.getLogger(App.class);
 
-    public static void main( String[] args ) throws Exception {
+    private final String kafka;
+    private final String pg;
 
-        DefaultParser parser = new DefaultParser();
-        CommandLine cmdLine = parser.parse(getCliOptns(), args);
+    public App (String kafka, String pg){
+        this.kafka = kafka;
+        this.pg = pg;
+    }
 
-        String kafka = cmdLine.getOptionValue("kafka", "kafka1:9092");
-        LOGGER.info(String.format("kafka: %s", kafka));
+    public void run() throws Exception {
+
+
+//        String kafka = cmdLine.getOptionValue("kafka", "kafka1:9092");
+//        LOGGER.info(String.format("kafka: %s", kafka));
 //        String pg = cmdLine.getOptionValue("pg", "exactly once");
 
         StreamExecutionEnvironment environment = StreamExecutionEnvironment.getExecutionEnvironment();
@@ -56,6 +62,12 @@ public class App
         sinkProperties.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafka);
         sinkProperties.put(ProducerConfig.TRANSACTION_TIMEOUT_CONFIG, 30000);
 
+        DeliveryGuarantee guarantee = null;
+        if (pg.equalsIgnoreCase("e1")){
+            guarantee = DeliveryGuarantee.EXACTLY_ONCE;
+        } else {
+            guarantee = DeliveryGuarantee.AT_LEAST_ONCE;
+        }
 
         KafkaSource<ClickEvent> clickSource = KafkaSource.<ClickEvent>builder()
                 .setTopics("click")
@@ -79,7 +91,7 @@ public class App
         KafkaSink<PageStatistics> statsSink = KafkaSink.<PageStatistics>builder()
                 .setBootstrapServers(kafka)
                 .setKafkaProducerConfig(sinkProperties)
-                .setDeliveryGuarantee(DeliveryGuarantee.EXACTLY_ONCE)
+                .setDeliveryGuarantee(guarantee)
                 .setTransactionalIdPrefix("statSink").
                 setRecordSerializer(KafkaRecordSerializationSchema.builder()
                         .setTopic("output")
@@ -91,7 +103,7 @@ public class App
         KafkaSink<ClickUpdateEvent> lateSink = KafkaSink.<ClickUpdateEvent>builder()
                 .setBootstrapServers(kafka)
                 .setKafkaProducerConfig(sinkProperties)
-                .setDeliveryGuarantee(DeliveryGuarantee.EXACTLY_ONCE)
+                .setDeliveryGuarantee(guarantee)
                 .setTransactionalIdPrefix("lateSink").
                 setRecordSerializer(KafkaRecordSerializationSchema.builder()
                         .setTopic("lateOutput")
@@ -103,7 +115,7 @@ public class App
 
 
         WatermarkStrategy<ClickEvent> clickEventWatermarkStrategy = WatermarkStrategy
-                .<ClickEvent>forBoundedOutOfOrderness(Duration.ofMillis(200))
+                .<ClickEvent>forMonotonousTimestamps()
 //                .withWatermarkAlignment("clickAligner", Duration.ofMillis(200))
                 .withTimestampAssigner((element, recordTimestamp) -> element.getTimestamp().getTime());
 

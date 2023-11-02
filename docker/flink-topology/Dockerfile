@@ -15,8 +15,8 @@ WORKDIR /opt/flink/bin
 
 VOLUME /usr/lib/jvm/java-11-openjdk-amd64
 
-ENV KAFKA_BOOTSTRAP="kafka1:9092"
+ENV KAFKA_BOOTSTRAP="kafka1:9092" NUM_STREAMS="1" PG="e1"
 
 EXPOSE 8081
 
-ENTRYPOINT flink run --class de.tum.in.msrg.flink.App1 topology.jar -kafka $KAFKA_BOOTSTRAP
+ENTRYPOINT flink run --class de.tum.in.msrg.flink.FlinkWrapper topology.jar -kafka $KAFKA_BOOTSTRAP -streams $NUM_STREAMS -pg $PG
