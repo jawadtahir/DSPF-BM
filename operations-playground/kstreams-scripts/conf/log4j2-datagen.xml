@@ -15,6 +15,10 @@
             <AppenderRef ref="LogToFile"/>
             <AppenderRef ref="LogToConsole"/>
         </Logger>
+        <Logger name="de.tum.in.msrg.utils.VerifyE1" level="info" additivity="false">
+            <AppenderRef ref="LogToFile"/>
+            <AppenderRef ref="LogToConsole"/>
+        </Logger>
         <Root level="info">
             <AppenderRef ref="LogToFile"/>
             <AppenderRef ref="LogToConsole"/>

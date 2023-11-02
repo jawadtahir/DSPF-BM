@@ -4,14 +4,14 @@ import org.apache.commons.cli.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class Wrapper {
+public class KSWrapper {
     private static String KAFKA_BOOTSTRAP;
     private static String PROCESSING_GUARANTEE;
     private static String APP_ID;
     private static String NUM_STANDBY;
     private static int NUM_STREAMS;
 
-    private static final Logger LOGGER = LogManager.getLogger(Wrapper.class);
+    private static final Logger LOGGER = LogManager.getLogger(KSWrapper.class);
 
     public static void main (String[] args) throws Exception {
 

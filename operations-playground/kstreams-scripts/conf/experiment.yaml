@@ -2,24 +2,44 @@
 
 
 tasks:
+#  - server:
+#      address: "pumba_ks2"
+#      port: 52923
+#    containers:
+#      - "kstreams_kstreams"
+#    operation: "netem"
+#    operationOptns:
+##      - option: "--interface"
+##        value: "docker_gwbridge"
+#      - option: "--duration"
+#        value: "30s"
+#      - option: "--tc-image"
+#        value: "gaiadocker/iproute2"
+#
+#    suboperation: "delay"
+#    suboperationOptns:
+#      - option: "--time"
+#        value: "5000"
+#    startDelay: 60
+
   - server:
       address: "pumba_ks2"
       port: 52923
     containers:
       - "kstreams_kstreams"
-    operation: "netem"
-    operationOptns:
+    operation: ""
+    operationOptns: []
 #      - option: "--interface"
 #        value: "docker_gwbridge"
-      - option: "--duration"
-        value: "30s"
-      - option: "--tc-image"
-        value: "gaiadocker/iproute2"
+#      - option: "--duration"
+#        value: "30s"
+#      - option: "--tc-image"
+#        value: "gaiadocker/iproute2"
 
-    suboperation: "corrupt"
-    suboperationOptns:
-      - option: "--percent"
-        value: "50"
+    suboperation: ""
+    suboperationOptns: []
+#      - option: "--time"
+#        value: "5000"
     startDelay: 60
 
 

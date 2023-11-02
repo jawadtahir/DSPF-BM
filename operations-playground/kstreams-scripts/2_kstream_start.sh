@@ -46,6 +46,8 @@ echo "Sleeping for 10 seconds..."
 sleep 10s
 
 export NUM_STREAMS=2
+#export PROCESSING_GUARANTEE="at_least_once"
+export PROCESSING_GUARANTEE="exactly_once_v2"
 
 # Start KStreams containers
 echo "Starting KStreams containers..."

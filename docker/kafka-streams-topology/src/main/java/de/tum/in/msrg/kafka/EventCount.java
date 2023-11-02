@@ -27,6 +27,7 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.metrics.*;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.utils.Time;
@@ -61,7 +62,6 @@ public class EventCount {
         Properties props = getProperties();
         props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaBootstrap);
         props.put(StreamsConfig.PROCESSING_GUARANTEE_CONFIG, processingGuarantee);
-        props.put(StreamsConfig.REPLICATION_FACTOR_CONFIG, "3");
         props.put(StreamsConfig.APPLICATION_ID_CONFIG, appId);
         props.put(StreamsConfig.NUM_STANDBY_REPLICAS_CONFIG, numStdby);
 
@@ -141,6 +141,8 @@ public class EventCount {
         props.put(StreamsConfig.METRICS_RECORDING_LEVEL_CONFIG, "INFO");
         props.put(StreamsConfig.NUM_STREAM_THREADS_CONFIG, "2");
         props.put(StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG, "10737418240");
+        props.put(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, 1000);
+        props.put(StreamsConfig.REPLICATION_FACTOR_CONFIG, "3");
 
         props.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, 3000);
         props.put(ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG, 1000);
