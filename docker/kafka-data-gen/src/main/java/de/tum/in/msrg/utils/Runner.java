@@ -86,19 +86,10 @@ public class Runner {
                         "Expected windows")
                 .labelNames("key").register();
 
-        Gauge debugExpectedCounter = Gauge.build(
-                "de_tum_in_msrg_utils_debug_expected",
-                "Expected number of events from memory map")
-                .labelNames("key").register();
-
-        Gauge debugProcessedCounter = Gauge.build(
-                        "de_tum_in_msrg_utils_debug_processed",
-                        "Processed number of events from memory map")
-                .labelNames("key").register();
 
         Map<PageTSKey, Date> inputTimeMap = new ConcurrentHashMap<>();
-        Map<PageTSKey, List<Long>> inputIdMap = new ConcurrentHashMap<>();
-        Map<PageTSKey, List<Long>> processedMap = new ConcurrentHashMap<>();
+        Map<PageTSKey, Map<Long, Boolean>> inputIdMap = new ConcurrentHashMap<>();
+        Map<PageTSKey, Map<Long, Boolean>> processedMap = new ConcurrentHashMap<>();
 
         ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(numProducer+1);
 
@@ -120,14 +111,14 @@ public class Runner {
 
         ExecutorService executorService = Executors.newCachedThreadPool();
 
-        Runnable outputVerifier = new Verify(bootstrap, inputTimeMap, processedMap, processedCounter, duplicateCounter, receivedInputCounter);
+        Runnable outputVerifier = new Verify(bootstrap, inputTimeMap, inputIdMap, processedMap, processedCounter, duplicateCounter, receivedInputCounter);
         Runnable lateOutputVerifier = new VerifyLate(bootstrap, inputIdMap, processedMap, processedCounter, duplicateCounter, receivedInputCounter);
 
         executorService.submit(outputVerifier);
         executorService.submit(lateOutputVerifier);
 
 //        ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
-        Runnable e1Verifier = new VerifyE1(inputIdMap, processedMap, unprocessedEventsGauge, unprocessedOutputsGauge, debugExpectedCounter, debugProcessedCounter);
+        Runnable e1Verifier = new VerifyE1(inputIdMap, processedMap, unprocessedEventsGauge, unprocessedOutputsGauge);
         scheduledExecutorService.scheduleWithFixedDelay(e1Verifier, 1, 1, TimeUnit.SECONDS);
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {

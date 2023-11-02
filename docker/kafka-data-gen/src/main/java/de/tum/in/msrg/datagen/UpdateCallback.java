@@ -10,14 +10,15 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class UpdateCallback implements Callback {
 
     private UpdateEvent updateEvent;
-    private Map<PageTSKey, List<Long>> inputIdMap;
+    private Map<PageTSKey, Map<Long, Boolean>> inputIdMap;
     private Counter generatedCounter;
 
-    public UpdateCallback(UpdateEvent updateEvent, Map<PageTSKey, List<Long>> inputIdMap, Counter generatedCounter) {
+    public UpdateCallback(UpdateEvent updateEvent, Map<PageTSKey, Map<Long, Boolean>> inputIdMap, Counter generatedCounter) {
         this.updateEvent = updateEvent;
         this.inputIdMap = inputIdMap;
         this.generatedCounter = generatedCounter;
@@ -28,9 +29,9 @@ public class UpdateCallback implements Callback {
         PageTSKey key = new PageTSKey(updateEvent.getPage(), updateEvent.getTimestamp());
         Long id = updateEvent.getId();
 
-        List<Long> previousIds = inputIdMap.getOrDefault(key, Collections.synchronizedList(new ArrayList<>()));
+        Map<Long, Boolean> previousIds = inputIdMap.getOrDefault(key, new ConcurrentHashMap<>());
 
-        previousIds.add(id);
+        previousIds.put(id, true);
         inputIdMap.put(key, previousIds);
 
         generatedCounter.labels(key.getPage()).inc();

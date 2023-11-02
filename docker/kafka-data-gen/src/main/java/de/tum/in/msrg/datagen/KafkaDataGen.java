@@ -7,8 +7,6 @@ import de.tum.in.msrg.common.PageTSKey;
 import de.tum.in.msrg.datamodel.ClickEvent;
 import de.tum.in.msrg.datamodel.UpdateEvent;
 import io.prometheus.client.Counter;
-import io.prometheus.client.exporter.HTTPServer;
-import org.apache.commons.cli.*;
 import org.apache.commons.lang3.RandomUtils;
 import org.apache.kafka.clients.producer.*;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
@@ -16,9 +14,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
-import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -39,7 +35,7 @@ public class KafkaDataGen
     private final int eventsPerWindow;
     private final int streamsAmount;
     private final Map<PageTSKey, Date> inputTimeMap;
-    private final Map<PageTSKey, List<Long>> inputIdMap;
+    private final Map<PageTSKey, Map<Long, Boolean>> inputIdMap;
     private final Counter recordsCounter;
     private final Counter expectedCounter;
 
@@ -57,7 +53,7 @@ public class KafkaDataGen
             int eventsPerWindow,
             int streamsAmount,
             Map<PageTSKey, Date> inputTimeMap,
-            Map<PageTSKey, List<Long>> inputIdMap,
+            Map<PageTSKey, Map<Long, Boolean>> inputIdMap,
             Counter recordsCounter,
             Counter expectedCounter) throws IOException {
 

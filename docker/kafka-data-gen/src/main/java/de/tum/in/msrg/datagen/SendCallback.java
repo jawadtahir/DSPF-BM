@@ -7,19 +7,20 @@ import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.RecordMetadata;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class SendCallback implements Callback {
 
     private ClickEvent clickEvent;
     private Map<PageTSKey, Date> inputTimeMap;
-    private Map<PageTSKey, List<Long>> inputIdMap;
+    private Map<PageTSKey, Map<Long, Boolean>> inputIdMap;
     private Counter generatedCounter;
     private Counter expectedOutputs;
 
     public SendCallback(
             ClickEvent clickEvent,
             Map<PageTSKey, Date> inputTimeMap,
-            Map<PageTSKey, List<Long>> inputIdMap,
+            Map<PageTSKey, Map<Long, Boolean>> inputIdMap,
             Counter generatedCounter,
             Counter expectedOutputs) {
         this.clickEvent = clickEvent;
@@ -42,9 +43,9 @@ public class SendCallback implements Callback {
             expectedOutputs.labels(key.getPage()).inc();
         }
 
-        List<Long> previousIds = inputIdMap.getOrDefault(key, Collections.synchronizedList(new ArrayList<>()));
+        Map<Long, Boolean> previousIds = inputIdMap.getOrDefault(key, new ConcurrentHashMap<>());
 
-        previousIds.add(id);
+        previousIds.put(id, true);
         inputIdMap.put(key, previousIds);
 
         generatedCounter.labels(key.getPage()).inc();

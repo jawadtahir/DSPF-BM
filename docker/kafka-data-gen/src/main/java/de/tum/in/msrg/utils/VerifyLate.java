@@ -1,16 +1,22 @@
 package de.tum.in.msrg.utils;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import de.tum.in.msrg.common.ClickUpdateEventDeserializer;
 import de.tum.in.msrg.common.Constants;
 import de.tum.in.msrg.common.PageStatisticsDeserializer;
 import de.tum.in.msrg.common.PageTSKey;
+import de.tum.in.msrg.datamodel.ClickEvent;
 import de.tum.in.msrg.datamodel.ClickUpdateEvent;
+import de.tum.in.msrg.datamodel.UpdateEvent;
 import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -22,19 +28,20 @@ import java.util.concurrent.ConcurrentHashMap;
 public class VerifyLate implements Runnable{
 
     String bootstrap;
-    Map<PageTSKey, List<Long>> inputIdMap;
-    Map<PageTSKey, List<Long>> processedMap;
+    Map<PageTSKey, Map<Long, Boolean>> inputIdMap;
+    Map<PageTSKey, Map<Long, Boolean>> processedMap;
     Counter processedCounter;
     Counter duplicateCounter;
     Counter lateCounter;
     Counter receivedInputCounter;
 
+    private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final Logger LOGGER = LogManager.getLogger(VerifyLate.class);
 
     public VerifyLate(
             String bootstrap,
-            Map<PageTSKey, List<Long>> inputIdMap,
-            Map<PageTSKey, List<Long>> processedMap,
+            Map<PageTSKey, Map<Long, Boolean>> inputIdMap,
+            Map<PageTSKey, Map<Long, Boolean>> processedMap,
             Counter processedCounter,
             Counter duplicateCounter,
             Counter receivedInputCounter) {
@@ -53,44 +60,78 @@ public class VerifyLate implements Runnable{
         lateCounter = Counter.build("de_tum_in_msrg_pgv_late", "Dropped events due to late arrival").labelNames("key").register();
 
         LOGGER.debug(String.format("Already processed: %s", Arrays.deepToString(processedMap.keySet().toArray())));
-        try (KafkaConsumer<String, ClickUpdateEvent> kafkaConsumer = new KafkaConsumer<String, ClickUpdateEvent>(getKafkaProperties())){
+        try (KafkaConsumer<byte[], String> kafkaConsumer = new KafkaConsumer<byte[], String>(getKafkaProperties())){
             LOGGER.info(String.format("Subscribing to %s topic...", Constants.LATE_OUTPUT_TOPIC));
             kafkaConsumer.subscribe(Arrays.asList(Constants.LATE_OUTPUT_TOPIC));
             while (true) {
-                ConsumerRecords<String, ClickUpdateEvent> records = kafkaConsumer.poll(Duration.ofMillis(100));
+                ConsumerRecords<byte[], String> records = kafkaConsumer.poll(Duration.ofMillis(100));
                 LOGGER.debug(String.format("Polled %d messages.", records.count()));
 
-                for (ConsumerRecord<String, ClickUpdateEvent> record : records) {
+                for (ConsumerRecord<byte[], String> record : records) {
+                    String page = new String(record.key());
 
                     LOGGER.debug("Updating counters...");
-                    lateCounter.labels(record.value().getPage()).inc();
-                    receivedInputCounter.labels(record.value().getPage()).inc();
+                    lateCounter.labels(page).inc();
+                    receivedInputCounter.labels(page).inc();
+
+                    Date eventTimestamp = null;
+                    Long clickId = 0L;
+                    Long updateId = 0L;
+
+                    if (record.value().contains("id") && record.value().contains("updatedBy")){
+                        try {
+                            UpdateEvent event = MAPPER.readValue(record.value(), UpdateEvent.class);
+                            eventTimestamp = event.getTimestamp();
+                            updateId = event.getId();
+                        } catch (JsonProcessingException e) {
+                            e.printStackTrace();
+                            continue;
+                        }
+                    } else if (record.value().contains("id") && record.value().contains("creationTimestamp")){
+                        try {
+                            ClickEvent event = MAPPER.readValue(record.value(), ClickEvent.class);
+                            eventTimestamp = event.getTimestamp();
+                            clickId = event.getId();
+                        } catch (JsonProcessingException e) {
+                            e.printStackTrace();
+                            continue;
+                        }
+                    } else if (record.value().contains("clickTimestamp") ){
+                        try {
+                            ClickUpdateEvent event = MAPPER.readValue(record.value(), ClickUpdateEvent.class);
+                            eventTimestamp = event.getClickTimestamp();
+                            clickId = event.getClickId();
+                            updateId = event.getUpdateId();
+                        } catch (JsonProcessingException e) {
+                            e.printStackTrace();
+                            continue;
+                        }
+                    }
 
 
-                    PageTSKey key = new PageTSKey(record.value().getPage(), record.value().getClickTimestamp());
-                    Long clickId = record.value().getClickId();
-                    Long updateId = record.value().getUpdateId();
+                    PageTSKey key = new PageTSKey(page, eventTimestamp);
+
 
                     LOGGER.debug(String.format("Key: %s",key.toString() ));
 
                     LOGGER.debug(String.format("Map contains key: %s", processedMap.containsKey(key)));
-                    List<Long> previousIds = processedMap.getOrDefault(key, Collections.synchronizedList(new ArrayList<>()) );
+                    Map<Long, Boolean> previousIds = processedMap.getOrDefault(key, new ConcurrentHashMap<>() );
 
 //                    LOGGER.debug(String.format("Already processed: %s", Arrays.deepToString(prevProcMap.keySet().toArray())));
 
-                    if (previousIds.contains(clickId)){
+                    if (previousIds.containsKey(clickId)){
                         duplicateCounter.labels(key.getPage()).inc();
                     } else {
                         processedCounter.labels(key.getPage()).inc();
-                        previousIds.add(clickId);
+                        previousIds.put(clickId, true);
                     }
 
                     if (updateId != 0L){
-                        if (previousIds.contains(updateId)){
+                        if (previousIds.containsKey(updateId)){
                             duplicateCounter.labels(key.getPage()).inc();
                         } else {
                             processedCounter.labels(key.getPage()).inc();
-                            previousIds.add(updateId);
+                            previousIds.put(updateId, true);
                         }
                     }
 
@@ -109,8 +150,8 @@ public class VerifyLate implements Runnable{
         properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap);
         properties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         properties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true");
-        properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getCanonicalName());
-        properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ClickUpdateEventDeserializer.class.getCanonicalName());
+        properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class.getCanonicalName());
+        properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getCanonicalName());
         properties.put(ConsumerConfig.ISOLATION_LEVEL_CONFIG, "read_committed");
         properties.put(ConsumerConfig.GROUP_ID_CONFIG, "lateOutputVerifier");
 
