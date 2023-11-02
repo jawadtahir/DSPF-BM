@@ -16,41 +16,28 @@ tasks:
       - option: "--tc-image"
         value: "gaiadocker/iproute2"
 
-    suboperation: "corrupt"
+    suboperation: "loss"
     suboperationOptns:
       - option: "--percent"
-        value: "50"
+        value: "20"
     startDelay: 60
 
-
-#tasks:
 #  - server:
 #      address: "pumba_tm2"
 #      port: 52923
 #    containers:
 #      - "flink_taskmanager2"
-#    operation: "netem"
+#    operation: ""
 #    operationOptns:
-##      - option: "--interface"
-##        value: "docker_gwbridge"
+#      #      - option: "--interface"
+#      #        value: "docker_gwbridge"
 #      - option: "--duration"
-#        value: "150s"
-#      - option: "--tc-image"
-#        value: "gaiadocker/iproute2"
+#        value: "30s"
+##      - option: "--tc-image"
+##        value: "gaiadocker/iproute2"
 #
-#    suboperation: "delay"
-#    suboperationOptns:
-#      - option: "--time"
-#        value: "5000"
-#    startDelay: 180
-
-#  - server:
-#      address: "pumba_tm2"
-#      port: 52923
-#    containers:
-#      - "flink_taskmanager2"
-#    operation: "netem"
-#    operationOptns: []
 #    suboperation: ""
 #    suboperationOptns: []
-#    startDelay: 180
+##      - option: "--time"
+##        value: "5000"
+#    startDelay: 60

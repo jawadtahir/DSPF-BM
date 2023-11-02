@@ -209,11 +209,16 @@ services:
       - source: workers_conf
         target: /opt/flink/conf/workers
 
+      - source: flink_console_log
+        target: /opt/flink/conf/log4j-console.properties
+
     environment:
       - JOB_MANAGER_RPC_ADDRESS=jobmanager
       - KAFKA_BOOTSTRAP=kafka1:9092
+      - NUM_STREAMS
+      - PG
     hostname: flink_client
-    entrypoint: flink run --class de.tum.in.msrg.flink.App topology.jar -kafka $KAFKA_BOOTSTRAP
+    entrypoint: "flink run --class de.tum.in.msrg.flink.FlinkWrapper topology.jar -kafka kafka1:9092 -streams ${NUM_STREAMS} -pg ¼{PG}"
     deploy:
       replicas: 1
       restart_policy:

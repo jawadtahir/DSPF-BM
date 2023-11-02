@@ -31,67 +31,23 @@ services:
           - "node.labels.vmname==utils2"
 
 
-#  latcal:
-#    image: jawadtahir/latcal:latest
-#    build:
-#      context: ../docker/latcal
-#    hostname: latcal
-#    networks:
-#      infra:
-#    environment:
-#      KAFKA_BOOTSTRAP: kafka1:9092
-#    configs:
-#      - source: log4j2_latcal
-#        target: /jar/log4j2.xml
-#
-#    deploy:
-#      replicas: 1
-#      placement:
-#        constraints:
-#          - "node.labels.vmname==utils"
 
-#  pgv:
-#    image: jawadtahir/latcal:latest
-#    build:
-#      context: ../docker/latcal
-#    hostname: pgv
+#  pumbasrvrclient:
+#    image: jawadtahir/pumbasrvrclient:latest
+#    hostname: pumbasrvrclient
 #    networks:
 #      infra:
-#    environment:
-#      KAFKA_BOOTSTRAP: kafka1:9092
-#      EVENTS_PER_WINDOW:
 #    configs:
-#      - source: log4j2_latcal
-#        target: /jar/log4j2.xml
-#    volumes:
-#      - pgv:/reports
-#
-##    entrypoint: ["java", "-cp", "*:.", "de.tum.in.msrg.latcal.PGV"]
-#    entrypoint: java -XX:ParallelGCThreads=4 -XX:ConcGCThreads=4 -Xmx15g -cp *:. de.tum.in.msrg.latcal.PGVNew -kafka $KAFKA_BOOTSTRAP -events $EVENTS_PER_WINDOW
+#      - source: experiment
+#        target: /PumbaSrvrClient/experiment.yaml
 #
 #    deploy:
 #      replicas: 1
+#      restart_policy:
+#        condition: on-failure
 #      placement:
 #        constraints:
 #          - "node.labels.vmname==utils2"
-
-
-  pumbasrvrclient:
-    image: jawadtahir/pumbasrvrclient:latest
-    hostname: pumbasrvrclient
-    networks:
-      infra:
-    configs:
-      - source: experiment
-        target: /PumbaSrvrClient/experiment.yaml
-
-    deploy:
-      replicas: 1
-      restart_policy:
-        condition: on-failure
-      placement:
-        constraints:
-          - "node.labels.vmname==utils2"
 
 
 configs:
