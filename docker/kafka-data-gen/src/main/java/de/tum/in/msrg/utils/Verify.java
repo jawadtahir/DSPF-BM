@@ -12,6 +12,8 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.time.Duration;
 import java.util.*;
@@ -27,6 +29,8 @@ public class Verify implements Runnable {
     Counter processedCounter;
     Counter duplicateCounter;
     Counter receivedInputCounter;
+
+    private static final Logger LOGGER = LogManager.getLogger(Verify.class);
 
 
     public Verify(
@@ -50,6 +54,7 @@ public class Verify implements Runnable {
     @Override
     public void run() {
         Gauge latencyGauge = Gauge.build("de_tum_in_msrg_latcal_latency", "End-to-end latency").labelNames("key").register();
+        Gauge latencyGauge1 = Gauge.build("de_tum_in_msrg_latcal_latency1", "End-to-end latency").labelNames("key").register();
         Counter receivedCounter = Counter.build("de_tum_in_msrg_pgv_received", "Total received events").labelNames("key").register();
         Counter correctOutputCounter = Counter.build("de_tum_in_msrg_pgv_correct_output", "Correct outputs").labelNames("key").register();
         Counter inCorrectEventCounter = Counter.build("de_tum_in_msrg_pgv_incorrect_event", "incorrect events").labelNames("key").register();
@@ -61,10 +66,16 @@ public class Verify implements Runnable {
             kafkaConsumer.subscribe(Arrays.asList(Constants.OUTPUT_TOPIC));
             while (true){
                 ConsumerRecords<String, PageStatistics> consumerRecords = kafkaConsumer.poll(Duration.ofMillis(200));
+                LOGGER.debug(String.format("Polled %d messages.", consumerRecords.count()));
+
                 for (ConsumerRecord<String, PageStatistics> record : consumerRecords){
                     PageTSKey key = new PageTSKey(record.value().getPage(), record.value().getWindowStart());
                     PageTSKey next1key = new PageTSKey(record.value().getPage(), record.value().getWindowEnd());
                     PageTSKey next2key = new PageTSKey(record.value().getPage(), new Date(record.value().getWindowEnd().getTime() + 60_000) );
+
+                    LOGGER.debug(String.format("Processing key = %s...", key));
+                    LOGGER.debug(String.format("Processing latency key = %s...", next1key));
+                    LOGGER.debug(String.format("Processing next latency key = %s...", next2key));
 
                     Map<Long, Boolean> processedIds = processedMap.getOrDefault(key, new ConcurrentHashMap<>());
                     Map<Long, Boolean> expectedIds = expectedMap.get(key);
@@ -76,9 +87,16 @@ public class Verify implements Runnable {
                     receivedCounter.labels(key.getPage()).inc();
 
                     Date ingestionTime = inputTimeMap.get(next1key);
+                    Date ingestionTime1 = inputTimeMap.get(next2key);
                     Date egressTime = new Date(record.timestamp());
                     long latency = egressTime.getTime() - ingestionTime.getTime();
                     latencyGauge.labels(next1key.getPage()).set(latency);
+                    if (ingestionTime1 != null) {
+                        long latency1 = egressTime.getTime() - ingestionTime1.getTime();
+                        latencyGauge1.labels(next2key.getPage()).set(latency1);
+                    }
+
+                    LOGGER.debug("calculated latency");
 
 
 
@@ -99,6 +117,8 @@ public class Verify implements Runnable {
 
                     }
 
+                    processedMap.put(key, processedIds);
+                    LOGGER.debug("Process processed");
 
                     if (receivedIds.size() == processedIds.size()){
                         correctOutputCounter.labels(key.getPage()).inc();
@@ -111,11 +131,13 @@ public class Verify implements Runnable {
                         }
                     }
 
-                    processedMap.put(key, processedIds);
+
 
 
                 }
             }
+        } catch (Exception e){
+            e.printStackTrace();
         }
 
 

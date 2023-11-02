@@ -33,10 +33,11 @@ public class VerifyE1 implements Runnable {
     @Override
     public void run() {
 
-        LOGGER.info("Starting E1 verifier");
+        LOGGER.debug("Starting E1 verifier");
         Long biggestTS = 0L;
 
         Map<PageTSKey, Long> unprocessedEventsMap = new ConcurrentHashMap<>();
+        Map<String, Long> unprocessedEventsMap2 = new ConcurrentHashMap<>();
         for (Map.Entry<PageTSKey, Map<Long, Boolean>> entry : inputIdMap.entrySet()){
             LOGGER.debug(String.format("Processing %s key...", entry.getKey()));
             Map<Long, Boolean> expectedIds = entry.getValue();
@@ -60,13 +61,21 @@ public class VerifyE1 implements Runnable {
 
             unprocessedEventsMap.put(entry.getKey(), unprocEventsPerKey);
         }
+        LOGGER.debug(String.format("Biggest TS: %d", biggestTS));
 
         for (Map.Entry<PageTSKey, Long> entry : unprocessedEventsMap.entrySet()){
+            LOGGER.debug(String.format("Processing %s key", entry.getKey()));
             if (entry.getKey().getTS().getTime() < biggestTS){
-                unprocessedEventsGauge.labels(entry.getKey().getPage()).set(entry.getValue());
+                Long unproc = unprocessedEventsMap2.getOrDefault(entry.getKey().getPage(), 0L);
+                unproc += entry.getValue();
+                unprocessedEventsMap2.put(entry.getKey().getPage(), unproc);
+
             }
         }
 
-        LOGGER.info("Finished E1 verifier");
+        LOGGER.debug("updating gauge...");
+        unprocessedEventsMap2.forEach((s, aLong) -> unprocessedEventsGauge.labels(s).set(aLong));
+
+        LOGGER.debug("Finished E1 verifier");
     }
 }
