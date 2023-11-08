@@ -1,6 +1,8 @@
 package de.tum.in.msrg.utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.exc.StreamReadException;
+import com.fasterxml.jackson.databind.DatabindException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.tum.in.msrg.common.ClickUpdateEventDeserializer;
@@ -16,11 +18,13 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -68,11 +72,7 @@ public class VerifyLate implements Runnable{
                 LOGGER.debug(String.format("Polled %d messages.", records.count()));
 
                 for (ConsumerRecord<byte[], String> record : records) {
-                    String page = new String(record.key());
-
-                    LOGGER.debug("Updating counters...");
-                    lateCounter.labels(page).inc();
-                    receivedInputCounter.labels(page).inc();
+                    String page = MAPPER.readValue(record.key(), String.class);
 
                     Date eventTimestamp = null;
                     Long clickId = 0L;
@@ -106,6 +106,9 @@ public class VerifyLate implements Runnable{
                             e.printStackTrace();
                             continue;
                         }
+                    } else {
+                        LOGGER.error("Event type is unknown");
+                        System.exit(-1);
                     }
 
 
@@ -115,9 +118,16 @@ public class VerifyLate implements Runnable{
                     LOGGER.debug(String.format("Key: %s",key.toString() ));
 
                     LOGGER.debug(String.format("Map contains key: %s", processedMap.containsKey(key)));
-                    Map<Long, Boolean> previousIds = processedMap.getOrDefault(key, new ConcurrentHashMap<>() );
+                    Map<Long, Boolean> previousIds = processedMap.get(key);
+                    if (previousIds == null) {
+                        LOGGER.warn("Late event's corresponding processed not found. Seeking...");
+                        kafkaConsumer.seek(new TopicPartition(record.topic(), record.partition()), record.offset());
+                        break;
+                    }
 
-//                    LOGGER.debug(String.format("Already processed: %s", Arrays.deepToString(prevProcMap.keySet().toArray())));
+                    LOGGER.debug("Updating counters...");
+                    lateCounter.labels(page).inc();
+                    receivedInputCounter.labels(page).inc();
 
                     if (previousIds.containsKey(clickId)){
                         duplicateCounter.labels(key.getPage()).inc();
@@ -141,6 +151,12 @@ public class VerifyLate implements Runnable{
 
                 }
             }
+        } catch (StreamReadException e) {
+            e.printStackTrace();
+        } catch (DatabindException e) {
+            e.printStackTrace();
+        } catch (IOException exception) {
+            exception.printStackTrace();
         }
     }
 

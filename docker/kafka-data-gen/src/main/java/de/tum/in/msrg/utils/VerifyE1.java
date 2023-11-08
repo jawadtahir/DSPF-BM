@@ -50,7 +50,7 @@ public class VerifyE1 implements Runnable {
             int expectedSize = expectedIds.size();
             int processedSize = processedIds.size();
 
-            long unprocEventsPerKey = unprocessedEventsMap.getOrDefault(entry.getKey().getPage(), 0L);
+            long unprocEventsPerKey = unprocessedEventsMap.getOrDefault(entry.getKey(), 0L);
 
             for (Long id : expectedIds.keySet()){
                 if (!processedIds.containsKey(id)){

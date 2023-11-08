@@ -10,6 +10,7 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.logging.log4j.LogManager;
@@ -77,8 +78,18 @@ public class Verify implements Runnable {
                     LOGGER.debug(String.format("Processing latency key = %s...", next1key));
                     LOGGER.debug(String.format("Processing next latency key = %s...", next2key));
 
+                    Date ingestionTime = inputTimeMap.get(next1key);
+                    Date ingestionTime1 = inputTimeMap.get(next2key);
+
                     Map<Long, Boolean> processedIds = processedMap.getOrDefault(key, new ConcurrentHashMap<>());
                     Map<Long, Boolean> expectedIds = expectedMap.get(key);
+
+                    if (ingestionTime == null || expectedIds == null) {
+                        LOGGER.warn("Corresponding input is not found yet. Seeking...");
+                        kafkaConsumer.seek(new TopicPartition(record.topic(), record.partition()), record.offset());
+                        break;
+                    }
+
 
                     List<Long> receivedIds = record.value().getClickIds();
                     receivedIds.addAll(record.value().getUpdateIds());
@@ -86,8 +97,8 @@ public class Verify implements Runnable {
 
                     receivedCounter.labels(key.getPage()).inc();
 
-                    Date ingestionTime = inputTimeMap.get(next1key);
-                    Date ingestionTime1 = inputTimeMap.get(next2key);
+//                    Date ingestionTime = inputTimeMap.get(next1key);
+//                    Date ingestionTime1 = inputTimeMap.get(next2key);
                     Date egressTime = new Date(record.timestamp());
                     long latency = egressTime.getTime() - ingestionTime.getTime();
                     latencyGauge.labels(next1key.getPage()).set(latency);
