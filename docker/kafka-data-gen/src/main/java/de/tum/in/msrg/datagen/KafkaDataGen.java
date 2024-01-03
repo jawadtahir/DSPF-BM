@@ -78,15 +78,15 @@ public class KafkaDataGen
         // Update the pages half way the window
         long nextUpdate = (Constants.WINDOW_SIZE.toMillis() / 2);
 
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            LOGGER.info("Shutdown hook.");
-            try {
-                Thread.sleep(6000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            LOGGER.info("Shutdown hook completed.");
-        }));
+//        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+//            LOGGER.info("Shutdown hook.");
+//            try {
+//                Thread.sleep(6000);
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
+//            LOGGER.info("Shutdown hook completed.");
+//        }));
 
         try (KafkaProducer<byte [], byte []> kafkaProducer = new KafkaProducer<byte[], byte[]>(getKafkaProps(bootstrap, delay))) {
 

@@ -18,22 +18,25 @@ public class LateToKafkaMapper implements TupleToKafkaMapper<byte[], String> {
 
     @Override
     public byte[] getKeyFromTuple(Tuple tuple) {
-        String page = null;
-        ITuple lateTuple = (ITuple) tuple.getValueByField("late_tuple");
-
-        if (lateTuple.getFields().contains("clickEvent")) {
-            page = ((ClickEvent) lateTuple.getValueByField("clickEvent")).getPage();
-
-        } else if (lateTuple.getFields().contains("updateEvent")){
-            page = ((UpdateEvent) lateTuple.getValueByField("updateEvent")).getPage();
-        }
-
-        else if (lateTuple.getFields().contains("clickUpdateEvent")){
-            page = ((ClickUpdateEvent) lateTuple.getValueByField("clickUpdateEvent")).getPage();
-        }
-
         try {
-            return MAPPER.writeValueAsBytes(page);
+            ClickEvent event = (ClickEvent) tuple.getValueByField("late_tuple");
+            return MAPPER.writeValueAsBytes(event.getPage());
+        } catch (ClassCastException e){
+            try {
+                UpdateEvent event = (UpdateEvent) tuple.getValueByField("late_tuple");
+                return MAPPER.writeValueAsBytes(event.getPage());
+            } catch (ClassCastException e1){
+                try {
+                    ClickUpdateEvent event = (ClickUpdateEvent) tuple.getValueByField("late_tuple");
+                    return MAPPER.writeValueAsBytes(event.getPage());
+                } catch (ClassCastException | JsonProcessingException e2){
+                    e.printStackTrace();
+                    return null;
+                }
+            } catch (JsonProcessingException e1) {
+                e.printStackTrace();
+                return null;
+            }
         } catch (JsonProcessingException e) {
             e.printStackTrace();
             return null;
@@ -42,31 +45,28 @@ public class LateToKafkaMapper implements TupleToKafkaMapper<byte[], String> {
 
     @Override
     public String getMessageFromTuple(Tuple tuple) {
-
-        Object obj = null;
-        ITuple lateTuple = (ITuple) tuple.getValueByField("late_tuple");
-
-        if (lateTuple.getFields().contains("clickEvent")) {
-            obj = ((ClickEvent) lateTuple.getValueByField("clickEvent"));
-
-        } else if (lateTuple.getFields().contains("updateEvent")){
-            obj = ((UpdateEvent) lateTuple.getValueByField("updateEvent"));
-        }
-
-        else if (lateTuple.getFields().contains("clickUpdateEvent")){
-            obj = ((ClickUpdateEvent) lateTuple.getValueByField("clickUpdateEvent"));
-        }
-
-
-//        ClickUpdateEvent clickUpdateEvent = (ClickUpdateEvent) ((ITuple)tuple.getValueByField("late_tuple")).getValueByField("clickUpdateEvent");
-//        System.out.println(stats);
-
         try {
-            return MAPPER.writeValueAsString(obj);
+            ClickEvent event = (ClickEvent) tuple.getValueByField("late_tuple");
+            return MAPPER.writeValueAsString(event);
+        } catch (ClassCastException e) {
+            try {
+                UpdateEvent event = (UpdateEvent) tuple.getValueByField("late_tuple");
+                return MAPPER.writeValueAsString(event);
+            } catch (ClassCastException e1) {
+                try {
+                    ClickUpdateEvent event = (ClickUpdateEvent) tuple.getValueByField("late_tuple");
+                    return MAPPER.writeValueAsString(event);
+                } catch (ClassCastException | JsonProcessingException e2) {
+                    e.printStackTrace();
+                    return null;
+                }
+            } catch (JsonProcessingException e1) {
+                e.printStackTrace();
+                return null;
+            }
         } catch (JsonProcessingException e) {
             e.printStackTrace();
             return null;
         }
-
     }
 }

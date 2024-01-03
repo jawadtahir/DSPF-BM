@@ -127,12 +127,14 @@ public class App1
 
 
         WatermarkStrategy<ClickEvent> clickEventWatermarkStrategy = WatermarkStrategy
-                .<ClickEvent>forMonotonousTimestamps().withIdleness(Duration.ofSeconds(1))
+                .<ClickEvent>forMonotonousTimestamps()
+//                .withIdleness(Duration.ofSeconds(1))
 //                .withWatermarkAlignment("clickAligner", Duration.ofMillis(200))
                 .withTimestampAssigner((element, recordTimestamp) -> element.getTimestamp().getTime());
 
         WatermarkStrategy<UpdateEvent> updateEventWatermarkStrategy = WatermarkStrategy
-                .<UpdateEvent>forMonotonousTimestamps().withIdleness(Duration.ofSeconds(1))
+                .<UpdateEvent>forMonotonousTimestamps()
+//                .withIdleness(Duration.ofSeconds(1))
 //                .withWatermarkAlignment("updateAligner", Duration.ofMillis(200))
                 .withTimestampAssigner((element, recordTimestamp) -> element.getTimestamp().getTime());
 

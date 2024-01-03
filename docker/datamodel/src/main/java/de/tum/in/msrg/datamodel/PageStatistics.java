@@ -19,6 +19,7 @@ package de.tum.in.msrg.datamodel;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
+import java.io.Serializable;
 import java.time.Instant;
 import java.util.*;
 
@@ -26,7 +27,7 @@ import java.util.*;
  * A small wrapper class for windowed page counts.
  *
  */
-public class PageStatistics {
+public class PageStatistics implements Serializable {
 
 	private String page;
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS")

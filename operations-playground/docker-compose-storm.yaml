@@ -11,7 +11,22 @@ services:
       replicas: 1
       placement:
         constraints:
-          - "node.labels.vmname==utils2"
+          - "node.labels.vmname==nimbus"
+
+
+  zookeeper1:
+    image: zookeeper:3.8.0
+    restart: always
+    hostname: zookeeper1
+
+    networks:
+      infra:
+
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - "node.labels.vmname==nimbus"
 
 
   nimbus:

@@ -8,6 +8,10 @@ services:
     hostname: redis
     networks:
       infra:
+    ports:
+      - target: 6379
+        published: 56379
+        mode: host
     deploy:
       replicas: 1
       placement:
@@ -118,7 +122,8 @@ services:
       replicas: 1
       placement:
         constraints:
-          - "node.labels.vmname==supervisor2"
+#          - "node.labels.vmname==supervisor2"
+          - "node.labels.vmname==tm2"
 
   pumba_supervisor2:
     image: jawadtahir/pumbasrvr:latest
@@ -131,7 +136,8 @@ services:
       replicas: 1
       placement:
         constraints:
-          - "node.labels.vmname==supervisor2"
+#          - "node.labels.vmname==supervisor2"
+          - "node.labels.vmname==tm2"
 
   supervisor3:
     image: jawadtahir/storm:latest
@@ -228,6 +234,9 @@ services:
 configs:
   storm_config:
     file: ./conf/storm.yaml
+
+  storm_log:
+    file: ./conf/worker.xml
 
 networks:
   infra:

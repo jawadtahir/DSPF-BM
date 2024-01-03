@@ -22,7 +22,7 @@ storm.zookeeper.servers:
 #nimbus.seeds: ["nimbus", "nimbus1"]
 nimbus.seeds: ["nimbus"]
 #TODO Change
-nimbus.task.timeout.secs: 30 #30
+nimbus.task.timeout.secs: 350 #30
 nimbus.supervisor.timeout.secs: 3 #60
 nimbus.code.sync.freq.secs: 10
 #nimbus.min.replication.count: 2
@@ -47,7 +47,7 @@ supervisor.slots.ports:
 supervisor.cpu.capacity: 400
 
 
-worker.childopts: "-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.port=52923 -Djava.rmi.server.hostname=localhost -Xmx%HEAP-MEM%m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=artifacts/heapdump"
+worker.childopts: "-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.port=52923 -Djava.rmi.server.hostname=0.0.0.0 -Xmx%HEAP-MEM%m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=artifacts/heapdump"
 worker.heap.memory.mb: 14336 #1536
 
 executor.metrics.frequency.secs: 1

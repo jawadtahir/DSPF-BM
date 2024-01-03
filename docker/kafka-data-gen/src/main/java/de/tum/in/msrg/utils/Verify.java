@@ -86,6 +86,7 @@ public class Verify implements Runnable {
 
                     if (ingestionTime == null || expectedIds == null) {
                         LOGGER.warn("Corresponding input is not found yet. Seeking...");
+                        Thread.sleep(100);
                         kafkaConsumer.seek(new TopicPartition(record.topic(), record.partition()), record.offset());
                         break;
                     }
@@ -131,11 +132,11 @@ public class Verify implements Runnable {
                     processedMap.put(key, processedIds);
                     LOGGER.debug("Process processed");
 
-                    if (receivedIds.size() == processedIds.size()){
+                    if (processedIds.size() == expectedIds.size()){
                         correctOutputCounter.labels(key.getPage()).inc();
                     } else {
                         inCorrectOutputCounter.labels(key.getPage()).inc();
-                        if (receivedIds.size() < processedIds.size()){
+                        if (processedIds.size() < expectedIds.size()){
                             inCorrectOutputLowerCounter.labels(key.getPage()).inc();
                         } else {
                             inCorrectOutputHigherCounter.labels(key.getPage()).inc();

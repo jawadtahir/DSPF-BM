@@ -2,7 +2,6 @@
 
 
 CREATE_TOPIC_SCRIPT="/home/foobar/Downloads/kafka_2.13-3.6.0/bin/kafka-topics.sh"
-export NUM_STREAMS=2
 
 # Remove any previous utils containers
 echo "Removing any previous utils containers..."
@@ -46,6 +45,7 @@ ${CREATE_TOPIC_SCRIPT} --topic lateOutput --create  --bootstrap-server node1:909
 echo "Sleeping for 10 seconds..."
 sleep 10s
 
+export NUM_STREAMS=2
 # Start Storm containers
 echo "Starting Storm containers..."
 docker stack deploy --prune -c docker-compose-storm.yaml storm

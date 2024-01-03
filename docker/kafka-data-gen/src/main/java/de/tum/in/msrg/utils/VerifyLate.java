@@ -118,12 +118,12 @@ public class VerifyLate implements Runnable{
                     LOGGER.debug(String.format("Key: %s",key.toString() ));
 
                     LOGGER.debug(String.format("Map contains key: %s", processedMap.containsKey(key)));
-                    Map<Long, Boolean> previousIds = processedMap.get(key);
-                    if (previousIds == null) {
-                        LOGGER.warn("Late event's corresponding processed not found. Seeking...");
-                        kafkaConsumer.seek(new TopicPartition(record.topic(), record.partition()), record.offset());
-                        break;
-                    }
+                    Map<Long, Boolean> previousIds = processedMap.getOrDefault(key, new ConcurrentHashMap<>());
+//                    if (previousIds == null) {
+//                        LOGGER.warn(String.format("Late event's corresponding processed not found. Seeking to topic %s, part %d, offset %d...", record.topic(), record.partition(), record.offset()));
+//                        kafkaConsumer.seek(new TopicPartition(record.topic(), record.partition()), record.offset());
+//                        break;
+//                    }
 
                     LOGGER.debug("Updating counters...");
                     lateCounter.labels(page).inc();

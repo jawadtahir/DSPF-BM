@@ -62,11 +62,13 @@ public class StormTopology1 {
 //                .withLateTupleStream("lateJoinEvents");
 
 
-        BaseStatefulWindowedBolt windowBolt = new ClickCountWindowBolt()
+        BaseWindowedBolt windowBolt = new ClickCountWindowBolt()
                 .withTumblingWindow(BaseWindowedBolt.Duration.seconds(60))
-                .withPersistence()
-                .withTimestampField("storm-click-parser:eventTimestamp")
-                .withLateTupleStream("lateEvents");
+                .withLag(BaseWindowedBolt.Duration.of(0))
+                .withWatermarkInterval(BaseWindowedBolt.Duration.seconds(1))
+//                .withPersistence()
+                .withTimestampField("storm-click-parser:eventTimestamp");
+//                .withLateTupleStream("lateEvents");
 
 //        BaseStatefulWindowedBolt<KeyValueState<String, PageStatistics>> clickWindowBolt = new ClickWindowBolt()
 //                .withTumblingWindow(BaseWindowedBolt.Duration.seconds(60))
@@ -79,33 +81,33 @@ public class StormTopology1 {
                 .withTupleToKafkaMapper(new StatsToKafkaMapper())
                 .withProducerProperties(getKafkaBoltProps());
 
-        KafkaBolt<byte[], String> lateKafkaBolt = new KafkaBolt<byte[], String>()
-                .withTopicSelector(LATE_TOPIC)
-                .withTupleToKafkaMapper(new LateToKafkaMapper())
-                .withProducerProperties(getKafkaBoltProps());
+//        KafkaBolt<byte[], String> lateKafkaBolt = new KafkaBolt<byte[], String>()
+//                .withTopicSelector(LATE_TOPIC)
+//                .withTupleToKafkaMapper(new LateToKafkaMapper())
+//                .withProducerProperties(getKafkaBoltProps());
 
         TopologyBuilder builder = new TopologyBuilder();
 
-        builder.setSpout("storm-click-spout", clickSpout);
-        builder.setSpout("storm-update-spout", updateSpout);
+        builder.setSpout("storm-click-spout", clickSpout, 3);
+        builder.setSpout("storm-update-spout", updateSpout, 3);
 
-        builder.setBolt("storm-click-parser", clickParserBolt)
+        builder.setBolt("storm-click-parser", clickParserBolt, 3)
                 .fieldsGrouping("storm-click-spout", new Fields("key"));
-        builder.setBolt("storm-update-parser", updateParserBolt)
+        builder.setBolt("storm-update-parser", updateParserBolt, 3)
                         .fieldsGrouping("storm-update-spout", new Fields("key"));
 
-        builder.setBolt("storm-clickupdate-join", clickUpdateJoinBolt)
+        builder.setBolt("storm-clickupdate-join", clickUpdateJoinBolt, 3)
                         .fieldsGrouping("storm-click-parser", new Fields("page"))
                         .fieldsGrouping("storm-update-parser", new Fields("page"));
 
-        builder.setBolt("storm-window-bolt", windowBolt)
+        builder.setBolt("storm-window-bolt", windowBolt, 3)
                 .fieldsGrouping("storm-clickupdate-join", new Fields("page"));
 
-        builder.setBolt("storm-kafka-bolt", kafkaBolt)
+        builder.setBolt("storm-kafka-bolt", kafkaBolt, 3)
                 .fieldsGrouping("storm-window-bolt", new Fields("page"));
 
-        builder.setBolt("storm-late-bolt", lateKafkaBolt)
-                .shuffleGrouping("storm-window-bolt", "lateEvents");
+//        builder.setBolt("storm-late-bolt", lateKafkaBolt)
+//                .localOrShuffleGrouping("storm-window-bolt", "lateEvents");
 //                .shuffleGrouping("storm-clickupdate-join", "lateJoinEvents");
 
         return builder;

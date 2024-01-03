@@ -42,19 +42,15 @@ public class StormTopology {
                 .build();
 
 
-
-
         KafkaSpout<byte[], String> clickSpout = new KafkaSpout<byte[], String>(clickSpoutConfig);
 
         ClickUpdateJoinParserBolt clickUpdateJoinParserBolt = new ClickUpdateJoinParserBolt();
 
 
 
-        BaseStatefulWindowedBolt windowBolt = new ClickWindowBolt()
+        BaseWindowedBolt windowBolt = new ClickWindowBoltTest()
                 .withTumblingWindow(BaseWindowedBolt.Duration.seconds(60))
-                .withPersistence()
-                .withTimestampField("eventTimestamp")
-                .withLateTupleStream("lateEvents");
+                .withTimestampField("eventTimestamp");
 
 
         KafkaBolt<byte[], String> kafkaBolt = new KafkaBolt<byte[], String>()
@@ -62,27 +58,27 @@ public class StormTopology {
                 .withTupleToKafkaMapper(new StatsToKafkaMapper())
                 .withProducerProperties(getKafkaBoltProps());
 
-        KafkaBolt<byte[], String> lateKafkaBolt = new KafkaBolt<byte[], String>()
-                .withTopicSelector(LATE_TOPIC)
-                .withTupleToKafkaMapper(new LateToKafkaMapper())
-                .withProducerProperties(getKafkaBoltProps());
+//        KafkaBolt<byte[], String> lateKafkaBolt = new KafkaBolt<byte[], String>()
+//                .withTopicSelector(LATE_TOPIC)
+//                .withTupleToKafkaMapper(new LateToKafkaMapper())
+//                .withProducerProperties(getKafkaBoltProps());
 
         TopologyBuilder builder = new TopologyBuilder();
 
         builder.setSpout("storm-click-spout", clickSpout, 3);
 
         builder.setBolt("storm-click-parser", clickUpdateJoinParserBolt, 3)
-                .shuffleGrouping("storm-click-spout");
+                .fieldsGrouping("storm-click-spout", new Fields("key"));
 
 
-        builder.setBolt("storm-window-bolt", windowBolt, 6)
+        builder.setBolt("storm-window-bolt", windowBolt, 3)
                 .fieldsGrouping("storm-click-parser", new Fields("page"));
 
         builder.setBolt("storm-kafka-bolt", kafkaBolt, 3)
                 .fieldsGrouping("storm-window-bolt", new Fields("page"));
 
-        builder.setBolt("storm-late-bolt", lateKafkaBolt, 3)
-                .shuffleGrouping("storm-window-bolt", "lateEvents");
+//        builder.setBolt("storm-late-bolt", lateKafkaBolt, 3)
+//                .shuffleGrouping("storm-window-bolt", "lateEvents");
 
         return builder;
     }

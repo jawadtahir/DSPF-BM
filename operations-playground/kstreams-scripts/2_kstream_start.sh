@@ -28,8 +28,8 @@ echo "Starting Kafka containers..."
 docker stack deploy --prune -c docker-compose-kafka-kraft.yaml kafka
 
 # Sleep for 20 seconds
-echo "Sleeping for 10 seconds..."
-sleep 10s
+echo "Sleeping for 15 seconds..."
+sleep 15s
 
 echo "Creating topics..."
 #${CREATE_TOPIC_SCRIPT} --topic click --create --partitions 3 --replication-factor 3 --bootstrap-server node6:9094 --replica-assignment 1001:1002:1003,1002:1001:1003,1003:1001:1002
@@ -45,7 +45,7 @@ ${CREATE_TOPIC_SCRIPT} --topic output --create  --bootstrap-server node1:9094 --
 echo "Sleeping for 10 seconds..."
 sleep 10s
 
-export NUM_STREAMS=2
+export NUM_STREAMS=1
 #export PROCESSING_GUARANTEE="at_least_once"
 export PROCESSING_GUARANTEE="exactly_once_v2"
 

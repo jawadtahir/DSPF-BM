@@ -8,7 +8,7 @@ docker stack rm utils
 #export DELAY_COUNT=5
 export DELAY_COUNT=9999999
 export DELAY_LENGTH=1
-export EVENTS_PER_WINDOW=5000
+export EVENTS_PER_WINDOW=500
 export KAFKA_BOOTSTRAP=kafka1:9092
 export BENCHMARK_LENGTH="120"
 export NUM_PRODUCERS=1

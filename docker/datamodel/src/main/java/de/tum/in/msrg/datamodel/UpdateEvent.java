@@ -2,6 +2,7 @@ package de.tum.in.msrg.datamodel;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
+import java.io.Serializable;
 import java.util.Date;
 import java.util.Objects;
 
@@ -9,7 +10,7 @@ import java.util.Objects;
  * A simple event recording an update on a {@link UpdateEvent#page} at time {@link UpdateEvent#timestamp}.
  *
  */
-public class UpdateEvent {
+public class UpdateEvent implements Serializable {
     private long id;
     //using java.util.Date for better readability
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS")
