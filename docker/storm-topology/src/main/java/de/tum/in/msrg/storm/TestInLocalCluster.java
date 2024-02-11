@@ -59,13 +59,13 @@ public class TestInLocalCluster {
 
 
         LocalCluster cluster = new LocalCluster.Builder()
-                .withSupervisors(1)
+                .withSupervisors(3)
                 .withPortsPerSupervisor(1)
                 .withDaemonConf(configuration)
                 .withNimbusDaemon()
                 .build();
 
-        try (LocalCluster.LocalTopology topology = cluster.submitTopology("test", configuration, new StormTopology1("node1:9094").getTopologyBuilder().createTopology())) {
+        try (LocalCluster.LocalTopology topology = cluster.submitTopology("test", configuration, new StormTopology("node1:9094").getTopologyBuilder().createTopology())) {
 
             System.in.readAllBytes();
         }

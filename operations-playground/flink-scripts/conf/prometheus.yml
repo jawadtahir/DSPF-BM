@@ -37,7 +37,7 @@ scrape_configs:
 
   - job_name: "utils"
     static_configs:
-      - targets: ["datagen:52923", "latcal:52923", "pumbasrvrclient:9100", "pgv:52923"]
+      - targets: ["datagen:52923", "latcal:52923", "pumbasrvrclient:9100", "pgv:52923", "pinger:52923"]
 
 
   - job_name: "kstreams"

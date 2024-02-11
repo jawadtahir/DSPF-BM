@@ -35,7 +35,7 @@ public class StormTopology1 {
                 .setProcessingGuarantee(KafkaSpoutConfig.ProcessingGuarantee.AT_LEAST_ONCE)
                 .setProp("group.id", "click-spout")
                 .setProp("auto.offset.reset", "earliest")
-                .setProp(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class.getCanonicalName())
+                .setProp(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getCanonicalName())
                 .setProp(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getCanonicalName())
                 .build();
 
@@ -44,7 +44,7 @@ public class StormTopology1 {
                 .setProcessingGuarantee(KafkaSpoutConfig.ProcessingGuarantee.AT_LEAST_ONCE)
                 .setProp("group.id", "update-spout")
                 .setProp("auto.offset.reset", "earliest")
-                .setProp(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class.getCanonicalName())
+                .setProp(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getCanonicalName())
                 .setProp(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getCanonicalName())
                 .build();
 
@@ -70,21 +70,12 @@ public class StormTopology1 {
                 .withTimestampField("storm-click-parser:eventTimestamp");
 //                .withLateTupleStream("lateEvents");
 
-//        BaseStatefulWindowedBolt<KeyValueState<String, PageStatistics>> clickWindowBolt = new ClickWindowBolt()
-//                .withTumblingWindow(BaseWindowedBolt.Duration.seconds(60))
-//                .withLag(BaseWindowedBolt.Duration.seconds(0))
-//                .withPersistence()
-//                .withTimestampField("eventTimestamp");
 
         KafkaBolt<byte[], String> kafkaBolt = new KafkaBolt<byte[], String>()
                 .withTopicSelector(OUTPUT_TOPIC)
                 .withTupleToKafkaMapper(new StatsToKafkaMapper())
                 .withProducerProperties(getKafkaBoltProps());
 
-//        KafkaBolt<byte[], String> lateKafkaBolt = new KafkaBolt<byte[], String>()
-//                .withTopicSelector(LATE_TOPIC)
-//                .withTupleToKafkaMapper(new LateToKafkaMapper())
-//                .withProducerProperties(getKafkaBoltProps());
 
         TopologyBuilder builder = new TopologyBuilder();
 

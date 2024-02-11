@@ -1,0 +1,191 @@
+version: '3.9'
+
+services:
+  kstreams1:
+    image: jawadtahir/kafka-streams-topology:latest
+    hostname: kstreams1
+    environment:
+      APPID: kafka-streams-count
+      KAFKA_BOOTSTRAP: "kafka1:9092,kafka2:9092,kafka3:9092"
+      PROCESSING_GUARANTEE:
+      STANDBY: 0
+      NUM_STREAMS:
+    configs:
+      - source: kstreams_log_config
+        target: /kafka-topology/log4j2.xml
+    networks:
+      infra:
+
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - "node.labels.vmname==kstreams1"
+
+
+  pumba_ks1:
+    image: jawadtahir/pumbasrvr:latest
+    hostname: pumba_ks1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      infra:
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - "node.labels.vmname==kstreams1"
+
+
+  kstreams2:
+    image: jawadtahir/kafka-streams-topology:latest
+    hostname: kstreams2
+    environment:
+      APPID: kafka-streams-count
+      KAFKA_BOOTSTRAP: "kafka1:9092,kafka2:9092,kafka3:9092"
+      PROCESSING_GUARANTEE:
+      STANDBY: 0
+      NUM_STREAMS:
+
+    configs:
+      - source: kstreams_log_config
+        target: /kafka-topology/log4j2.xml
+    networks:
+      infra:
+
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - "node.labels.vmname==kstreams2"
+
+  pumba_ks2:
+    image: jawadtahir/pumbasrvr:latest
+    hostname: pumba_ks2
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      infra:
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - "node.labels.vmname==kstreams2"
+
+  kstreams3:
+    image: jawadtahir/kafka-streams-topology:latest
+    hostname: kstreams3
+    environment:
+      APPID: kafka-streams-count
+      KAFKA_BOOTSTRAP: "kafka1:9092,kafka2:9092,kafka3:9092"
+      PROCESSING_GUARANTEE:
+      STANDBY: 0
+      NUM_STREAMS:
+
+    configs:
+      - source: kstreams_log_config
+        target: /kafka-topology/log4j2.xml
+
+    networks:
+      infra:
+
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - "node.labels.vmname==kstreams3"
+
+  pumba_ks3:
+    image: jawadtahir/pumbasrvr:latest
+    hostname: pumba_ks3
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      infra:
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - "node.labels.vmname==kstreams3"
+
+  kstreams4:
+    image: jawadtahir/kafka-streams-topology:latest
+    hostname: kstreams4
+    environment:
+      APPID: kafka-streams-count
+      KAFKA_BOOTSTRAP: "kafka1:9092,kafka2:9092,kafka3:9092"
+      PROCESSING_GUARANTEE:
+      STANDBY: 0
+      NUM_STREAMS:
+
+    configs:
+      - source: kstreams_log_config
+        target: /kafka-topology/log4j2.xml
+
+    networks:
+      infra:
+
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - "node.labels.vmname==worker1"
+
+  pumba_ks4:
+    image: jawadtahir/pumbasrvr:latest
+    hostname: pumba_ks4
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      infra:
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - "node.labels.vmname==worker1"
+
+  kstreams5:
+    image: jawadtahir/kafka-streams-topology:latest
+    hostname: kstreams5
+    environment:
+      APPID: kafka-streams-count
+      KAFKA_BOOTSTRAP: "kafka1:9092,kafka2:9092,kafka3:9092"
+      PROCESSING_GUARANTEE:
+      STANDBY: 0
+      NUM_STREAMS:
+
+    configs:
+      - source: kstreams_log_config
+        target: /kafka-topology/log4j2.xml
+
+    networks:
+      infra:
+
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - "node.labels.vmname==worker2"
+
+  pumba_ks5:
+    image: jawadtahir/pumbasrvr:latest
+    hostname: pumba_ks5
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      infra:
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - "node.labels.vmname==worker2"
+
+configs:
+  kstreams_log_config:
+    file: ./conf/log4j2-kstreams.xml
+
+
+networks:
+  infra:
+    name: infra
+    external: true

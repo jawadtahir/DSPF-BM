@@ -3,6 +3,7 @@ package de.tum.in.msrg.storm.topology;
 import de.tum.in.msrg.datamodel.ClickEvent;
 import de.tum.in.msrg.datamodel.PageStatistics;
 import de.tum.in.msrg.storm.bolt.*;
+import de.tum.in.msrg.storm.translator.EventTranslator;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
@@ -33,16 +34,17 @@ public class StormTopology {
     }
 
     public TopologyBuilder getTopologyBuilder(){
-        KafkaSpoutConfig<byte[], String> clickSpoutConfig = new  KafkaSpoutConfig.Builder<byte[], String>(kafkaBroker, INPUT_TOPIC)
+        KafkaSpoutConfig<String, String> clickSpoutConfig = new  KafkaSpoutConfig.Builder<String, String>(kafkaBroker, INPUT_TOPIC)
                 .setProcessingGuarantee(KafkaSpoutConfig.ProcessingGuarantee.AT_LEAST_ONCE)
                 .setFirstPollOffsetStrategy(FirstPollOffsetStrategy.EARLIEST)
+                .setRecordTranslator(new EventTranslator())
                 .setProp(ConsumerConfig.GROUP_ID_CONFIG, "click-spout")
-                .setProp(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class.getCanonicalName())
+                .setProp(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getCanonicalName())
                 .setProp(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getCanonicalName())
                 .build();
 
 
-        KafkaSpout<byte[], String> clickSpout = new KafkaSpout<byte[], String>(clickSpoutConfig);
+        KafkaSpout<String, String> clickSpout = new KafkaSpout<String, String>(clickSpoutConfig);
 
         ClickUpdateJoinParserBolt clickUpdateJoinParserBolt = new ClickUpdateJoinParserBolt();
 
@@ -72,10 +74,10 @@ public class StormTopology {
 
 
         builder.setBolt("storm-window-bolt", windowBolt, 3)
-                .fieldsGrouping("storm-click-parser", new Fields("page"));
+                .fieldsGrouping("storm-click-parser", new Fields("key"));
 
         builder.setBolt("storm-kafka-bolt", kafkaBolt, 3)
-                .fieldsGrouping("storm-window-bolt", new Fields("page"));
+                .fieldsGrouping("storm-window-bolt", new Fields("key"));
 
 //        builder.setBolt("storm-late-bolt", lateKafkaBolt, 3)
 //                .shuffleGrouping("storm-window-bolt", "lateEvents");

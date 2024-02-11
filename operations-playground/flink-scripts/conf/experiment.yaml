@@ -1,6 +1,4 @@
 ---
-
-
 tasks:
   - server:
       address: "pumba_tm2"
@@ -12,15 +10,16 @@ tasks:
       #      - option: "--interface"
       #        value: "docker_gwbridge"
       - option: "--duration"
-        value: "30s"
+        value: "60s"
       - option: "--tc-image"
         value: "gaiadocker/iproute2"
 
-    suboperation: "loss"
+    suboperation: "corrupt"
     suboperationOptns:
       - option: "--percent"
         value: "20"
-    startDelay: 60
+    startDelay: 90
+
 
 #  - server:
 #      address: "pumba_tm2"
@@ -32,7 +31,7 @@ tasks:
 #      #      - option: "--interface"
 #      #        value: "docker_gwbridge"
 #      - option: "--duration"
-#        value: "30s"
+#        value: "60s"
 ##      - option: "--tc-image"
 ##        value: "gaiadocker/iproute2"
 #
@@ -40,4 +39,4 @@ tasks:
 #    suboperationOptns: []
 ##      - option: "--time"
 ##        value: "5000"
-#    startDelay: 60
+#    startDelay: 90
