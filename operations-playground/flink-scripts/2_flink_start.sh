@@ -59,11 +59,11 @@ ${CREATE_TOPIC_SCRIPT} --topic lateOutput --create  --bootstrap-server node1:909
 echo "Sleeping for 10 seconds..."
 sleep 10s
 
-export NUM_STREAMS=2
-export PG=e1
-#export PG=a1
+export NUM_STREAMS=1
+#export PG=e1
+export PG=a1
 
 # Start Flink containers
 echo "Starting Flink containers..."
-docker stack deploy --prune -c docker-compose-flink.yaml flink
+docker stack deploy --prune -c docker-compose-flink2.yaml flink
 

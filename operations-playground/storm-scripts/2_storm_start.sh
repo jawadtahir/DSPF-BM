@@ -41,6 +41,12 @@ ${CREATE_TOPIC_SCRIPT} --topic update --create  --bootstrap-server node1:9094 --
 ${CREATE_TOPIC_SCRIPT} --topic output --create  --bootstrap-server node1:9094 --replica-assignment 1001:1002:1003,1002:1001:1003,1003:1001:1002
 ${CREATE_TOPIC_SCRIPT} --topic lateOutput --create  --bootstrap-server node1:9094 --replica-assignment 1001:1002:1003,1002:1001:1003,1003:1001:1002
 
+
+#${CREATE_TOPIC_SCRIPT} --topic click --create  --bootstrap-server node1:9094
+#${CREATE_TOPIC_SCRIPT} --topic update --create  --bootstrap-server node1:9094
+#${CREATE_TOPIC_SCRIPT} --topic output --create  --bootstrap-server node1:9094
+#${CREATE_TOPIC_SCRIPT} --topic lateOutput --create  --bootstrap-server node1:9094
+
 # Sleep for 10 seconds
 echo "Sleeping for 10 seconds..."
 sleep 10s
@@ -48,5 +54,5 @@ sleep 10s
 export NUM_STREAMS=1
 # Start Storm containers
 echo "Starting Storm containers..."
-docker stack deploy --prune -c docker-compose-storm.yaml storm
+docker stack deploy --prune -c docker-compose-storm3.yaml storm
 

@@ -6,7 +6,7 @@ echo "Removing any previous utils containers..."
 docker stack rm utils
 
 #export DELAY_COUNT=5
-export DELAY_COUNT=500
+export DELAY_COUNT=999
 export DELAY_LENGTH=1
 export EVENTS_PER_WINDOW=500
 export KAFKA_BOOTSTRAP=kafka1:9092
@@ -28,7 +28,7 @@ docker stack deploy --prune -c docker-compose-utils.yaml utils
 #sleep 60s
 #
 #echo "Redeploying container..."
-#docker stack deploy -c docker-compose-storm.yaml storm
+#docker service create --mount type=bind,src="/home/ubuntu/csvmetrics",target="/data/csvmetrics" --config source=storm_storm_config,target=/conf/storm.yaml --env COMMAND="storm supervisor" --replicas 1 --constraint node.labels.vmname==supervisor2 --hostname supervisor2 --network infra --name storm_supervisor2  jawadtahir/storm:latest
 #
 #echo "Sleeping for 150s..."
 #sleep 150s

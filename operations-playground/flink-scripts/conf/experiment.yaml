@@ -14,10 +14,10 @@ tasks:
       - option: "--tc-image"
         value: "gaiadocker/iproute2"
 
-    suboperation: "corrupt"
+    suboperation: "delay"
     suboperationOptns:
-      - option: "--percent"
-        value: "20"
+      - option: "--time"
+        value: "500"
     startDelay: 90
 
 

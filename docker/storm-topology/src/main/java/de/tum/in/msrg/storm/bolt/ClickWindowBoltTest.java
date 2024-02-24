@@ -25,12 +25,12 @@ public class ClickWindowBoltTest extends BaseWindowedBolt {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declare(new Fields("key","stats"));
+        declarer.declare(new Fields("page","stats"));
     }
 
     @Override
     public void execute(TupleWindow inputWindow) {
-        Map<byte[], PageStatistics> statsMap = new HashMap<>();
+        Map<String, PageStatistics> statsMap = new HashMap<>();
 //        Iterator<Tuple> iterator = inputWindow.getIter();
         Date windowStart = new Date(inputWindow.getStartTimestamp());
         Date windowEnd = new Date(inputWindow.getEndTimestamp());
@@ -38,8 +38,7 @@ public class ClickWindowBoltTest extends BaseWindowedBolt {
 //"page,storm-click-parser:eventTimestamp,clickEvent,storm-update-parser:eventTimestamp,updateEvent"
         for (Tuple tuple: inputWindow.getNew()){
             anchoredTuple.add(tuple);
-            byte[] page = tuple.getBinaryByField("key");
-            String strPage = tuple.getStringByField("key");
+            String page = tuple.getStringByField("page");
             ClickUpdateEvent clickUpdateEvent = (ClickUpdateEvent) tuple.getValueByField("clickUpdateEvent");
 
             PageStatistics stats = statsMap.getOrDefault(page, null);
@@ -47,7 +46,7 @@ public class ClickWindowBoltTest extends BaseWindowedBolt {
                 PageStatistics tempStat = new PageStatistics();
                 tempStat.setWindowStart(windowStart);
                 tempStat.setWindowEnd(windowEnd);
-                tempStat.setPage(strPage);
+                tempStat.setPage(page);
                 tempStat.getClickIds().add(clickUpdateEvent.getClickId());
                 if (clickUpdateEvent.getUpdateId()!=0) {
                     tempStat.getUpdateIds().add(clickUpdateEvent.getUpdateId());

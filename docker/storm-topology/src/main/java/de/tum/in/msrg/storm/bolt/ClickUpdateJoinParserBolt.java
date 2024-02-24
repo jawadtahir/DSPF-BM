@@ -29,14 +29,13 @@ public class ClickUpdateJoinParserBolt extends BaseRichBolt {
     @Override
     public void execute(Tuple input) {
         String msg = input.getStringByField("value");
-        byte[] page = input.getBinaryByField("key");
         try {
             ClickEvent clickEvent = this.mapper.readValue(msg, ClickEvent.class);
             ClickUpdateEvent clickUpdateEvent = new ClickUpdateEvent(clickEvent, null);
-            collector.emit(input, new Values(page, clickUpdateEvent.getClickTimestamp().getTime(), clickUpdateEvent));
+            collector.emit(input, new Values(clickUpdateEvent.getPage(), clickUpdateEvent.getClickTimestamp().getTime(), clickUpdateEvent));
             collector.ack(input);
             counter.inc();
-        } catch (Exception e) {
+        } catch (JsonProcessingException e) {
             e.printStackTrace();
         }
 
@@ -44,7 +43,7 @@ public class ClickUpdateJoinParserBolt extends BaseRichBolt {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declare(new Fields("key", "eventTimestamp", "clickUpdateEvent"));
+        declarer.declare(new Fields("page", "eventTimestamp", "clickUpdateEvent"));
 
     }
 }

@@ -20,7 +20,7 @@ public class EventTranslator implements RecordTranslator<String, String> {
     public List<Object> apply(ConsumerRecord<String, String> record) {
         try {
             String key = OBJECT_MAPPER.readValue(record.key(), String.class);
-            byte [] bKey = OBJECT_MAPPER.writeValueAsBytes(key);
+            byte [] bKey = key.getBytes();
             String value = record.value();
             KafkaTuple tuple = new KafkaTuple(bKey, value);
             return tuple.routedTo(stream);

@@ -45,12 +45,12 @@ ${CREATE_TOPIC_SCRIPT} --topic output --create  --bootstrap-server node1:9094 --
 echo "Sleeping for 10 seconds..."
 sleep 10s
 
-export NUM_STREAMS=1
+export NUM_STREAMS=2
 #export PROCESSING_GUARANTEE="at_least_once"
 export PROCESSING_GUARANTEE="exactly_once_v2"
 
 # Start KStreams containers
 echo "Starting KStreams containers..."
 #docker-compose -f docker-compose-kstreams.yaml up --build -d
-docker stack deploy --prune -c docker-compose-kstreams.yaml kstreams
+docker stack deploy --prune -c docker-compose-kstreams3.yaml kstreams
 

@@ -19,8 +19,29 @@ tasks:
     suboperation: "delay"
     suboperationOptns:
       - option: "--time"
-        value: "5000"
+        value: "500"
     startDelay: 90
+
+#  - server:
+#      address: "pumba_supervisor2"
+#      port: 52923
+#    containers:
+#      - "storm_supervisor2"
+#    operation: ""
+#    operationOptns:
+#      #      - option: "--interface"
+#      #        value: "docker_gwbridge"
+#      - option: "--duration"
+#        value: "60s"
+##      - option: "--tc-image"
+##        value: "gaiadocker/iproute2"
+#
+#    suboperation: ""
+#    suboperationOptns: []
+##      - option: "--time"
+##        value: "500"
+#    startDelay: 90
+
 
 
 #tasks:

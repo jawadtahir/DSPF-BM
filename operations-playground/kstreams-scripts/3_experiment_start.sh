@@ -6,13 +6,13 @@ echo "Removing any previous utils containers..."
 docker stack rm utils
 
 #export DELAY_COUNT=60
-export DELAY_COUNT=160
+export DELAY_COUNT=60
 export DELAY_LENGTH=1
 export EVENTS_PER_WINDOW=500
 export KAFKA_BOOTSTRAP=kafka1:9092
 export BENCHMARK_LENGTH="210"
 export NUM_PRODUCERS=1
-export NUM_STREAMS=1
+export NUM_STREAMS=2
 
 # Start utils containers
 echo "Starting utils containers..."

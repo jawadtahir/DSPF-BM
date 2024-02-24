@@ -60,7 +60,7 @@ topology.component.resources.onheap.memory.mb: 1024.0
 topology.component.resources.offheap.memory.mb: 128.0
 topology.worker.max.heap.size.mb: 14336.0 #1536
 topology.builtin.metrics.bucket.size.secs: 1
-topology.message.timeout.secs: 190
+topology.message.timeout.secs: 124
 topology.ras.acker.executors.per.worker: 1
 #topology.state.provider: org.apache.storm.state.InMemoryKeyValueStateProvider
 topology.state.provider: org.apache.storm.redis.state.RedisKeyValueStateProvider
@@ -73,6 +73,15 @@ topology.metrics.reporters:
   - class: "org.apache.storm.metrics2.reporters.JmxStormReporter"
     report.period: 1
     report.period.units: "SECONDS"
+    report.dimensions.enabled: true
+
+  - class: "org.apache.storm.metrics2.reporters.CsvStormReporter"
+    report.period: 1
+    report.period.units: "SECONDS"
+    report.dimensions.enabled: true
+#    filter:
+#      class: "org.apache.storm.metrics2.filters.RegexFilter"
+#      expression: "storm.*.supervisor?.storm*"
 
 
 

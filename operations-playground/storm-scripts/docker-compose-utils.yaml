@@ -1,34 +1,34 @@
 version: '3.9'
 
 services:
-#  datagen:
-#    image: jawadtahir/kafka-data-gen:latest
-#    build:
-#      context: ../docker/kafka-data-gen
-#    hostname: datagen
-#    networks:
-#      infra:
-#    environment:
-#      DELAY_COUNT:
-#      KAFKA_BOOTSTRAP: kafka1:9092
-#      DELAY_LENGTH:
-#      EVENTS_PER_WINDOW:
-#      SHORT_DATA:
-#      BENCHMARK_LENGTH:
-#      NUM_PRODUCERS:
-#      NUM_STREAMS:
-#    configs:
-#      - source: log4j2_datagen
-#        target: /jar/log4j2.xml
-#    entrypoint:  "java -XX:ParallelGCThreads=4 -XX:ConcGCThreads=4 -Xmx15g -cp *:. de.tum.in.msrg.utils.Runner -benchmarkLength $BENCHMARK_LENGTH -kafka $KAFKA_BOOTSTRAP -producers $NUM_PRODUCERS -streams $NUM_STREAMS -delay $DELAY_COUNT -length $DELAY_LENGTH -events $EVENTS_PER_WINDOW"
-#    #    volumes:
-#    #      - datagen:/reports
-#
-#    deploy:
-#      replicas: 1
-#      placement:
-#        constraints:
-#          - "node.labels.vmname==utils2"
+  datagen:
+    image: jawadtahir/kafka-data-gen:latest
+    build:
+      context: ../docker/kafka-data-gen
+    hostname: datagen
+    networks:
+      infra:
+    environment:
+      DELAY_COUNT:
+      KAFKA_BOOTSTRAP: kafka1:9092
+      DELAY_LENGTH:
+      EVENTS_PER_WINDOW:
+      SHORT_DATA:
+      BENCHMARK_LENGTH:
+      NUM_PRODUCERS:
+      NUM_STREAMS:
+    configs:
+      - source: log4j2_datagen
+        target: /jar/log4j2.xml
+    entrypoint:  "java -XX:ParallelGCThreads=4 -XX:ConcGCThreads=4 -Xmx15g -cp *:. de.tum.in.msrg.utils.Runner -benchmarkLength $BENCHMARK_LENGTH -kafka $KAFKA_BOOTSTRAP -producers $NUM_PRODUCERS -streams $NUM_STREAMS -delay $DELAY_COUNT -length $DELAY_LENGTH -events $EVENTS_PER_WINDOW"
+    #    volumes:
+    #      - datagen:/reports
+
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - "node.labels.vmname==utils2"
 
 
 
