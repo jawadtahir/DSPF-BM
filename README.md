@@ -1,18 +1,19 @@
 # DSPS-BM: SPS benchmarking under failures
 
-##Requirements
+## Requirements
 
-###Hardware
+### Hardware
 We set up our machines on our cluster running OpenNebula. However, you can run it with your AWS account as well. AWS Terraform file is under development and will be provided later.
-###Software
+### Software
 ```
 Terraform
 Ansible
 Docker
 direnv
+AWS CLI
 ```
 
-##Set up infrastructure
+## Set up infrastructure
 
 Enable local SSH on HDFS machine
 ```shell
@@ -41,7 +42,7 @@ cd ../../operations-plyground
 * Set up data source; URL `http://prometheus:9090`, Scrape interval `1s`
 * Import the dashboard.
 
-#Old README.md (obsolete)
+# Old README.md (obsolete)
 ## TODO: Remove
 
 This repository provides playgrounds to quickly and easily explore [Apache Flink](https://flink.apache.org)'s features.
