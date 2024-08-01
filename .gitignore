@@ -41,3 +41,4 @@ Infra/terraform/.terraform/*
 Infra/terraform/variables.tf
 
 Infra/terraform/aws/.terraform/providers/*
+Infra/terraform/aws/terraform.tfstate.backup

@@ -146,9 +146,9 @@ public class PGV {
                 LOGGER.info(String.format("Current position: %d", statsConsumer.position(topicPartition)));
                 for (ConsumerRecord<String, PageStatistics> record: records.records(topicPartition)){
                     this.result.incReadOutputs();
-                    if (record.value().getCount() == this.numEventsPerWindow){
+                    if (record.value().getClickIds().size() == this.numEventsPerWindow){
                         this.result.incCorrectOutputs();
-                    } else if (record.value().getCount() < this.numEventsPerWindow) {
+                    } else if (record.value().getClickIds().size() < this.numEventsPerWindow) {
                         this.result.incLowerIncorrectOutputs();
                     } else {
                         this.result.incHigherIncorrectOutputs();
@@ -156,7 +156,7 @@ public class PGV {
 
                     PageTSKey key = new PageTSKey(record.value().getPage(), record.value().getWindowStart());
                     List<Long> prevProcessedEvents = receivedOutput.getOrDefault(key, new ArrayList<Long>());
-                    List<Long> processedEvents = record.value().getIds();
+                    List<Long> processedEvents = record.value().getClickIds();
 
                     for (Long eventId : processedEvents) {
                         this.result.incReadOutputInputs();
@@ -194,8 +194,8 @@ public class PGV {
             while (true){
                 ConsumerRecords<String, ClickUpdateEvent> records = lateConsumer.poll(Duration.ofMillis(100));
                 for (ConsumerRecord<String, ClickUpdateEvent>record:records.records(topicPartition)){
-                    PageTSKey key = new PageTSKey(record.value().getPage(), record.value().getTimestamp());
-                    Long eventId = record.value().getId();
+                    PageTSKey key = new PageTSKey(record.value().getPage(), record.value().getClickTimestamp());
+                    Long eventId = record.value().getClickId();
                     this.result.incReadOutputInputs();
                     List<Long> previousIds = receivedOutput.getOrDefault(key, new ArrayList<Long>());
                     if (previousIds.contains(eventId)){
