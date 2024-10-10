@@ -29,3 +29,16 @@ operations-playground/lib/frauddetection-0.1.jar
 tmp/
 reports/
 /docker/flink-topology/settings.xml
+
+Infra/ansible/inventory.cfg
+
+*.terraform.lock.hcl
+
+Infra/terraform/.terraform/*
+
+*.tfstate
+
+Infra/terraform/variables.tf
+
+Infra/terraform/aws/.terraform/providers/*
+Infra/terraform/aws/terraform.tfstate.backup

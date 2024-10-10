@@ -14,10 +14,7 @@ import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.windowing.TupleWindow;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
 public class ClickWindowBolt extends BaseStatefulWindowedBolt<KeyValueState<String, PageStatistics>> {
     private OutputCollector collector;
@@ -39,11 +36,13 @@ public class ClickWindowBolt extends BaseStatefulWindowedBolt<KeyValueState<Stri
         Iterator<Tuple> iterator = inputWindow.getIter();
         Date windowStart = new Date(inputWindow.getStartTimestamp());
         Date windowEnd = new Date(inputWindow.getEndTimestamp());
+        List<Tuple> anchoredTuple = new ArrayList<>();
 //"page,storm-click-parser:eventTimestamp,clickEvent,storm-update-parser:eventTimestamp,updateEvent"
         while (iterator.hasNext()){
             Tuple tuple = iterator.next();
+            anchoredTuple.add(tuple);
             String page = tuple.getStringByField("page");
-            ClickEvent clickEvent = (ClickEvent) tuple.getValueByField("clickEvent");
+            ClickUpdateEvent clickUpdateEvent = (ClickUpdateEvent) tuple.getValueByField("clickUpdateEvent");
 //            UpdateEvent updateEvent = (UpdateEvent) tuple.getValueByField("updateEvent");
 //            ClickUpdateEvent joinEvent = new ClickUpdateEvent(clickEvent, updateEvent);
 
@@ -53,27 +52,26 @@ public class ClickWindowBolt extends BaseStatefulWindowedBolt<KeyValueState<Stri
                 tempStat.setWindowStart(windowStart);
                 tempStat.setWindowEnd(windowEnd);
                 tempStat.setPage(page);
-                tempStat.setCount(1);
-                tempStat.getIds().add(clickEvent.getId());
-                tempStat.setLastUpdateTS(clickEvent.getTimestamp());
-
+                tempStat.getClickIds().add(clickUpdateEvent.getClickId());
+                if (clickUpdateEvent.getUpdateId()!=0) {
+                    tempStat.getUpdateIds().add(clickUpdateEvent.getUpdateId());
+                }
                 statsMap.put(page, tempStat);
             }else{
-                stats.setCount(stats.getCount()+1);
-                stats.getIds().add(clickEvent.getId());
-//                if (!stats.getLastUpdateTS().equals(joinEvent.getUpdateTimestamp())){
-//                    stats.setLastUpdateTS(joinEvent.getUpdateTimestamp());
-//                    stats.setUpdateCount(stats.getUpdateCount()+1);
-//                }
+                stats.getClickIds().add(clickUpdateEvent.getClickId());
+                if (clickUpdateEvent.getUpdateId()!=0) {
+                    stats.getUpdateIds().add(clickUpdateEvent.getUpdateId());
+                }
             }
 
         }
 
         statsMap.forEach((s, pageStatistics) -> {
-            this.collector.emit(new Values(
+            this.collector.emit(anchoredTuple, new Values(
                     s, pageStatistics
             ));
         });
+        anchoredTuple.forEach(tuple -> this.collector.ack(tuple));
 
 
     }

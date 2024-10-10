@@ -3,6 +3,7 @@ package de.tum.in.msrg.datamodel;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 
+import java.io.Serializable;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Objects;
@@ -11,7 +12,7 @@ import java.util.Objects;
  * A simple event recording a click on a {@link ClickEvent#page} at time {@link ClickEvent#timestamp}.
  *
  */
-public class ClickEvent{
+public class ClickEvent implements Serializable {
 
     private long id;
     //using java.util.Date for better readability

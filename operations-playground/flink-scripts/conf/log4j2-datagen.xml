@@ -11,7 +11,19 @@
         </File>
     </Appenders>
     <Loggers>
-        <Logger name="de.tum.in.msrg.datagen" level="info" additivity="false">
+        <Logger name="de.tum.in.msrg.datagen.KafkaDataGen" level="info" additivity="false">
+            <AppenderRef ref="LogToFile"/>
+            <AppenderRef ref="LogToConsole"/>
+        </Logger>
+        <Logger name="de.tum.in.msrg.utils" level="info" additivity="false">
+            <AppenderRef ref="LogToFile"/>
+            <AppenderRef ref="LogToConsole"/>
+        </Logger>
+        <Logger name="de.tum.in.msrg.utils.VerifyE1" level="info" additivity="false">
+            <AppenderRef ref="LogToFile"/>
+            <AppenderRef ref="LogToConsole"/>
+        </Logger>
+        <Logger name="de.tum.in.msrg.utils.VerifyLate" level="info" additivity="false">
             <AppenderRef ref="LogToFile"/>
             <AppenderRef ref="LogToConsole"/>
         </Logger>

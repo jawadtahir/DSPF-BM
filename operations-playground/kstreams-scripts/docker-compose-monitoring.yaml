@@ -3,11 +3,11 @@ version: '3.9'
 services:
   prometheus:
     image: prom/prometheus
-#    restart: always
+    #    restart: always
     hostname: prometheus
     entrypoint: /bin/prometheus --config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/prometheus --storage.tsdb.retention.size=20GB --web.console.libraries=/usr/share/prometheus/console_libraries --web.console.templates=/usr/share/prometheus/consoles --enable-feature=exemplar-storage
     volumes:
-#      - ./conf/prometheus.yml:/etc/prometheus/prometheus.yml
+      #      - ./conf/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus:/prometheus
     networks:
       infra:
@@ -25,6 +25,10 @@ services:
       - ${node11}
       - ${node12}
       - ${node13}
+      - ${node14}
+      - ${node15}
+      - ${node16}
+      - ${node17}
     ports:
       - mode: host
         target: 9090
@@ -66,21 +70,6 @@ configs:
     file: ./conf/prometheus.yml
   alert_config:
     file: ./conf/alert.yml
-
-
-#  latcal:
-#    image: jawadtahir/latcal
-#    build:
-#      context: ../docker/latcal
-#    hostname: latcal
-#    networks:
-#      infra:
-#    volumes:
-#      - conf/log4j2-latcal.xml:/jar/log4j2.xml
-#    environment:
-#      KAFKA_BOOTSTRAP: kafka1:9092
-
-
 
 
 volumes:

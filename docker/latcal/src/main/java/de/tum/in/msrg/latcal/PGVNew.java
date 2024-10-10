@@ -1,5 +1,7 @@
 package de.tum.in.msrg.latcal;
 
+import io.prometheus.client.Gauge;
+import io.prometheus.client.exporter.HTTPServer;
 import org.apache.commons.cli.*;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -11,8 +13,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 
@@ -22,6 +26,7 @@ public class PGVNew {
 
     private static String bootstrap;
     private static String reportFolder;
+    private static int eventsPerWindow;
 
     public static void main(String[] args) throws ParseException, IOException {
         DefaultParser parser = new DefaultParser();
@@ -30,27 +35,51 @@ public class PGVNew {
         bootstrap = cmd.getOptionValue("kafka", "kafka1:9092");
         LOGGER.info(String.format("Kafka bootstrap server: %s", bootstrap));
 
-        reportFolder = cmd.getOptionValue("report", "/reports");
-        Path rootFolder = Paths.get(reportFolder);
-        Path createdPath = Files.createDirectories(rootFolder);
-        LOGGER.info(String.format("Created reports folder: %s", createdPath.toString()));
+        eventsPerWindow = Integer.parseInt(cmd.getOptionValue("events", "5000"));
+        LOGGER.info(String.format("Events per window: %d", eventsPerWindow));
+
 
         Properties kafkaProperties = getKafkaProperties();
         kafkaProperties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap);
 
-        ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(2);
+        HTTPServer promServer = new HTTPServer(52923);
+        Gauge unprocessedGauge = Gauge.build("de_tum_in_msrg_pgv_unprocessed", "Unprocessed events").labelNames("key").register();
+
+        Integer cpuCount = Runtime.getRuntime().availableProcessors();
+        LOGGER.info(String.format("Found %d cores. Creating thread pool", cpuCount));
+
+        ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(3);
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             threadPoolExecutor.shutdown();
+            promServer.close();
         }));
 
         ConcurrentHashMap<PageTSKey, List<Long>> idHashMap = new ConcurrentHashMap<>();
+        ConcurrentHashMap<PageTSKey, Map<Long, Long>> processedIdHashMap = new ConcurrentHashMap<>();
+        ConcurrentHashMap<PageTSKey, Integer> unprocessedCountMap = new ConcurrentHashMap<>();
 
-        PGVInNew pgvin = new PGVInNew(kafkaProperties, idHashMap);
-        PGVOutNew pgvOut = new PGVOutNew(kafkaProperties, idHashMap, createdPath);
+        PGVInNew pgvin = new PGVInNew(
+                kafkaProperties,
+                idHashMap,
+                processedIdHashMap,
+                unprocessedCountMap,
+                unprocessedGauge,
+                eventsPerWindow);
+
+        PGVOutNew pgvOut = new PGVOutNew(
+                threadPoolExecutor,
+                kafkaProperties,
+                idHashMap,
+                processedIdHashMap,
+                unprocessedCountMap,
+                unprocessedGauge,
+                eventsPerWindow);
+//        PGVUnproc pgvUnproc = new PGVUnproc(idHashMap, processedIdHashMap, eventsPerWindow);
 
         threadPoolExecutor.submit(pgvin);
         threadPoolExecutor.submit(pgvOut);
+//        threadPoolExecutor.submit(pgvUnproc);
 
     }
 
@@ -63,14 +92,15 @@ public class PGVNew {
                 .desc("Bootstrap kafka server")
                 .build();
 
-        Option reportRoot = Option.builder("report")
+        Option epwOptn = Option.builder("events")
                 .hasArg(true)
-                .argName("folder")
-                .desc("report folder")
+                .argName("perWindow")
+                .desc("Events per window")
                 .build();
 
+
         cliOptions.addOption(kafkaOptn);
-        cliOptions.addOption(reportRoot);
+        cliOptions.addOption(epwOptn);
 
         return  cliOptions;
     }

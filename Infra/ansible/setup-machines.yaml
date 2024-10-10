@@ -1,0 +1,217 @@
+---
+- hosts: all
+  remote_user: ubuntu
+  become: true
+  name: install docker and node exporter
+  roles:
+    - install-docker
+    - prometheus.prometheus.node_exporter
+  vars:
+    node_exporter_enabled_collectors: []
+    node_exporter_disabled_collectors:
+      - arp
+      - bcache
+      - bonding
+      - btrfs
+      - conntrack
+      - cpufreq
+      - dmi
+      - edac
+      - entropy
+      - fibrechannel
+      - filefd
+      - infiniband
+      - ipvs
+      - mdadm
+      - nfs
+      - nfsd
+      - nvme
+      - os
+      - powersupplyclass
+      - pressure
+      - rapl
+      - schedstat
+      - selinux
+      - softnet
+      - stat
+      - tapestats
+      - textfile
+      - thermal_zone
+      - time
+      - timex
+      - udp_queues
+      - uname
+      - vmstat
+      - xfs
+      - zfs
+
+
+- name: create docker swarm
+  hosts: utils
+  remote_user: ubuntu
+  become: true
+  tasks:
+    - name: docker swarm init
+      community.docker.docker_swarm:
+        state: present
+      register: swarm
+
+    - ansible.builtin.set_fact:
+        cacheable: true
+        key_value:
+          swarm: '{{swarm}}'
+
+#    - debug:
+#        var: swarm
+#    - debug:
+#        var: hostvars
+
+- name: join swarm cluster as managers
+  hosts:
+    - util[1]
+    - kafka
+    - hdfs
+    - flink[0]
+    - kstreams[0]
+    - spark[0]
+    - storm[0]
+  remote_user: ubuntu
+  become: true
+  tasks:
+    - community.docker.docker_swarm:
+        state: join
+        join_token: '{{hostvars.utils.swarm.swarm_facts.JoinTokens.Manager}}'
+        remote_addrs:
+          - '{{hostvars.utils.ansible_host}}'
+
+- name: join swarm cluster as workers
+  hosts:
+    - flink[1:]
+    - kstreams[1:]
+    - spark[1:]
+    - storm[1:]
+  remote_user: ubuntu
+  become: true
+  become_user: ubuntu
+  tasks:
+    - community.docker.docker_swarm:
+        state: join
+        join_token: '{{hostvars.utils.swarm.swarm_facts.JoinTokens.Worker}}'
+        remote_addrs:
+          - '{{hostvars.utils.ansible_host}}'
+
+- name: update node labels
+  hosts: utils
+  remote_user: ubuntu
+  become: true
+  tasks:
+    - community.docker.docker_node:
+        hostname: "{{hostvars[item]['vm_name']}}"
+        labels:
+          vmname: "{{hostvars[item]['swarm_label']}}"
+      loop: "{{query('inventory_hostnames', 'all')}}"
+    - debug:
+        msg: '{{hostvars}}'
+
+    - debug:
+        msg: "export node{{ansible_loop.index}}=node{{ansible_loop.index}}:{{hostvars[item]['ansible_host']}}    #{{hostvars[item]['swarm_label']}}"
+      loop: "{{query('inventory_hostnames', 'all')}}"
+      loop_control:
+        extended: true
+
+
+- name: install java
+  hosts:
+    - flink
+    - hdfs
+  remote_user: ubuntu
+  become: true
+  become_user: ubuntu
+  tasks:
+    - name: install java
+      ansible.builtin.apt:
+        name: openjdk-11-jdk
+      environment:
+        JAVA_HOME: /usr/lib/jvm/java-11-openjdk-amd64
+
+    - name: set JAVA_HOME
+      ansible.builtin.lineinfile:
+        path: /home/ubuntu/.bashrc
+        line: export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+        insertafter: EOF
+
+    - name: source the file
+      ansible.builtin.shell:
+        cmd: . /home/ubuntu/.bashrc
+
+
+- name: install hdfs
+  hosts:
+    - hdfs
+    - flink
+  remote_user: ubuntu
+  become: true
+  become_user: ubuntu
+  roles:
+    - install-hdfs
+
+- name: run hdfs
+  hosts: hdfs
+  remote_user: ubuntu
+  become: true
+  become_user: ubuntu
+  tasks:
+    - name: ensure-data-dir
+      ansible.builtin.file:
+        path: /home/ubuntu/hadoop/data
+        state: directory
+        mode: '777'
+
+
+    - name: stop-hdfs
+      ansible.builtin.command:
+        chdir: /home/ubuntu/hadoop/hadoop-3.3.6
+        cmd: 'sbin/stop-dfs.sh'
+
+    - name: format-hdfs
+      ansible.builtin.command:
+        chdir: /home/ubuntu/hadoop/hadoop-3.3.6
+        cmd: 'bin/hdfs namenode -format'
+        stdin: Y
+
+    - name: stop-hdfs
+      ansible.builtin.shell:
+        chdir: /home/ubuntu/hadoop/hadoop-3.3.6
+        cmd: |
+          sbin/start-dfs.sh
+          bin/hdfs dfs -mkdir /tmp
+          bin/hdfs dfs -chmod 777 /tmp
+#### set correct core-site.xml on flink cluster
+
+
+
+- hosts: 127.0.0.1
+  connection: local
+  tasks:
+    - name: setup envrc file
+      ansible.builtin.lineinfile:
+        path: ../../operations-playground/.envrc
+        create: true
+        insertafter: EOF
+        line: "export node{{ansible_loop.index}}=node{{ansible_loop.index}}:{{hostvars[item]['ansible_host']}}    #{{hostvars[item]['swarm_label']}}"
+      loop: "{{query('inventory_hostnames', 'all')}}"
+      loop_control:
+        extended: true
+
+    - name: copy envrc file
+      ansible.builtin.copy:
+        src: ../../operations-playground/.envrc
+        dest: ../../operations-playground/{{item}}-scripts/.envrc
+      loop:
+        - flink
+        - kstreams
+        - spark
+        - storm
+
+#######
+# fix flink conf; set hadoop path

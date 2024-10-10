@@ -1,0 +1,42 @@
+#[kafka]
+#%{ for machine in kafka_machines}
+#${machine}
+#%{ endfor ~}
+#
+#[utils]
+#%{ for machine in utils_machines}
+#${machine}
+#%{ endfor ~}
+#
+#[hdfs]
+#%{ for machine in hdfs_machines}
+#${machine}
+#%{ endfor ~}
+
+
+
+[flink]
+jm      ansible_host=${flink_jobman}         vm_name=benchmark-flink-0     swarm_label=jm
+
+%{ for index, machine in flink_taskman ~}
+${format("tm%d", index+1)}    ansible_host=${machine}      vm_name=${format("benchmark-flink-%d", index+1)}      swarm_label=${format("tm%d", index+1)}
+%{ endfor ~}
+
+#%{ for machine in flink_machines}
+#${machine}
+#%{ endfor ~}
+
+#[kstreams]
+#%{ for machine in kstreams_machine}
+#${machine}
+#%{ endfor ~}
+#
+#[spark]
+#%{ for machine in spark_machines}
+#${machine}
+#%{ endfor ~}
+#
+#[storm]
+#%{ for machine in storm_machines}
+#${machine}
+#%{ endfor ~}

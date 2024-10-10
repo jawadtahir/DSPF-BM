@@ -27,6 +27,7 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.metrics.*;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.utils.Time;
@@ -51,43 +52,18 @@ import java.util.concurrent.TimeUnit;
 
 public class EventCount {
 
-    private static String KAFKA_BOOTSTRAP;
-    private static String PROCESSING_GUARANTEE;
-    private static String APP_ID;
-    private static String NUM_STANDBY;
+
 
     private static final Logger LOGGER = LogManager.getLogger(EventCount.class);
 
-    public static void main(String[] args) throws Exception {
-        LOGGER.info(Arrays.asList(args));
-
-        LOGGER.info("Getting program arguments");
-
-        Options cliOpts = createCLI();
-        DefaultParser parser = new DefaultParser();
-        CommandLine cmd = parser.parse(cliOpts, args);
-
-        KAFKA_BOOTSTRAP = cmd.getOptionValue("kafka", "kafka:9092");
-        LOGGER.info(String.format("Kafka bootstrap server: %s", KAFKA_BOOTSTRAP));
-
-
-        PROCESSING_GUARANTEE = cmd.getOptionValue("guarantee", "exactly_once_beta");
-        LOGGER.info(String.format("Configured processing guarantee: %s", PROCESSING_GUARANTEE));
-
-        APP_ID = cmd.getOptionValue("appid", "streams-eventcount");
-        LOGGER.info(String.format("Application ID: %s", APP_ID));
-
-        NUM_STANDBY = cmd.getOptionValue("standby", "0");
-        LOGGER.info(String.format("Number of standby replicas: %s", NUM_STANDBY));
-
+    public void run(String kafkaBootstrap, String processingGuarantee, String appId, String numStdby) throws Exception {
 
 
         Properties props = getProperties();
-        props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKA_BOOTSTRAP);
-        props.put(StreamsConfig.PROCESSING_GUARANTEE_CONFIG, PROCESSING_GUARANTEE);
-        props.put(StreamsConfig.REPLICATION_FACTOR_CONFIG, "3");
-        props.put(StreamsConfig.APPLICATION_ID_CONFIG, APP_ID);
-        props.put(StreamsConfig.NUM_STANDBY_REPLICAS_CONFIG, NUM_STANDBY);
+        props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaBootstrap);
+        props.put(StreamsConfig.PROCESSING_GUARANTEE_CONFIG, processingGuarantee);
+        props.put(StreamsConfig.APPLICATION_ID_CONFIG, appId);
+        props.put(StreamsConfig.NUM_STANDBY_REPLICAS_CONFIG, numStdby);
 
         LOGGER.info("Creating custom metrics...");
         Metrics customMetrics = getMetrics();
@@ -122,45 +98,31 @@ public class EventCount {
     public static Topology getTopology(Metrics metrics) {
         StreamsBuilder builder = new StreamsBuilder();
 
-        KStream<String, ClickEvent> clickStream = builder.stream("click",
-                        Consumed.<String, String>with(new ClickEventTimeExtractor())
-                                .withKeySerde(new Serdes.StringSerde())
+        KStream<byte[], ClickUpdateEvent> clickStream = builder.stream("click",
+                        Consumed.<byte[], String>with(new ClickEventTimeExtractor())
+                                .withKeySerde(new Serdes.ByteArraySerde())
                                 .withValueSerde(new Serdes.StringSerde()))
-                .flatMapValues(new ClickEventMapper(metrics));
-
-
-        KTable<String, UpdateEvent> eventKTable = builder.table("update",
-                Consumed.<String, UpdateEvent>with(new UpdateEventTimeExtractor())
-                        .withKeySerde(new Serdes.StringSerde())
-                        .withValueSerde(new UpdateEventSerdes()),
-                Materialized.with(new Serdes.StringSerde(), new UpdateEventSerdes()));
+                .flatMapValues(new ClickUpdateEventMapper(metrics));
 
 
 
-        KStream<String, ClickUpdateEvent> joinStream = clickStream.leftJoin(
-                eventKTable,
-                new ClickUpdateJoiner(),
-                Joined.<String, ClickEvent, UpdateEvent>with(
-                        new Serdes.StringSerde(),
-                        new ClickEventSerde(),
-                        new UpdateEventSerdes()));
-
-
-        joinStream
-                .groupBy((key, value) -> value.getPage(), Grouped.with(new Serdes.StringSerde(), new ClickUpdateSerdes()))
-                .windowedBy(TimeWindows.of(Duration.of(60, ChronoUnit.SECONDS)).grace(Duration.ofMillis(0)))
+        clickStream
+                .groupBy((key, value) -> key, Grouped.with(new Serdes.ByteArraySerde(), new ClickUpdateSerdes()))
+                .windowedBy(
+                        TimeWindows.ofSizeAndGrace(Duration.of(60, ChronoUnit.SECONDS),
+                                Duration.ofMillis(2000)))
                 .aggregate(
                         new PageStatisticsInitializer(),
                         new PageStatisticsAggregator(),
                         Materialized.with(
-                                new Serdes.StringSerde(),
+                                new Serdes.ByteArraySerde(),
                                 new PageStatisticsSerdes()))
                 .suppress(Suppressed.untilWindowCloses(Suppressed.BufferConfig.unbounded()))
                 .toStream((k, v) -> {
                     v.setWindowStart(new Date(k.window().start()));
                     v.setWindowEnd(new Date(k.window().end()));
-                    return v.getPage();
-                }).to("output", Produced.with(new Serdes.StringSerde(), new PageStatisticsSerdes()));
+                    return k.key();
+                }).to("output", Produced.with(new Serdes.ByteArraySerde(), new PageStatisticsSerdes()));
 
 
         Topology topology = builder.build();
@@ -176,9 +138,11 @@ public class EventCount {
         props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass());
         props.put(StreamsConfig.DEFAULT_TIMESTAMP_EXTRACTOR_CLASS_CONFIG, ClickEventTimeExtractor.class.getCanonicalName());
         props.put(StreamsConfig.METRICS_SAMPLE_WINDOW_MS_CONFIG, "1000");
-        props.put(StreamsConfig.METRICS_RECORDING_LEVEL_CONFIG, "DEBUG");
+        props.put(StreamsConfig.METRICS_RECORDING_LEVEL_CONFIG, "INFO");
         props.put(StreamsConfig.NUM_STREAM_THREADS_CONFIG, "2");
         props.put(StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG, "10737418240");
+        props.put(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, 1000);
+        props.put(StreamsConfig.REPLICATION_FACTOR_CONFIG, "3");
 
         props.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, 3000);
         props.put(ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG, 1000);

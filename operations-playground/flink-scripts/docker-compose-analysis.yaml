@@ -1,0 +1,39 @@
+version: '3.9'
+
+services:
+  pgv:
+    image: jawadtahir/latcal:latest
+#    build:
+#      context: ../docker/latcal
+    hostname: pgv
+    networks:
+      infra:
+    environment:
+      KAFKA_BOOTSTRAP: kafka1:9092
+      EVENTS_PER_WINDOW:
+    configs:
+      - source: log4j2_latcal
+        target: /jar/log4j2.xml
+#    volumes:
+#      - pgv:/reports
+
+#    entrypoint: ["java", "-cp", "*:.", "de.tum.in.msrg.latcal.PGV"]
+    entrypoint: java -XX:ParallelGCThreads=4 -XX:ConcGCThreads=4 -Xmx15g -cp *:. de.tum.in.msrg.latcal.offline.PGV -kafka $KAFKA_BOOTSTRAP -events $EVENTS_PER_WINDOW
+
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - "node.labels.vmname==utils2"
+      restart_policy:
+        condition: on-failure
+
+configs:
+  log4j2_latcal:
+    file: ./conf/log4j2-latcal.xml
+
+
+networks:
+  infra:
+    name: infra
+    external: true

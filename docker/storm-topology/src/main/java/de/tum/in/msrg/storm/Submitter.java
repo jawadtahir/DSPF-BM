@@ -6,15 +6,27 @@ import de.tum.in.msrg.datamodel.ClickUpdateEvent;
 import de.tum.in.msrg.datamodel.PageStatistics;
 import de.tum.in.msrg.datamodel.UpdateEvent;
 import de.tum.in.msrg.storm.topology.StormTopology;
+import de.tum.in.msrg.storm.topology.StormTopology1;
 import org.apache.commons.cli.*;
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.AlreadyAliveException;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.InvalidTopologyException;
+import org.apache.storm.serialization.*;
+import org.apache.storm.serialization.types.ArrayListSerializer;
+import org.apache.storm.serialization.types.HashMapSerializer;
+import org.apache.storm.serialization.types.HashSetSerializer;
+import org.apache.storm.serialization.types.ListDelegateSerializer;
+import org.apache.storm.spout.CheckPointState;
+import org.apache.storm.task.WorkerTopologyContext;
 import org.apache.storm.topology.TopologyBuilder;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.TupleImpl;
 
 import java.util.Arrays;
+import java.util.Date;
+import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * Hello world!
@@ -31,11 +43,17 @@ public class Submitter
         Config stormConfig = getStormConfig(cmdLine.getOptionValue("nimbus", "nimbus"));
 
         String kafkaBroker = cmdLine.getOptionValue("kafka", "kafka:9092");
-        String inputTopic = cmdLine.getOptionValue("input", "click");
-        String updateTopic = cmdLine.getOptionValue("update", "update");
-        String outputTopic = cmdLine.getOptionValue("output", "output");
+        Integer numStreams = Integer.parseInt(cmdLine.getOptionValue("streams", "1")) ;
 
-        TopologyBuilder tpBuilder = new StormTopology(kafkaBroker, inputTopic, updateTopic, outputTopic).getTopologyBuilder();
+        TopologyBuilder tpBuilder = new StormTopology(kafkaBroker).getTopologyBuilder();
+
+        if (numStreams == 1){
+            tpBuilder = new StormTopology(kafkaBroker).getTopologyBuilder();
+        } else {
+            tpBuilder = new StormTopology1(kafkaBroker).getTopologyBuilder();
+        }
+
+
 
         StormSubmitter.submitTopologyWithProgressBar("storm-click-count-job", stormConfig, tpBuilder.createTopology());
 
@@ -44,16 +62,32 @@ public class Submitter
     }
 
     public static Config getStormConfig(String nimbus){
-        Config config = new Config();
+        Config configuration = new Config();
 
-        config.put(Config.NIMBUS_SEEDS, Arrays.asList(nimbus));
-        config.registerSerialization(ClickEvent.class);
-        config.registerSerialization(UpdateEvent.class);
-        config.registerSerialization(ClickUpdateEvent.class);
-        config.registerSerialization(PageStatistics.class);
+        configuration.put(Config.NIMBUS_SEEDS, Arrays.asList(nimbus));
+        configuration.registerSerialization(ClickEvent.class);
+        configuration.registerSerialization(UpdateEvent.class);
+        configuration.registerSerialization(ClickUpdateEvent.class);
+        configuration.registerSerialization(PageStatistics.class);
+        configuration.registerSerialization(Date.class);
+        configuration.registerSerialization(CheckPointState.Action.class);
+        configuration.registerSerialization(TupleImpl.class);
+        configuration.registerSerialization(WorkerTopologyContext.class);
+        configuration.registerSerialization(Fields.class);
+        configuration.registerSerialization(ArrayListSerializer.class);
+        configuration.registerSerialization(HashMapSerializer.class);
+        configuration.registerSerialization(HashSetSerializer.class);
+        configuration.registerSerialization(ListDelegateSerializer.class);
+        configuration.registerSerialization(GzipBridgeThriftSerializationDelegate.class);
+        configuration.registerSerialization(GzipSerializationDelegate.class);
+        configuration.registerSerialization(KryoTupleDeserializer.class);
+        configuration.registerSerialization(KryoTupleSerializer.class);
+        configuration.registerSerialization(SerializableSerializer.class);
+        configuration.registerSerialization(ThriftSerializationDelegate.class);
+        configuration.registerSerialization(ThreadPoolExecutor.class);
 //        config.registerSerialization(ObjectMapper.class);
 
-        return config;
+        return configuration;
     }
 
     public static Options createOptns(){
@@ -71,25 +105,16 @@ public class Submitter
                 .desc("Kafka bootstrap server")
                 .build();
 
-        Option inputTopicOpt = Option.builder("input")
-                .argName("topic")
+        Option streamsOptn = Option.builder("streams")
+                .argName("count")
                 .hasArg()
-                .desc("Kafka input topic for spout")
+                .desc("Number of streams")
                 .build();
 
-        Option updateTopicOpt = Option.builder("update")
-                .argName("topic")
-                .hasArg()
-                .desc("Kafka update topic for spout")
-                .build();
 
-        Option outputTopicOpt = Option.builder("output")
-                .argName("topic")
-                .hasArg()
-                .desc("Kafka output topic for bolt")
-                .build();
-
-        opts.addOption(kafkaOpt).addOption(nimbusOpt).addOption(inputTopicOpt).addOption(updateTopicOpt).addOption(outputTopicOpt);
+        opts.addOption(kafkaOpt)
+                .addOption(nimbusOpt)
+                .addOption(streamsOptn);
 
         return opts;
 

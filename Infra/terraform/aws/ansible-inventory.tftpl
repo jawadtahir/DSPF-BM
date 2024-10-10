@@ -1,0 +1,34 @@
+[kafka]
+%{ for index, machine in kafka_machines ~}
+${format("kafka%d", index+1)}    ansible_host=${machine}      vm_name=${format("benchmark-kafka-%d", index)}      swarm_label=${format("kafka%d", index+1)}
+%{ endfor ~}
+
+
+[util]
+utils       ansible_host=${utils}        vm_name=benchmark-utils-0       swarm_label=utils
+utils2      ansible_host=${utils2}        vm_name=benchmark-utils-1       swarm_label=utils2
+
+
+[hdfs]
+hadoop      ansible_host=${hdfs}        vm_name=benchmark-hdfs-0        swarm_label=hadoop
+
+
+[flink]
+jm      ansible_host=${flink_jobman}         vm_name=benchmark-flink-0     swarm_label=jm
+%{ for index, machine in flink_taskman ~}
+${format("tm%d", index+1)}    ansible_host=${machine}      vm_name=${format("benchmark-flink-%d", index+1)}      swarm_label=${format("tm%d", index+1)}
+%{ endfor ~}
+
+
+[kstreams]
+%{ for index, machine in kstreams_machine ~}
+${format("kstreams%d", index+1)}    ansible_host=${machine}      vm_name=${format("benchmark-kstreams-%d", index)}      swarm_label=${format("kstreams%d", index+1)}
+%{ endfor ~}
+
+
+[storm]
+nimbus      ansible_host=${nimbus}        vm_name=benchmark-storm-0       swarm_label=nimbus
+%{ for index, machine in storm_machines ~}
+${format("supervisor%d", index+1)}    ansible_host=${machine}      vm_name=${format("benchmark-storm-%d", index+1)}      swarm_label=${format("supervisor%d", index+1)}
+%{ endfor ~}
+

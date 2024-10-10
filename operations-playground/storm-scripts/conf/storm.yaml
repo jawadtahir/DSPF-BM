@@ -1,0 +1,172 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+########### These MUST be filled in for a storm configuration
+storm.zookeeper.servers:
+  - "zookeeper1"
+#     - "server2"
+#
+#nimbus.seeds: ["nimbus", "nimbus1"]
+nimbus.seeds: ["nimbus"]
+#TODO Change
+nimbus.task.timeout.secs: 350 #30
+nimbus.supervisor.timeout.secs: 3 #60
+nimbus.code.sync.freq.secs: 10
+#nimbus.min.replication.count: 2
+nimbus.min.replication.count: 1
+
+ui.host: utils2
+ui.port: 8080
+
+storm.log.dir: /logs
+storm.local.dir: /data
+storm.cluster.metrics.consumer.publish.interval.secs: 1
+#storm.local.hostname: localhost
+
+
+
+
+
+
+supervisor.memory.capacity.mb: 18360 #15 GB
+supervisor.slots.ports:
+  - 6700
+supervisor.cpu.capacity: 400
+
+
+worker.childopts: "-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.port=52923 -Djava.rmi.server.hostname=0.0.0.0 -Xmx%HEAP-MEM%m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=artifacts/heapdump"
+worker.heap.memory.mb: 14336 #1536
+
+executor.metrics.frequency.secs: 1
+
+
+topology.min.replication.count: 1
+topology.tasks: 3
+topology.workers: 3
+topology.component.resources.onheap.memory.mb: 1024.0
+topology.component.resources.offheap.memory.mb: 128.0
+topology.worker.max.heap.size.mb: 14336.0 #1536
+topology.builtin.metrics.bucket.size.secs: 1
+topology.message.timeout.secs: 124
+topology.ras.acker.executors.per.worker: 1
+#topology.state.provider: org.apache.storm.state.InMemoryKeyValueStateProvider
+topology.state.provider: org.apache.storm.redis.state.RedisKeyValueStateProvider
+topology.state.provider.config:  "{ \"jedisPoolConfig\":{\"host\":\"redis\", \"port\":6379}}"
+topology.state.checkpoint.interval.ms: 5000
+topology.fall.back.on.java.serialization: true
+topology.enable.v2.metrics.tick: true
+topology.v2.metrics.tick.interval.seconds: 1
+topology.metrics.reporters:
+  - class: "org.apache.storm.metrics2.reporters.JmxStormReporter"
+    report.period: 1
+    report.period.units: "SECONDS"
+    report.dimensions.enabled: true
+
+  - class: "org.apache.storm.metrics2.reporters.CsvStormReporter"
+    report.period: 1
+    report.period.units: "SECONDS"
+    report.dimensions.enabled: true
+#    filter:
+#      class: "org.apache.storm.metrics2.filters.RegexFilter"
+#      expression: "storm.*.supervisor?.storm*"
+
+
+
+# nimbus.seeds: ["host1", "host2", "host3"]
+#
+#
+# ##### These may optionally be filled in:
+#
+## List of custom serializations
+# topology.kryo.register:
+#     - org.mycompany.MyType
+#     - org.mycompany.MyType2: org.mycompany.MyType2Serializer
+#
+## List of custom kryo decorators
+# topology.kryo.decorators:
+#     - org.mycompany.MyDecorator
+#
+## Locations of the drpc servers
+# drpc.servers:
+#     - "server1"
+#     - "server2"
+
+## Metrics Consumers
+## max.retain.metric.tuples
+## - task queue will be unbounded when max.retain.metric.tuples is equal or less than 0.
+## whitelist / blacklist
+## - when none of configuration for metric filter are specified, it'll be treated as 'pass all'.
+## - you need to specify either whitelist or blacklist, or none of them. You can't specify both of them.
+## - you can specify multiple whitelist / blacklist with regular expression
+## expandMapType: expand metric with map type as value to multiple metrics
+## - set to true when you would like to apply filter to expanded metrics
+## - default value is false which is backward compatible value
+## metricNameSeparator: separator between origin metric name and key of entry from map
+## - only effective when expandMapType is set to true
+## - default value is "."
+# topology.metrics.consumer.register:
+#   - class: "org.apache.storm.metric.LoggingMetricsConsumer"
+#     max.retain.metric.tuples: 100
+#     parallelism.hint: 1
+#   - class: "org.mycompany.MyMetricsConsumer"
+#     max.retain.metric.tuples: 100
+#     whitelist:
+#       - "execute.*"
+#       - "^__complete-latency$"
+#     parallelism.hint: 1
+#     argument:
+#       - endpoint: "metrics-collector.mycompany.org"
+#     expandMapType: true
+#     metricNameSeparator: "."
+
+## Cluster Metrics Consumers
+# storm.cluster.metrics.consumer.register:
+#   - class: "org.apache.storm.metric.LoggingClusterMetricsConsumer"
+#   - class: "org.mycompany.MyMetricsConsumer"
+#     argument:
+#       - endpoint: "metrics-collector.mycompany.org"
+#
+# storm.cluster.metrics.consumer.publish.interval.secs: 60
+
+# Event Logger
+# topology.event.logger.register:
+#   - class: "org.apache.storm.metric.FileBasedEventLogger"
+#   - class: "org.mycompany.MyEventLogger"
+#     arguments:
+#       endpoint: "event-logger.mycompany.org"
+
+# Metrics v2 configuration (optional)
+#storm.metrics.reporters:
+#  # Graphite Reporter
+#  - class: "org.apache.storm.metrics2.reporters.GraphiteStormReporter"
+#    daemons:
+#        - "supervisor"
+#        - "nimbus"
+#        - "worker"
+#    report.period: 60
+#    report.period.units: "SECONDS"
+#    graphite.host: "localhost"
+#    graphite.port: 2003
+#
+#  # Console Reporter
+#  - class: "org.apache.storm.metrics2.reporters.ConsoleStormReporter"
+#    daemons:
+#        - "worker"
+#    report.period: 10
+#    report.period.units: "SECONDS"
+#    filter:
+#        class: "org.apache.storm.metrics2.filters.RegexFilter"
+#        expression: ".*my_component.*emitted.*"

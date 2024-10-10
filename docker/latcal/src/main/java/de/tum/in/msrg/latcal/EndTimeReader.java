@@ -2,15 +2,11 @@ package de.tum.in.msrg.latcal;
 
 import de.tum.in.msrg.datamodel.PageStatistics;
 import io.prometheus.client.Gauge;
-import io.prometheus.client.exporter.HTTPServer;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.*;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.util.*;
 
@@ -18,14 +14,14 @@ public class EndTimeReader implements Runnable{
 
 
     Properties kafkaProperties;
-    final Map<PageTSKey, Date> pageTSKeyDateMap;
+    final Map<PageTSKey, Date> eventInTimeMap;
+    final Map<PageTSKey, Date> eventOutTimeMap;
 
-    Gauge latencyGauge;
-    Map<String, String> keyMap;
+    final Gauge latencyGauge;
 
     private static final Logger LOGGER = LogManager.getLogger(EndTimeReader.class);
 
-    public EndTimeReader(Properties kafkaProperties, Map pageTSKeyDateMap){
+    public EndTimeReader(Properties kafkaProperties, Map eventInTimeMap, Map eventOutTimeMap, Gauge latencyGauge){
         this.kafkaProperties = (Properties) kafkaProperties.clone();
 
         this.kafkaProperties.put(ConsumerConfig.GROUP_ID_CONFIG, "latcalOutputReader");
@@ -33,7 +29,9 @@ public class EndTimeReader implements Runnable{
         this.keyMap = new HashMap<String, String>();
         LOGGER.info(String.format("Kafka Properties: %s", this.kafkaProperties.toString()));
 
-        this.pageTSKeyDateMap = pageTSKeyDateMap;
+        this.eventInTimeMap = eventInTimeMap;
+        this.eventOutTimeMap = eventOutTimeMap;
+        this.latencyGauge = latencyGauge;
 
     }
 
@@ -44,33 +42,30 @@ public class EndTimeReader implements Runnable{
         LOGGER.info("Starting Kafka consumer and prometheus server...");
         try (
                 KafkaConsumer<String, PageStatistics> consumer = new KafkaConsumer<String, PageStatistics>(this.kafkaProperties);
-                HTTPServer promServer = new HTTPServer(52923);
         ) {
             consumer.subscribe(Arrays.asList("output"));
-            latencyGauge = Gauge.build("de_tum_in_msrg_latcal_latency", "End to End latency").labelNames("key").register();
-            Date previousIngestion = null;
 
             while (true){
-                ConsumerRecords<String, PageStatistics> records = consumer.poll(Duration.ofMillis(100));
+//                Thread.sleep(500);
+                ConsumerRecords<String, PageStatistics> records = consumer.poll(Duration.ofMillis(500));
                 LOGGER.debug(String.format("Polled %d messages", records.count()));
 
-                for (ConsumerRecord<String, PageStatistics> record : records){
-                    PageTSKey key = new PageTSKey(record.value().getPage(), record.value().getWindowEnd());
-                    Date ingestionTime = this.pageTSKeyDateMap.getOrDefault(key, null);
-
-                    // assert ingestionTime != null;
-                    // it may happen that a node fires windows for all keys on the first firing event
-                    // i.e. a window is fired yet its firing event is not received.
-                    if (ingestionTime == null){
-                        ingestionTime = previousIngestion;
+                for (TopicPartition topicPartition : records.partitions()){
+                    for (ConsumerRecord<String, PageStatistics> record : records.records(topicPartition)){
+                        PageTSKey key = new PageTSKey(record.value().getPage(), record.value().getWindowStart());
+                        Date outTime = new Date(record.timestamp());
+                        if (eventOutTimeMap.get(key) == null) {
+                            eventOutTimeMap.put(key, outTime);
+                            Date inTime = eventInTimeMap.get(key);
+                            if (inTime != null){
+                                long latency = outTime.getTime() - inTime.getTime();
+                                latencyGauge.labels(key.getPage()).set(latency);
+                            } else {
+                                consumer.seek(new TopicPartition(record.topic(), record.partition()), record.offset());
+                                break;
+                            }
+                        }
                     }
-
-                    Date egressTime = new Date(record.timestamp());
-                    long latency = egressTime.getTime() - ingestionTime.getTime();
-                    LOGGER.debug(String.format("The latency for %s is %d ms", key, latency));
-                    latencyGauge.labels(key.getPage()).set(latency);
-                    keyMap.put(key.getPage(), key.getPage());
-                    previousIngestion = ingestionTime;
                 }
                 if (!records.isEmpty()){
                     Thread.sleep(1200);
@@ -79,10 +74,7 @@ public class EndTimeReader implements Runnable{
                     }
                 }
             }
-
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
         }
-
     }
+
 }

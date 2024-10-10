@@ -9,19 +9,16 @@ import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseStatefulWindowedBolt;
+import org.apache.storm.topology.base.BaseWindowedBolt;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.windowing.TupleWindow;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
-public class ClickCountWindowBolt extends BaseStatefulWindowedBolt<KeyValueState<String, PageStatistics>> {
+public class ClickCountWindowBolt extends BaseWindowedBolt {
     private OutputCollector collector;
-    private KeyValueState<String, PageStatistics> state;
 
     @Override
     public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
@@ -36,12 +33,12 @@ public class ClickCountWindowBolt extends BaseStatefulWindowedBolt<KeyValueState
     @Override
     public void execute(TupleWindow inputWindow) {
         Map<String, PageStatistics> statsMap = new HashMap<>();
-        Iterator<Tuple> iterator = inputWindow.getIter();
+//        Iterator<Tuple> iterator = inputWindow.getIter();
         Date windowStart = new Date(inputWindow.getStartTimestamp());
         Date windowEnd = new Date(inputWindow.getEndTimestamp());
 //"page,storm-click-parser:eventTimestamp,clickEvent,storm-update-parser:eventTimestamp,updateEvent"
-        while (iterator.hasNext()){
-            Tuple tuple = iterator.next();
+        for (Tuple tuple : inputWindow.get()){
+//            Tuple tuple = iterator.next();
             String page = tuple.getStringByField("page");
             ClickEvent clickEvent = (ClickEvent) tuple.getValueByField("clickEvent");
             UpdateEvent updateEvent = (UpdateEvent) tuple.getValueByField("updateEvent");
@@ -53,17 +50,15 @@ public class ClickCountWindowBolt extends BaseStatefulWindowedBolt<KeyValueState
                 tempStat.setWindowStart(windowStart);
                 tempStat.setWindowEnd(windowEnd);
                 tempStat.setPage(page);
-                tempStat.setCount(1);
-                tempStat.getIds().add(joinEvent.getId());
-                tempStat.setLastUpdateTS(joinEvent.getUpdateTimestamp());
-
+                tempStat.getClickIds().add(joinEvent.getClickId());
+                if (joinEvent.getUpdateId() != 0){
+                    tempStat.getUpdateIds().add(joinEvent.getUpdateId());
+                }
                 statsMap.put(page, tempStat);
             }else{
-                stats.setCount(stats.getCount()+1);
-                stats.getIds().add(joinEvent.getId());
-                if (!stats.getLastUpdateTS().equals(joinEvent.getUpdateTimestamp())){
-                    stats.setLastUpdateTS(joinEvent.getUpdateTimestamp());
-                    stats.setUpdateCount(stats.getUpdateCount()+1);
+                stats.getClickIds().add(joinEvent.getClickId());
+                if (joinEvent.getUpdateId() != 0 && !stats.getUpdateIds().contains(joinEvent.getUpdateId())){
+                    stats.getUpdateIds().add(joinEvent.getUpdateId());
                 }
             }
 
@@ -76,10 +71,5 @@ public class ClickCountWindowBolt extends BaseStatefulWindowedBolt<KeyValueState
         });
 
 
-    }
-
-    @Override
-    public void initState(KeyValueState<String, PageStatistics> entries) {
-        this.state = state;
     }
 }

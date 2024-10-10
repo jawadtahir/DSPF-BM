@@ -1,5 +1,5 @@
 ---
-hostPort: localhost:52923
+hostPort: 0.0.0.0:52923
 username:
 password:
 

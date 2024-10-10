@@ -1,0 +1,73 @@
+version: '3.9'
+
+services:
+  datagen:
+    image: jawadtahir/kafka-data-gen:latest
+    build:
+      context: ../docker/kafka-data-gen
+    hostname: datagen
+    networks:
+      infra:
+    environment:
+      DELAY_COUNT:
+      KAFKA_BOOTSTRAP: kafka1:9092
+      DELAY_LENGTH:
+      EVENTS_PER_WINDOW:
+      SHORT_DATA:
+      BENCHMARK_LENGTH:
+      NUM_PRODUCERS:
+      NUM_STREAMS:
+      UPDATE_DISTRIBUTION:
+    configs:
+      - source: log4j2_datagen
+        target: /jar/log4j2.xml
+    entrypoint:  "java -XX:ParallelGCThreads=4 -XX:ConcGCThreads=4 -Xmx15g -cp *:. de.tum.in.msrg.utils.Runner -benchmarkLength $BENCHMARK_LENGTH -kafka $KAFKA_BOOTSTRAP -producers $NUM_PRODUCERS -streams $NUM_STREAMS -delay $DELAY_COUNT -length $DELAY_LENGTH -events $EVENTS_PER_WINDOW -updateDistribution $UPDATE_DISTRIBUTION"
+    #    volumes:
+    #      - datagen:/reports
+
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - "node.labels.vmname==utils2"
+
+
+
+  pumbasrvrclient:
+    image: jawadtahir/pumbasrvrclient:latest
+    hostname: pumbasrvrclient
+    networks:
+      infra:
+    configs:
+      - source: experiment
+        target: /PumbaSrvrClient/experiment.yaml
+
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      placement:
+        constraints:
+          - "node.labels.vmname==utils2"
+
+
+configs:
+
+  log4j2_datagen:
+    file: ./conf/log4j2-datagen.xml
+
+  experiment:
+    file: ./conf/experiment.yaml
+
+
+volumes:
+  pgv:
+  datagen:
+
+
+
+
+networks:
+  infra:
+    name: infra
+    external: true

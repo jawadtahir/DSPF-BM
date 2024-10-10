@@ -2,7 +2,10 @@ package de.tum.in.msrg.datamodel;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
+import java.io.Serializable;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Objects;
 
@@ -10,78 +13,72 @@ import java.util.Objects;
  * A simple event recording a click on a {@link ClickUpdateEvent#page} at time {@link ClickUpdateEvent#timestamp}.
  *
  */
-public class ClickUpdateEvent {
+public class ClickUpdateEvent implements Serializable {
 
-    private long id;
-    //using java.util.Date for better readability
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS")
-    private Date timestamp;
     private String page;
+    private long clickId;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS")
-    private Date creationTimestamp;
+    private Date clickTimestamp;
+    private long updateId;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS")
     private Date updateTimestamp;
 
-    public ClickUpdateEvent() {
-    }
 
     public ClickUpdateEvent(ClickEvent clickEvent, UpdateEvent updateEvent){
-        this.id = clickEvent.getId();
-        this.timestamp = clickEvent.getTimestamp();
         this.page = clickEvent.getPage();
-        this.creationTimestamp = clickEvent.getCreationTimestamp();
+        this.clickId = clickEvent.getId();
+        this.clickTimestamp = clickEvent.getTimestamp();
         if (updateEvent == null) {
+            this.updateId = 0L;
             this.updateTimestamp = Date.from(Instant.EPOCH);
         } else {
-        this.updateTimestamp = updateEvent.getTimestamp();}
+            this.updateId = updateEvent.getId();
+            this.updateTimestamp = updateEvent.getTimestamp();
+        }
     }
 
+    public ClickUpdateEvent(){
+        this("", 0L, new Date(Instant.EPOCH.toEpochMilli()), 0L, new Date(Instant.EPOCH.toEpochMilli()));
+    }
 
-    public ClickUpdateEvent(long id, Date timestamp, String page) {
-        this.id = id;
-        this.timestamp = timestamp;
+    public ClickUpdateEvent(String page, long clickId, Date clickTimestamp, long updateId, Date updateTimestamp) {
         this.page = page;
-        this.creationTimestamp = Date.from(Instant.now());
-    }
-
-
-    public ClickUpdateEvent(long id, Date timestamp, String page, Date creationTimestamp) {
-        this.id = id;
-        this.timestamp = timestamp;
-        this.page = page;
-        this.creationTimestamp = creationTimestamp;
-    }
-
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
-    }
-
-    public Date getTimestamp() {
-        return timestamp;
-    }
-
-    public void setTimestamp(final Date timestamp) {
-        this.timestamp = timestamp;
+        this.clickId = clickId;
+        this.clickTimestamp = clickTimestamp;
+        this.updateId = updateId;
+        this.updateTimestamp = updateTimestamp;
     }
 
     public String getPage() {
         return page;
     }
 
-    public void setPage(final String page) {
+    public void setPage(String page) {
         this.page = page;
     }
 
-    public Date getCreationTimestamp() {
-        return creationTimestamp;
+    public long getClickId() {
+        return clickId;
     }
 
-    public void setCreationTimestamp(Date creationTimestamp) {
-        this.creationTimestamp = creationTimestamp;
+    public void setClickId(long clickId) {
+        this.clickId = clickId;
+    }
+
+    public Date getClickTimestamp() {
+        return clickTimestamp;
+    }
+
+    public void setClickTimestamp(Date clickTimestamp) {
+        this.clickTimestamp = clickTimestamp;
+    }
+
+    public long getUpdateId() {
+        return updateId;
+    }
+
+    public void setUpdateId(long updateId) {
+        this.updateId = updateId;
     }
 
     public Date getUpdateTimestamp() {
@@ -97,21 +94,21 @@ public class ClickUpdateEvent {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ClickUpdateEvent that = (ClickUpdateEvent) o;
-        return id == that.id && timestamp.equals(that.timestamp) && page.equals(that.page) && Objects.equals(creationTimestamp, that.creationTimestamp) && updateTimestamp.equals(that.updateTimestamp);
+        return clickId == that.clickId && updateId == that.updateId && page.equals(that.page) && clickTimestamp.equals(that.clickTimestamp) && updateTimestamp.equals(that.updateTimestamp);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, timestamp, page, creationTimestamp, updateTimestamp);
+        return Objects.hash(page, clickId, clickTimestamp, updateId, updateTimestamp);
     }
 
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("ClickUpdateEvent{");
-        sb.append("id=").append(id);
-        sb.append(", timestamp=").append(timestamp);
-        sb.append(", page='").append(page).append('\'');
-        sb.append(", creationTimestamp=").append(creationTimestamp);
+        sb.append("page='").append(page).append('\'');
+        sb.append(", clickId=").append(clickId);
+        sb.append(", clickTimestamp=").append(clickTimestamp);
+        sb.append(", updateId=").append(updateId);
         sb.append(", updateTimestamp=").append(updateTimestamp);
         sb.append('}');
         return sb.toString();

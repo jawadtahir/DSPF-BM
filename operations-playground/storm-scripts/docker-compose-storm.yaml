@@ -1,0 +1,244 @@
+version: '3.9'
+
+
+services:
+
+  redis:
+    image: redis
+    hostname: redis
+    networks:
+      infra:
+    ports:
+      - target: 6379
+        published: 56379
+        mode: host
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - "node.labels.vmname==nimbus"
+
+
+  zookeeper1:
+    image: zookeeper:3.8.0
+    restart: always
+    hostname: zookeeper1
+
+    networks:
+      infra:
+
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - "node.labels.vmname==nimbus"
+
+
+  nimbus:
+    image: jawadtahir/storm:latest
+    hostname: nimbus
+#    volumes:
+#      - ./storm-conf/worker.xml:/apache-storm-2.4.0/log4j2/worker.xml
+#    entrypoint: storm nimbus
+    environment:
+      COMMAND: "storm nimbus"
+    depends_on:
+      - zookeeper
+    configs:
+      - source: storm_config
+        target: /conf/storm.yaml
+    networks:
+      infra:
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - "node.labels.vmname==nimbus"
+
+  pumba_nimbus:
+    image: jawadtahir/pumbasrvr:latest
+    hostname: pumba_nimbus
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      infra:
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - "node.labels.vmname==nimbus"
+
+
+  supervisor1:
+    image: jawadtahir/storm:latest
+    hostname: supervisor1
+    depends_on:
+      - nimbus
+#    volumes:
+#      - ./storm-conf/worker.xml:/apache-storm-2.4.0/log4j2/worker.xml
+#    entrypoint: storm supervisor
+    environment:
+      COMMAND: "storm supervisor"
+    configs:
+      - source: storm_config
+        target: /conf/storm.yaml
+    networks:
+      infra:
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - "node.labels.vmname==supervisor1"
+
+  pumba_supervisor1:
+    image: jawadtahir/pumbasrvr:latest
+    hostname: pumba_supervisor1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      infra:
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - "node.labels.vmname==supervisor1"
+
+  supervisor2:
+    image: jawadtahir/storm:latest
+    hostname: supervisor2
+    depends_on:
+      - nimbus
+    #    volumes:
+    #      - ./storm-conf/worker.xml:/apache-storm-2.4.0/log4j2/worker.xml
+#    entrypoint: storm supervisor
+    environment:
+      COMMAND: "storm supervisor"
+    configs:
+      - source: storm_config
+        target: /conf/storm.yaml
+    networks:
+      infra:
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+#          - "node.labels.vmname==supervisor2"
+          - "node.labels.vmname==tm2"
+
+  pumba_supervisor2:
+    image: jawadtahir/pumbasrvr:latest
+    hostname: pumba_supervisor2
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      infra:
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+#          - "node.labels.vmname==supervisor2"
+          - "node.labels.vmname==tm2"
+
+  supervisor3:
+    image: jawadtahir/storm:latest
+    hostname: supervisor3
+    depends_on:
+      - nimbus
+    #    volumes:
+    #      - ./storm-conf/worker.xml:/apache-storm-2.4.0/log4j2/worker.xml
+#    entrypoint: storm supervisor
+    environment:
+      COMMAND: "storm supervisor"
+    configs:
+      - source: storm_config
+        target: /conf/storm.yaml
+    networks:
+      infra:
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - "node.labels.vmname==supervisor3"
+
+  pumba_supervisor3:
+    image: jawadtahir/pumbasrvr:latest
+    hostname: pumba_supervisor3
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      infra:
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - "node.labels.vmname==supervisor3"
+
+
+  stormUI:
+    image: jawadtahir/storm:latest
+#    hostname: stormUI
+    depends_on:
+      - supervisor1
+#    entrypoint: storm ui
+    environment:
+      COMMAND: "storm ui"
+#    volumes:
+#      - ./storm-conf/storm.yaml:/conf/storm.yaml
+    configs:
+      - source: storm_config
+        target: /conf/storm.yaml
+        mode: 0777
+    networks:
+      infra:
+    ports:
+      - target: 8080
+        published: 58080
+        mode: host
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - "node.labels.vmname==utils2"
+
+  storm_jar:
+    image: jawadtahir/storm:latest
+    depends_on:
+      - nimbus
+    environment:
+      NUM_STREAMS:
+      COMMAND: "storm jar /apache-storm-2.5.0/bin/storm-topology.jar de.tum.in.msrg.storm.Submitter -nimbus nimbus -kafka kafka1:9092 -streams ${NUM_STREAMS}"
+#      COMMAND: "${BOOT_COMMAND}${NUM_STREAMS}"
+    networks:
+      infra:
+    deploy:
+      placement:
+        constraints:
+          - "node.labels.vmname==utils2"
+      restart_policy:
+        condition: on-failure
+
+#  prompgw:
+#    image: prom/pushgateway
+#    depends_on:
+#      - nimbus
+#    hostname: prompgw
+#    networks:
+#      infra:
+#    deploy:
+#      replicas: 1
+#      placement:
+#        constraints:
+#          - "node.labels.vmname==utils2"
+
+
+configs:
+  storm_config:
+    file: ./conf/storm.yaml
+
+  storm_log:
+    file: ./conf/worker.xml
+
+networks:
+  infra:
+    name: infra
+    external: true

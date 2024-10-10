@@ -9,10 +9,7 @@ import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.util.Collector;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 public class CountProcessWindowFunction extends ProcessWindowFunction<ClickUpdateEvent, PageStatistics, String, TimeWindow> {
 
@@ -20,26 +17,28 @@ public class CountProcessWindowFunction extends ProcessWindowFunction<ClickUpdat
     public void process(String s, ProcessWindowFunction<ClickUpdateEvent, PageStatistics, String, TimeWindow>.Context context, Iterable<ClickUpdateEvent> elements, Collector<PageStatistics> out) throws Exception {
         Date winStart = new Date(context.window().getStart());
         Date winEnd = new Date(context.window().getEnd());
-        List<Long> ids = new ArrayList<Long>();
-        Integer updateCount = 1;
-        Date lastUpdated = null;
+        List<Long> clickIds = new ArrayList<Long>();
+        List<Long> updateIds = new ArrayList<Long>();
+
 
         Iterator<ClickUpdateEvent> clickUpdateEventIterator = elements.iterator();
-        ClickUpdateEvent firstEvent = clickUpdateEventIterator.next();
+//        ClickUpdateEvent firstEvent = clickUpdateEventIterator.next();
 
-        lastUpdated = firstEvent.getUpdateTimestamp();
-        ids.add(firstEvent.getId());
+//        lastUpdated = firstEvent.getUpdateTimestamp();
+//        ids.add(firstEvent.getId());
 
         while (clickUpdateEventIterator.hasNext()){
             ClickUpdateEvent event = clickUpdateEventIterator.next();
-            ids.add(event.getId());
-            if (event.getUpdateTimestamp().after(lastUpdated)){
-                updateCount++;
+            if (!clickIds.contains(event.getClickId())){
+                clickIds.add(event.getClickId());
             }
+            if (event.getUpdateId() != 0 && !updateIds.contains(event.getUpdateId())){
+                updateIds.add(event.getUpdateId());
+            }
+
         }
 
-        PageStatistics statistics = new PageStatistics(winStart, winEnd, s, ids, ids.size());
-        statistics.setUpdateCount(updateCount);
+        PageStatistics statistics = new PageStatistics(s, winStart, winEnd, clickIds, updateIds);
 
         out.collect(statistics);
 

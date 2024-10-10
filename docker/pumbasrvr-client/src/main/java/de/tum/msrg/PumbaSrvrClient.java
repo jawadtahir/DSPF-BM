@@ -8,16 +8,13 @@ import io.prometheus.client.exporter.HTTPServer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class PumbaSrvrClient {
 
@@ -61,18 +58,32 @@ public class PumbaSrvrClient {
     }
 
     protected void annotate(Task task) throws InterruptedException {
+        long delayTO = extractTO(task);
         if (httpServer != null){
             if (task.getOperation().toLowerCase().equals("kill")){
                     faultGauge.inc(5);
-                    TimeUnit.SECONDS.sleep(1);
+                    TimeUnit.SECONDS.sleep(delayTO);
                     faultGauge.dec(5);
             } else {
                 faultGauge.inc(5);
-                TimeUnit.SECONDS.sleep(task.getStartDelay());
+                TimeUnit.SECONDS.sleep(delayTO);
                 faultGauge.dec(5);
             }
 
         }
+    }
+
+    private long extractTO(Task task) {
+        AtomicReference<Long> retVal = new AtomicReference<>(0L);
+
+        task.getOperationOptns().stream()
+                .filter(opt -> opt.getOption().equalsIgnoreCase("-d")||
+                                opt.getOption().equalsIgnoreCase("--duration"))
+                .findFirst().ifPresentOrElse(
+                        operationOptn -> retVal.set(Long.parseLong(operationOptn.getValue().substring(0, operationOptn.getValue().length()-1))),
+                        () -> retVal.set(0L));
+
+        return retVal.get();
     }
 
     public String buildCommand(Task task){

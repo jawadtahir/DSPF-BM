@@ -2,28 +2,23 @@ package de.tum.in.msrg.datagen;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.tum.in.msrg.common.Constants;
+import de.tum.in.msrg.common.PageTSKey;
 import de.tum.in.msrg.datamodel.ClickEvent;
 import de.tum.in.msrg.datamodel.UpdateEvent;
 import io.prometheus.client.Counter;
-import io.prometheus.client.exporter.HTTPServer;
-import org.apache.commons.cli.*;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.common.serialization.StringSerializer;
+import org.apache.commons.lang3.RandomUtils;
+import org.apache.kafka.clients.producer.*;
+import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 /**
  * Hello world!
@@ -31,201 +26,168 @@ import java.util.*;
  */
 public class KafkaDataGen
 {
-    public static final Duration WINDOW_SIZE = Duration.of(60, ChronoUnit.SECONDS );
-    public static final int EVENTS_PER_WINDOW = 5000;
-    private static final List<String> pages = Arrays.asList("/help", "/index", "/shop", "/jobs", "/about", "/news");
-    //this calculation is only accurate as long as pages.size() * EVENTS_PER_WINDOW divides the
-    //window size
-    public static final long DELAY = WINDOW_SIZE.toMillis() / pages.size() / EVENTS_PER_WINDOW;
 
+
+
+    private final Long benchmarkLength;
     private final String bootstrap;
     private final long delay;
+    private final long delayLength;
+    private final int eventsPerWindow;
+    private final int streamsAmount;
+
+    private final float updateDistribution;
+    private final Map<PageTSKey, Date> inputTimeMap;
+    private final Map<PageTSKey, Map<Long, Boolean>> inputIdMap;
+    private final Counter recordsCounter;
+    private final Counter expectedCounter;
+
+
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaDataGen.class);
 
 
-    public KafkaDataGen(String bootstrap, long delay){
-        this.bootstrap = bootstrap;
+    public KafkaDataGen(
+            Long benchmarkLength,
+            String bootstrap,
+            long delay,
+            long delayLength,
+            int eventsPerWindow,
+            int streamsAmount,
+            float updateDistribution,
+            Map<PageTSKey, Date> inputTimeMap,
+            Map<PageTSKey, Map<Long, Boolean>> inputIdMap,
+            Counter recordsCounter,
+            Counter expectedCounter) throws IOException {
 
+        this.benchmarkLength = benchmarkLength;
+        this.bootstrap = bootstrap;
         this.delay = delay;
+        this.delayLength = delayLength;
+        this.eventsPerWindow = eventsPerWindow;
+        this.streamsAmount = streamsAmount;
+        this.updateDistribution = updateDistribution;
+        this.inputTimeMap = inputTimeMap;
+        this.inputIdMap = inputIdMap;
+        this.recordsCounter = recordsCounter;
+        this.expectedCounter = expectedCounter;
     }
 
+    public void start() throws JsonProcessingException, InterruptedException {
+        float updatePortion = (updateDistribution/100)*eventsPerWindow;
+        float clickPortion = ((100-updateDistribution)/100)*eventsPerWindow;
+        ClickDataset clickDataset = new ClickDataset((int) clickPortion);
+        UpdateDataset updateDataset = new UpdateDataset();
 
-    public static void main( String[] args ) throws ParseException, IOException {
+        long counter = 0L;
+        // Update the pages half way the window
+        long nextUpdate = (Constants.WINDOW_SIZE.toMillis() / 2);
 
-        Options cliOptns = KafkaDataGen.createCLI();
-        DefaultParser parser = new DefaultParser();
-        CommandLine cmdLine = parser.parse(cliOptns, args);
+//        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+//            LOGGER.info("Shutdown hook.");
+//            try {
+//                Thread.sleep(6000);
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
+//            LOGGER.info("Shutdown hook completed.");
+//        }));
 
-        String bootstrap = cmdLine.getOptionValue("kafka", "kafka:9092");
-        LOGGER.info(String.format("Kafka bootstrap server: %s", bootstrap));
-//        String topic = cmdLine.getOptionValue("topic","input");
-        long delay = Long.parseLong(cmdLine.getOptionValue("delay", "1000"));
-        LOGGER.info(String.format("Thread sleep after %d records", delay));
-
-        long delayLength = Long.parseLong(cmdLine.getOptionValue("length", "1"));
-        LOGGER.info(String.format("Thread sleep for %d ms", delayLength));
-
-        KafkaDataGen dataGen = new KafkaDataGen(bootstrap, delay);
-
-        Path rootReportFolder = Paths.get("/reports", Instant.now().toString());
-        Path createdDir = Files.createDirectories(rootReportFolder);
-        FileWriter fileWriter = new FileWriter(createdDir.resolve("datagen.txt").toFile(), false);
+        try (KafkaProducer<byte [], byte []> kafkaProducer = new KafkaProducer<byte[], byte[]>(getKafkaProps(bootstrap, delay))) {
 
 
-        Properties kafkaPros = dataGen.getKafkaProps();
-        LOGGER.info(String.format("Kafka properties: %s", kafkaPros.toString()));
-
-        LOGGER.info("Creating Kafka producer and prom server at port 52923...");
-        try (
-                HTTPServer promServer = new HTTPServer(52923);
-                KafkaProducer<String, String> kafkaProducer = new KafkaProducer<>(kafkaPros)
-        ){
-            LOGGER.info("Creating counters...");
-            Counter recordsCounter = Counter.build("de_tum_in_msrg_datagen_records_total", "Total number of messages generated by the generator").labelNames("key").register();
-            Counter idRolloverCounter = Counter.build("de_tum_in_msrg_datagen_id_rollover_total", "Total number of times ID roll overed").register();
-
-            ClickIterator clickIterator = new ClickIterator();
-
-            long counter = 0L;
-            // Update the pages half way the window
-            long nextUpdate = (WINDOW_SIZE.toMillis()/2);
-
+//        kafkaProducer.initTransactions();
+//        kafkaProducer.beginTransaction();
             LOGGER.info("Producing records...");
-            while (true){
-                ClickEvent clickEvent = clickIterator.next();
-                if (clickEvent.getTimestamp().getTime() > nextUpdate){
-                    updatePages(clickEvent, kafkaProducer, dataGen.objectMapper);
-                    nextUpdate += WINDOW_SIZE.toMillis();
+            Instant benchmarkEndTime = Instant.now().plusSeconds(benchmarkLength);
+            LOGGER.info(benchmarkEndTime.toString());
+
+            boolean isFinished = false;
+            while (!isFinished) {
+                isFinished = benchmarkEndTime.isBefore(Instant.now());
+
+                 ClickEvent clickEvent = clickDataset.next();
+
+                 if (streamsAmount != 1) {
+                     if (clickEvent.getTimestamp().getTime() > nextUpdate) {
+                         for (int i = 0; i < (int) updatePortion; i++) {
+                             for (String page : Constants.PAGES) {
+                                 UpdateEvent updateEvent = updateDataset.next(clickEvent.getTimestamp());
+                                 ProducerRecord<byte[], byte[]> producerRecord = new ProducerRecord<>("update", objectMapper.writeValueAsBytes(updateEvent.getPage()), objectMapper.writeValueAsBytes(updateEvent));
+                                 Future<RecordMetadata> future = kafkaProducer.send(producerRecord, new UpdateCallback(updateEvent, inputIdMap, recordsCounter));
+                                 if (isFinished) {
+                                     future.get();
+                                 }
+                                 counter++;
+                                 if (counter == this.delay) {
+                                     Thread.sleep(delayLength);
+                                     counter = 0;
+                                     kafkaProducer.flush();
+                                 }
+                             }
+                         }
+
+                         nextUpdate += Constants.WINDOW_SIZE.toMillis();
+                     }
+                 }
+
+
+                ProducerRecord<byte[], byte[]> record = new ProducerRecord<>(
+                        "click",
+                        this.objectMapper.writeValueAsBytes(clickEvent.getPage()),
+                        this.objectMapper.writeValueAsBytes(clickEvent));
+
+                Future<RecordMetadata> future = kafkaProducer.send(record, new SendCallback(clickEvent, inputTimeMap, inputIdMap, recordsCounter, expectedCounter));
+                if (isFinished){
+                    future.get();
                 }
-
-
-
-                ProducerRecord<String, String> record = new ProducerRecord<>("click", clickEvent.getPage(), dataGen.objectMapper.writeValueAsString(clickEvent));
-                kafkaProducer.send(record);
                 counter++;
-
-
-                recordsCounter.labels(clickEvent.getPage()).inc();
-                if (clickEvent.getId() == Long.MIN_VALUE){
-                    idRolloverCounter.inc();
-                }
-
-                if (counter == dataGen.delay){
+                if (counter == this.delay) {
                     Thread.sleep(delayLength);
                     counter = 0;
                     kafkaProducer.flush();
                 }
-
-
             }
 
-        } catch (InterruptedException e) {
+        } catch (ExecutionException e) {
             e.printStackTrace();
         }
-
-
     }
 
-    protected static void updatePages(ClickEvent clickEvent, KafkaProducer<String, String> kafkaProducer, ObjectMapper objectMapper) throws JsonProcessingException {
-        for (String page : pages){
-            UpdateEvent updateEvent = new UpdateEvent(clickEvent.getId(), clickEvent.getTimestamp(), page, "");
-            ProducerRecord<String, String> producerRecord = new ProducerRecord<>("update", updateEvent.getPage(), objectMapper.writeValueAsString(updateEvent));
-            kafkaProducer.send(producerRecord);
-        }
-    }
 
-    protected Properties getKafkaProps(){
+
+
+    protected static Properties getKafkaProps(String bootstrap, long delay){
         Properties props = new Properties();
 
-        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, this.bootstrap);
-        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getCanonicalName());
-        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getCanonicalName());
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap);
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getCanonicalName());
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getCanonicalName());
+//        props.put(ProducerConfig.BATCH_SIZE_CONFIG, (int)100);
+        props.put(ProducerConfig.LINGER_MS_CONFIG, 100);
+        props.put(ProducerConfig.CLIENT_ID_CONFIG, "datagen"+ RandomUtils.nextInt());
+//        props.put(ProducerConfig.TRANSACTIONAL_ID_CONFIG, "datagen");
 
 
         return props;
     }
 
-    protected static Options createCLI(){
-        Options options = new Options();
+    public static void main(String[] args) throws IOException, InterruptedException {
+        Counter recordsCounter = Counter.build(
+                        "de_tum_in_msrg_datagen_records_total",
+                        "Total number of messages generated by the generator")
+                .labelNames("key").register();
 
-        Option kafkaOptn = Option.builder("kafka")
-                .argName("bootstrap")
-                .hasArg()
-                .desc("Kafka bootstrap server")
-                .build();
-
-//        Option topicOptn = Option.builder("topic")
-//                .argName("topic")
-//                .hasArg()
-//                .desc("Kafka input topic")
-//                .build();
-
-        Option delayOptn = Option.builder("delay")
-                .argName("count")
-                .hasArg()
-                .desc("Insert delay after count events")
-                .build();
-
-        Option delayLengthOptn = Option.builder("length")
-                .argName("delayLength")
-                .hasArg()
-                .desc("Length of delay after count events [ms]")
-                .build();
-
-
-
-        options.addOption(kafkaOptn);
-//        options.addOption(topicOptn);
-        options.addOption(delayOptn);
-        options.addOption(delayLengthOptn);
-
-
-        return options;
+        Counter expectedCounter = Counter.build(
+                        "de_tum_in_msrg_pgv_expected_windows",
+                        "Expected windows")
+                .labelNames("key").register();
+        Map<PageTSKey, Date> inputTimeMap = new ConcurrentHashMap<>();
+        Map<PageTSKey, Map<Long, Boolean>> inputIdMap = new ConcurrentHashMap<>();
+        KafkaDataGen dg = new KafkaDataGen(210L, "172.24.33.89:9094", 1, 1, 50, 2, 10, inputTimeMap, inputIdMap, recordsCounter, expectedCounter);
+        dg.start();
     }
 
-
-    static class ClickIterator  {
-
-        private Map<String, Long> nextTimestampPerKey;
-        private int nextPageIndex;
-        private long id = Long.MIN_VALUE;
-
-        ClickIterator() {
-            nextTimestampPerKey = new HashMap<>();
-            nextPageIndex = 0;
-        }
-
-        ClickEvent next() {
-            String page = nextPage();
-            id++;
-            if (id == Long.MAX_VALUE) {
-                id = Long.MIN_VALUE;
-            }
-            return new ClickEvent(id, nextTimestamp(page), page);
-        }
-
-        private Date nextTimestamp(String page) {
-            long nextTimestamp = nextTimestampPerKey.getOrDefault(page, 1L);
-//			nextTimestampPerKey.put(page, nextTimestamp + WINDOW_SIZE.toMilliseconds() / EVENTS_PER_WINDOW);
-            nextTimestampPerKey.put(page, nextTimestamp + (WINDOW_SIZE.toMillis()  / EVENTS_PER_WINDOW ) );
-            return new Date(nextTimestamp);
-        }
-
-        private String nextPage() {
-            String nextPage = pages.get(nextPageIndex);
-            if (nextPageIndex == pages.size() - 1) {
-                nextPageIndex = 0;
-            } else {
-                nextPageIndex++;
-            }
-            return nextPage;
-        }
-    }
-
-    static class UpdateIterator {
-        private long lastUpdated = 30000L;
-    }
 
 }
