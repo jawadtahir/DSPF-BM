@@ -26,6 +26,7 @@ public class EndTimeReader implements Runnable{
 
         this.kafkaProperties.put(ConsumerConfig.GROUP_ID_CONFIG, "latcalOutputReader");
         this.kafkaProperties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, PageStatisticsDeserializer.class.getCanonicalName());
+        this.keyMap = new HashMap<String, String>();
         LOGGER.info(String.format("Kafka Properties: %s", this.kafkaProperties.toString()));
 
         this.eventInTimeMap = eventInTimeMap;
@@ -64,6 +65,12 @@ public class EndTimeReader implements Runnable{
                                 break;
                             }
                         }
+                    }
+                }
+                if (!records.isEmpty()){
+                    Thread.sleep(1200);
+                    for (Map.Entry<String, String> entry : keyMap.entrySet()){
+                        latencyGauge.labels(entry.getKey()).set(0.0);
                     }
                 }
             }
