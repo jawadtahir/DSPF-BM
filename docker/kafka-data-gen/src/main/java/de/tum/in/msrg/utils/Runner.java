@@ -36,6 +36,9 @@ public class Runner {
         int numStreams = Integer.parseInt(cmdLine.getOptionValue("streams", "1"));
         LOGGER.info(String.format("Number of streams: %d", numStreams));
 
+        float updateDistribution = Float.parseFloat(cmdLine.getOptionValue("updateDistribution", "2"));
+        LOGGER.info(String.format("Distribution of update events: %f", updateDistribution));
+
         int numProducer = Integer.parseInt(cmdLine.getOptionValue("producers", "1"));
         LOGGER.info(String.format("Number of producers: %d", numProducer));
 
@@ -97,7 +100,7 @@ public class Runner {
             Runnable datagen = () -> {
                 KafkaDataGen dataGen = null;
                 try {
-                    dataGen = new KafkaDataGen(benchmarkLength, bootstrap, delay, delayLength, eventsPerWindow, numStreams, inputTimeMap,inputIdMap, recordsCounter, expectedCounter);
+                    dataGen = new KafkaDataGen(benchmarkLength, bootstrap, delay, delayLength, eventsPerWindow, numStreams, updateDistribution, inputTimeMap,inputIdMap, recordsCounter, expectedCounter);
                     dataGen.start();
                 } catch (IOException | InterruptedException e) {
                     e.printStackTrace();
@@ -173,6 +176,12 @@ public class Runner {
                 .desc("Length of delay after count events [ms]")
                 .build();
 
+        Option updateDistOptn = Option.builder("updateDistribution")
+                .argName("updateDist")
+                .hasArg()
+                .desc("Distribution of update events in dataset")
+                .build();
+
 
 
         options.addOption(kafkaOptn);
@@ -182,6 +191,7 @@ public class Runner {
         options.addOption(delayOptn);
         options.addOption(delayLengthOptn);
         options.addOption(benchmarkLengthOptn);
+        options.addOption(updateDistOptn);
 
 
         return options;

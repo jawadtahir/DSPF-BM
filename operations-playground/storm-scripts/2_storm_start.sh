@@ -51,7 +51,7 @@ ${CREATE_TOPIC_SCRIPT} --topic lateOutput --create  --bootstrap-server node1:909
 echo "Sleeping for 10 seconds..."
 sleep 10s
 
-export NUM_STREAMS=1
+export NUM_STREAMS=2
 # Start Storm containers
 echo "Starting Storm containers..."
 docker stack deploy --prune -c docker-compose-storm3.yaml storm

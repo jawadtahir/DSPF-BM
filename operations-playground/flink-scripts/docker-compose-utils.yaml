@@ -17,10 +17,11 @@ services:
       BENCHMARK_LENGTH:
       NUM_PRODUCERS:
       NUM_STREAMS:
+      UPDATE_DISTRIBUTION:
     configs:
       - source: log4j2_datagen
         target: /jar/log4j2.xml
-    entrypoint:  "java -XX:ParallelGCThreads=4 -XX:ConcGCThreads=4 -Xmx15g -cp *:. de.tum.in.msrg.utils.Runner -benchmarkLength $BENCHMARK_LENGTH -kafka $KAFKA_BOOTSTRAP -producers $NUM_PRODUCERS -streams $NUM_STREAMS -delay $DELAY_COUNT -length $DELAY_LENGTH -events $EVENTS_PER_WINDOW"
+    entrypoint:  "java -XX:ParallelGCThreads=4 -XX:ConcGCThreads=4 -Xmx15g -cp *:. de.tum.in.msrg.utils.Runner -benchmarkLength $BENCHMARK_LENGTH -kafka $KAFKA_BOOTSTRAP -producers $NUM_PRODUCERS -streams $NUM_STREAMS -delay $DELAY_COUNT -length $DELAY_LENGTH -events $EVENTS_PER_WINDOW -updateDistribution $UPDATE_DISTRIBUTION"
 #    volumes:
 #      - datagen:/reports
 

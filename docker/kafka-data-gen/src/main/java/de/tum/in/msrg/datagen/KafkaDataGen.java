@@ -16,6 +16,7 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -34,6 +35,8 @@ public class KafkaDataGen
     private final long delayLength;
     private final int eventsPerWindow;
     private final int streamsAmount;
+
+    private final float updateDistribution;
     private final Map<PageTSKey, Date> inputTimeMap;
     private final Map<PageTSKey, Map<Long, Boolean>> inputIdMap;
     private final Counter recordsCounter;
@@ -52,6 +55,7 @@ public class KafkaDataGen
             long delayLength,
             int eventsPerWindow,
             int streamsAmount,
+            float updateDistribution,
             Map<PageTSKey, Date> inputTimeMap,
             Map<PageTSKey, Map<Long, Boolean>> inputIdMap,
             Counter recordsCounter,
@@ -63,6 +67,7 @@ public class KafkaDataGen
         this.delayLength = delayLength;
         this.eventsPerWindow = eventsPerWindow;
         this.streamsAmount = streamsAmount;
+        this.updateDistribution = updateDistribution;
         this.inputTimeMap = inputTimeMap;
         this.inputIdMap = inputIdMap;
         this.recordsCounter = recordsCounter;
@@ -70,8 +75,9 @@ public class KafkaDataGen
     }
 
     public void start() throws JsonProcessingException, InterruptedException {
-
-        ClickDataset clickDataset = new ClickDataset(this.eventsPerWindow);
+        float updatePortion = (updateDistribution/100)*eventsPerWindow;
+        float clickPortion = ((100-updateDistribution)/100)*eventsPerWindow;
+        ClickDataset clickDataset = new ClickDataset((int) clickPortion);
         UpdateDataset updateDataset = new UpdateDataset();
 
         long counter = 0L;
@@ -105,14 +111,23 @@ public class KafkaDataGen
 
                  if (streamsAmount != 1) {
                      if (clickEvent.getTimestamp().getTime() > nextUpdate) {
-                         for (String page : Constants.PAGES) {
-                             UpdateEvent updateEvent = updateDataset.next(clickEvent.getTimestamp());
-                             ProducerRecord<byte[], byte[]> producerRecord = new ProducerRecord<>("update", objectMapper.writeValueAsBytes(updateEvent.getPage()), objectMapper.writeValueAsBytes(updateEvent));
-                             Future<RecordMetadata> future = kafkaProducer.send(producerRecord, new UpdateCallback(updateEvent, inputIdMap, recordsCounter));
-                             if (isFinished) {
-                                 future.get();
+                         for (int i = 0; i < (int) updatePortion; i++) {
+                             for (String page : Constants.PAGES) {
+                                 UpdateEvent updateEvent = updateDataset.next(clickEvent.getTimestamp());
+                                 ProducerRecord<byte[], byte[]> producerRecord = new ProducerRecord<>("update", objectMapper.writeValueAsBytes(updateEvent.getPage()), objectMapper.writeValueAsBytes(updateEvent));
+                                 Future<RecordMetadata> future = kafkaProducer.send(producerRecord, new UpdateCallback(updateEvent, inputIdMap, recordsCounter));
+                                 if (isFinished) {
+                                     future.get();
+                                 }
+                                 counter++;
+                                 if (counter == this.delay) {
+                                     Thread.sleep(delayLength);
+                                     counter = 0;
+                                     kafkaProducer.flush();
+                                 }
                              }
                          }
+
                          nextUpdate += Constants.WINDOW_SIZE.toMillis();
                      }
                  }
@@ -128,24 +143,12 @@ public class KafkaDataGen
                     future.get();
                 }
                 counter++;
-
-
-//                recordsCounter.labels(clickEvent.getPage()).inc();
-
                 if (counter == this.delay) {
                     Thread.sleep(delayLength);
                     counter = 0;
                     kafkaProducer.flush();
-//                this.kafkaProducer.commitTransaction();
-//                kafkaProducer.beginTransaction();
                 }
             }
-//            LOGGER.info("Finished data generation. Sleeping...");
-//
-//            kafkaProducer.flush();
-//            Thread.sleep(6000);
-//
-//            LOGGER.info("Closing data gen...");
 
         } catch (ExecutionException e) {
             e.printStackTrace();
@@ -168,6 +171,22 @@ public class KafkaDataGen
 
 
         return props;
+    }
+
+    public static void main(String[] args) throws IOException, InterruptedException {
+        Counter recordsCounter = Counter.build(
+                        "de_tum_in_msrg_datagen_records_total",
+                        "Total number of messages generated by the generator")
+                .labelNames("key").register();
+
+        Counter expectedCounter = Counter.build(
+                        "de_tum_in_msrg_pgv_expected_windows",
+                        "Expected windows")
+                .labelNames("key").register();
+        Map<PageTSKey, Date> inputTimeMap = new ConcurrentHashMap<>();
+        Map<PageTSKey, Map<Long, Boolean>> inputIdMap = new ConcurrentHashMap<>();
+        KafkaDataGen dg = new KafkaDataGen(210L, "172.24.33.89:9094", 1, 1, 50, 2, 10, inputTimeMap, inputIdMap, recordsCounter, expectedCounter);
+        dg.start();
     }
 
 

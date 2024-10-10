@@ -16,7 +16,7 @@ services:
       replicas: 1
       placement:
         constraints:
-          - "node.labels.vmname==kstreams4"
+          - "node.labels.vmname==nimbus"
 
 
   zookeeper1:
@@ -31,7 +31,7 @@ services:
       replicas: 1
       placement:
         constraints:
-          - "node.labels.vmname==kstreams4"
+          - "node.labels.vmname==nimbus"
 
 
   nimbus:
@@ -52,7 +52,7 @@ services:
       replicas: 1
       placement:
         constraints:
-          - "node.labels.vmname==kstreams4"
+          - "node.labels.vmname==nimbus"
 
   pumba_nimbus:
     image: jawadtahir/pumbasrvr:latest
@@ -65,7 +65,7 @@ services:
       replicas: 1
       placement:
         constraints:
-          - "node.labels.vmname==kstreams4"
+          - "node.labels.vmname==nimbus"
 
 
   supervisor1:
