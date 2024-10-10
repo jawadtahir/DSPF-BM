@@ -44,7 +44,7 @@ under the License.
 
     <properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<kafka.version>2.4.1</kafka.version>
+		<kafka.version>2.6.3</kafka.version>
 		<flink.version>1.14.4</flink.version>
 		<prometheus.version>0.8.1</prometheus.version>
 		<java.version>11</java.version>
