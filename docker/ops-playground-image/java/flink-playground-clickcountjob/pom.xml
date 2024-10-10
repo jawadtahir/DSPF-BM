@@ -51,7 +51,7 @@ under the License.
 		<scala.binary.version>2.12</scala.binary.version>
 		<maven.compiler.source>${java.version}</maven.compiler.source>
 		<maven.compiler.target>${java.version}</maven.compiler.target>
-		<storm.version>2.2.0</storm.version>
+		<storm.version>2.6.0</storm.version>
 	</properties>
 
 	<dependencies>
