@@ -213,5 +213,5 @@ resource "local_file" "ansible_inventory" {
       kstreams_machine = opennebula_virtual_machine.kstreams.*.ip
     }
   )
-  filename = "../ansible/inventory.cfg"
+  filename = "../../ansible/inventory.cfg"
 }

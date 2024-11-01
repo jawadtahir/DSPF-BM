@@ -38,7 +38,7 @@ Infra/terraform/.terraform/*
 
 *.tfstate
 
-Infra/terraform/variables.tf
+Infra/terraform/OpenNebula/variables.tf
 
 Infra/terraform/aws/.terraform/providers/*
 Infra/terraform/aws/terraform.tfstate.backup
