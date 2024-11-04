@@ -60,7 +60,7 @@ After that, run
 ./3_experiment_start.sh
 ```
 The experiment will run and can be observed in Grafana dashboard.
-To configure experiments, please see wiki.
+To configure experiments, please see the [wiki](https://github.com/jawadtahir/DSPF-BM/wiki).
 
 [//]: # (# CLEAN UP)
 
