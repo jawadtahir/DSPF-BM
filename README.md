@@ -12,9 +12,9 @@ This ReadMe file explains the steps to performs benchmarks. To run benchmarks we
 
 
 All components of the benchmark are deployed on a cluster of VMs. 
-We provide terraform scripts to automate VM creation for OpenNebula and AWS (work in progress). 
+We provide [terraform](https://developer.hashicorp.com/terraform/install?product_intent=terraform) scripts to automate VM creation for OpenNebula and AWS (work in progress). 
 These VMs need to be configured with the required packages and softwares. 
-To this end, we provide Ansible scripts to automate the configuration. 
+To this end, we provide [Ansible](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html) scripts to automate the configuration. 
 Once VMs are set up, you can run benchmark scripts.    
 
 ## Infrastructure
