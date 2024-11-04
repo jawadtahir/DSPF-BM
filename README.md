@@ -21,7 +21,7 @@ Once VMs are set up, you can run benchmark scripts.
 If you already have VMs that are connected on a network, you can skip this step and read set up instruction. 
 We provide Terraform scripts for OpenNebula and AWS in `Infra/terraform` folder.
 ```shell
-cd infra/terraform/<provider>
+cd infra/terraform/<provider> #AWS requires AWS CLI installed
 terraform init
 terraform plan #optional
 terraform apply
