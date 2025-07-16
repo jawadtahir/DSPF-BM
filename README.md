@@ -2,7 +2,8 @@
 
 PGVal is a benchmarking system for stream processing systems (SPSs). 
 PGVal benchmarks SPSs for correctness and performance. 
-For details, please see the extended paper in `Docs` folder.
+For details, please see the published paper at:
+https://doi.org/10.14778/3712221.3712227
 
 This ReadMe file explains the steps to performs benchmarks. To run benchmarks we need three things.
 
